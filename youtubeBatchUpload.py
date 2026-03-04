@@ -1,0 +1,967 @@
+"""Batch-upload YouTube Shorts with AI-generated metadata.
+
+Setup:
+1) Create YouTube API OAuth credentials and download `client_secret.json`.
+2) Set `OPENAI_API_KEY` in your environment for AI metadata generation.
+3) Install dependencies:
+   pip install google-api-python-client google-auth-oauthlib google-auth-httplib2 openai
+
+Example:
+python youtubeBatchUpload.py --root "." --max-videos 10 --privacy public
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import random
+import re
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaFileUpload
+try:
+    from openai import OpenAI
+except ImportError:  # pragma: no cover - handled at runtime.
+    OpenAI = None  # type: ignore[assignment]
+
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube",
+]
+RETRIABLE_STATUS_CODES = {500, 502, 503, 504}
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Upload local clips to YouTube Shorts with AI metadata."
+    )
+    parser.add_argument(
+        "--root",
+        default=".",
+        help="Root directory to recursively scan for videos.",
+    )
+    parser.add_argument(
+        "--extensions",
+        default=".mp4,.mov,.mkv,.webm",
+        help="Comma-separated list of video extensions.",
+    )
+    parser.add_argument(
+        "--exclude-dirs",
+        default=".git,__pycache__,generated_metadata,converted_shorts",
+        help="Comma-separated directory names to skip while scanning for videos.",
+    )
+    parser.add_argument(
+        "--exclude-files",
+        default="shorts_crop_preview.mp4",
+        help="Comma-separated file names to skip while scanning for videos.",
+    )
+    parser.add_argument(
+        "--max-videos",
+        type=int,
+        default=0,
+        help="Limit number of uploads (0 = all discovered).",
+    )
+    parser.add_argument(
+        "--privacy",
+        choices=["private", "public", "unlisted"],
+        default="public",
+        help="YouTube privacy setting.",
+    )
+    parser.add_argument(
+        "--playlist-name",
+        default="Valorant",
+        help="Playlist title to add each uploaded video to (empty to disable).",
+    )
+    parser.add_argument(
+        "--client-secrets",
+        default="client_secret.json",
+        help="Path to YouTube OAuth client secrets JSON.",
+    )
+    parser.add_argument(
+        "--auth-port",
+        type=int,
+        default=8080,
+        help="Local port used by OAuth callback server.",
+    )
+    parser.add_argument(
+        "--token-file",
+        default="token.json",
+        help="Path to store OAuth access token JSON.",
+    )
+    parser.add_argument(
+        "--state-file",
+        default=".youtube_upload_state.json",
+        help="Path to upload state file (used to skip already uploaded videos).",
+    )
+    parser.add_argument(
+        "--metadata-dir",
+        default="generated_metadata",
+        help="Directory to store generated metadata JSON per uploaded file.",
+    )
+    parser.add_argument(
+        "--shorts-policy",
+        choices=["off", "strict", "convert"],
+        default="convert",
+        help=(
+            "How to enforce Shorts format: "
+            "off=upload as-is, strict=skip non-Shorts files, "
+            "convert=auto-convert non-Shorts files to 9:16."
+        ),
+    )
+    parser.add_argument(
+        "--shorts-max-seconds",
+        type=int,
+        default=180,
+        help="Maximum Shorts duration in seconds.",
+    )
+    parser.add_argument(
+        "--converted-dir",
+        default="converted_shorts",
+        help="Directory to store auto-converted Shorts files.",
+    )
+    parser.add_argument(
+        "--ffmpeg-bin",
+        default="ffmpeg",
+        help="Path to ffmpeg binary for conversion.",
+    )
+    parser.add_argument(
+        "--ffprobe-bin",
+        default="ffprobe",
+        help="Path to ffprobe binary for media inspection.",
+    )
+    parser.add_argument(
+        "--openai-model",
+        default="gpt-4.1-mini",
+        help="OpenAI model used to generate metadata.",
+    )
+    parser.add_argument(
+        "--channel-name",
+        default="",
+        help="Optional channel name/style for AI prompt.",
+    )
+    parser.add_argument(
+        "--extra-keywords",
+        default="valorant,valorant clips,shorts,gaming,fps",
+        help="Comma-separated keywords to guide metadata generation.",
+    )
+    parser.add_argument(
+        "--language",
+        default="en",
+        help="Default language for video metadata.",
+    )
+    parser.add_argument(
+        "--category-id",
+        default="20",
+        help="YouTube category ID (20 = Gaming).",
+    )
+    parser.add_argument(
+        "--notify-subscribers",
+        action="store_true",
+        help="Send upload notifications to subscribers.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Generate and save metadata, but do not upload.",
+    )
+    parser.add_argument(
+        "--skip-uploaded",
+        action="store_true",
+        default=True,
+        help="Skip files already present in the state file.",
+    )
+    parser.add_argument(
+        "--no-skip-uploaded",
+        action="store_false",
+        dest="skip_uploaded",
+        help="Re-upload files even if they exist in the state file.",
+    )
+    parser.add_argument(
+        "--no-ai",
+        action="store_true",
+        help="Disable OpenAI metadata generation and use fallback metadata.",
+    )
+    return parser.parse_args()
+
+
+def load_json_file(path: Path, default: Any) -> Any:
+    if not path.exists():
+        return default
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return default
+
+
+def save_json_file(path: Path, data: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def normalize_extensions(raw_extensions: str) -> set[str]:
+    exts: set[str] = set()
+    for item in raw_extensions.split(","):
+        cleaned = item.strip().lower()
+        if not cleaned:
+            continue
+        if not cleaned.startswith("."):
+            cleaned = f".{cleaned}"
+        exts.add(cleaned)
+    return exts
+
+
+def normalize_names_csv(raw: str) -> set[str]:
+    values = set()
+    for item in raw.split(","):
+        cleaned = item.strip().lower()
+        if cleaned:
+            values.add(cleaned)
+    return values
+
+
+def discover_videos(
+    root: Path,
+    extensions: set[str],
+    exclude_dirs: set[str],
+    exclude_files: set[str],
+) -> List[Path]:
+    files: List[Path] = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d.lower() not in exclude_dirs]
+        base = Path(dirpath)
+        for filename in filenames:
+            if filename.lower() in exclude_files:
+                continue
+            path = base / filename
+            if path.suffix.lower() in extensions:
+                files.append(path)
+    files.sort()
+    return files
+
+
+def file_key(root: Path, file_path: Path) -> str:
+    stat = file_path.stat()
+    rel = file_path.relative_to(root).as_posix()
+    return f"{rel}|{stat.st_size}|{int(stat.st_mtime)}"
+
+
+def build_youtube_client(client_secrets: Path, token_file: Path, auth_port: int):
+    creds: Optional[Credentials] = None
+    client_config = load_json_file(client_secrets, default={})
+    if "web" in client_config and "installed" not in client_config:
+        print(
+            "[warn] client_secret.json is a WEB OAuth client. "
+            "Use a DESKTOP OAuth client to avoid redirect_uri_mismatch."
+        )
+    token_scope_mismatch = False
+    if token_file.exists():
+        token_payload = load_json_file(token_file, default={})
+        stored_scopes = set(token_payload.get("scopes", []))
+        if stored_scopes and not set(SCOPES).issubset(stored_scopes):
+            token_scope_mismatch = True
+        if token_scope_mismatch:
+            print("[info] token scopes are outdated; re-authenticating for playlist access.")
+        else:
+            creds = Credentials.from_authorized_user_file(str(token_file), SCOPES)
+    if creds and not creds.has_scopes(SCOPES):
+        creds = None
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token and creds.has_scopes(SCOPES):
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets), SCOPES)
+            creds = flow.run_local_server(port=auth_port)
+        token_file.write_text(creds.to_json(), encoding="utf-8")
+    return build("youtube", "v3", credentials=creds)
+
+
+def check_tool_available(bin_name: str) -> bool:
+    try:
+        proc = subprocess.run(
+            [bin_name, "-version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        return proc.returncode == 0
+    except OSError:
+        return False
+
+
+def resolve_media_tool(bin_name: str) -> Optional[str]:
+    # If user provided an absolute path or PATH-resolved binary, use it.
+    if Path(bin_name).exists() or check_tool_available(bin_name):
+        return bin_name
+
+    exe_name = bin_name
+    if not exe_name.lower().endswith(".exe"):
+        exe_name = f"{exe_name}.exe"
+
+    # Fallback for WinGet FFmpeg installation path.
+    local_appdata = os.getenv("LOCALAPPDATA")
+    if local_appdata:
+        candidate_root = Path(local_appdata) / "Microsoft" / "WinGet" / "Packages"
+        if candidate_root.exists():
+            for match in candidate_root.rglob(exe_name):
+                if match.is_file():
+                    return str(match)
+
+    return None
+
+
+def probe_video_info(file_path: Path, ffprobe_bin: str) -> Optional[Dict[str, float]]:
+    try:
+        proc = subprocess.run(
+            [
+                ffprobe_bin,
+                "-v",
+                "error",
+                "-select_streams",
+                "v:0",
+                "-show_entries",
+                "stream=width,height",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "json",
+                str(file_path),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+
+    if proc.returncode != 0:
+        return None
+
+    try:
+        payload = json.loads(proc.stdout or "{}")
+        streams = payload.get("streams", [])
+        stream = streams[0] if streams else {}
+        width = int(stream.get("width", 0))
+        height = int(stream.get("height", 0))
+        duration = float(payload.get("format", {}).get("duration", 0.0))
+    except (ValueError, TypeError, json.JSONDecodeError, IndexError):
+        return None
+
+    if width <= 0 or height <= 0 or duration <= 0:
+        return None
+
+    return {
+        "width": float(width),
+        "height": float(height),
+        "duration": float(duration),
+    }
+
+
+def is_shorts_eligible(
+    video_info: Dict[str, float],
+    shorts_max_seconds: int,
+) -> Tuple[bool, List[str]]:
+    reasons: List[str] = []
+    width = int(video_info["width"])
+    height = int(video_info["height"])
+    duration = float(video_info["duration"])
+    if width > height:
+        reasons.append(f"horizontal aspect ratio ({width}x{height})")
+    if duration > shorts_max_seconds:
+        reasons.append(f"duration {duration:.1f}s > {shorts_max_seconds}s")
+    return (len(reasons) == 0, reasons)
+
+
+def build_converted_path(source: Path, converted_dir: Path) -> Path:
+    profile = "cropv1"
+    digest = hashlib.sha1(f"{source}|{profile}".encode("utf-8")).hexdigest()[:10]
+    safe_stem = re.sub(r"[^a-zA-Z0-9._-]", "_", source.stem)[:80]
+    filename = f"{safe_stem}.{digest}.{profile}.shorts.mp4"
+    return converted_dir / filename
+
+
+def convert_to_shorts(
+    source: Path,
+    converted_dir: Path,
+    ffmpeg_bin: str,
+    shorts_max_seconds: int,
+) -> Path:
+    converted_dir.mkdir(parents=True, exist_ok=True)
+    output = build_converted_path(source, converted_dir)
+
+    if output.exists() and output.stat().st_mtime >= source.stat().st_mtime:
+        return output
+
+    filter_graph = (
+        "crop="
+        "'if(gte(iw/ih,9/16),trunc(ih*9/16/2)*2,iw)':"
+        "'if(gte(iw/ih,9/16),ih,trunc(iw*16/9/2)*2)',"
+        "scale=1080:1920,setsar=1"
+    )
+    proc = subprocess.run(
+        [
+            ffmpeg_bin,
+            "-y",
+            "-i",
+            str(source),
+            "-vf",
+            filter_graph,
+            "-t",
+            str(shorts_max_seconds),
+            "-c:v",
+            "libx264",
+            "-preset",
+            "medium",
+            "-crf",
+            "20",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            "-movflags",
+            "+faststart",
+            str(output),
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        tail = "\n".join((proc.stderr or "").splitlines()[-20:])
+        raise RuntimeError(f"ffmpeg conversion failed for {source}:\n{tail}")
+
+    return output
+
+
+def clean_text(value: str) -> str:
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def parse_json_response(raw: str) -> Dict[str, Any]:
+    raw = raw.strip()
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if match:
+            return json.loads(match.group(0))
+        raise
+
+
+def normalize_hashtag(tag: str) -> str:
+    text = re.sub(r"[^a-zA-Z0-9_]", "", tag.replace("#", "").strip().lower())
+    return f"#{text}" if text else ""
+
+
+def normalize_tags(tags: List[str], max_total_chars: int = 500, max_tags: int = 15) -> List[str]:
+    normalized: List[str] = []
+    seen = set()
+    total = 0
+    for tag in tags:
+        cleaned = clean_text(tag).lower()
+        cleaned = re.sub(r"[^a-z0-9\s\-]", "", cleaned).strip("- ")
+        if not cleaned or cleaned in seen:
+            continue
+        estimated_add = len(cleaned) + (1 if normalized else 0)
+        if len(normalized) >= max_tags or total + estimated_add > max_total_chars:
+            break
+        normalized.append(cleaned)
+        seen.add(cleaned)
+        total += estimated_add
+    return normalized
+
+
+def trim_title(title: str, max_len: int = 100) -> str:
+    title = clean_text(title)
+    if len(title) <= max_len:
+        return title
+    return clean_text(title[: max_len - 3]) + "..."
+
+
+def build_fallback_metadata(file_path: Path, extra_keywords: List[str]) -> Dict[str, Any]:
+    base_name = file_path.stem.replace("_", " ")
+    base_name = re.sub(r"[-]+", " ", base_name)
+    base_name = clean_text(base_name)
+    title = f"{base_name} | Valorant Shorts"
+    description = (
+        f"Clean VALORANT clip from session: {base_name}.\n"
+        "More clutch and aim clips coming daily.\n"
+        "Like + subscribe for consistent highlights."
+    )
+    tags = [
+        "valorant",
+        "valorant clips",
+        "valorant shorts",
+        "fps",
+        "gaming",
+        "valorant gameplay",
+    ] + extra_keywords
+    return {
+        "title": title,
+        "description": description,
+        "tags": tags,
+        "hashtags": ["#shorts", "#valorant", "#gaming"],
+        "cta": "Follow for more daily Valorant highlights.",
+    }
+
+
+def generate_ai_metadata(
+    client: OpenAI,
+    model: str,
+    file_path: Path,
+    rel_path: str,
+    channel_name: str,
+    extra_keywords: List[str],
+    language: str,
+) -> Dict[str, Any]:
+    system_prompt = (
+        "You are a YouTube Shorts growth strategist for gaming channels. "
+        "Generate metadata for a single VALORANT short-form clip. "
+        "Return only strict JSON."
+    )
+    user_prompt = (
+        "Create metadata with better CTR + search relevance while staying realistic.\n"
+        f"Video file name: {file_path.name}\n"
+        f"Relative path: {rel_path}\n"
+        f"Channel name/style: {channel_name or 'not provided'}\n"
+        f"Language: {language}\n"
+        f"Extra keywords: {', '.join(extra_keywords) if extra_keywords else 'none'}\n\n"
+        "Output JSON schema:\n"
+        "{\n"
+        '  "title": "string <= 100 chars, compelling, no clickbait lies",\n'
+        '  "description": "string 2-4 short lines, natural tone",\n'
+        '  "tags": ["10-15 relevant tags without #"],\n'
+        '  "hashtags": ["3-5 hashtags including shorts and valorant"],\n'
+        '  "cta": "one short call-to-action sentence"\n'
+        "}\n"
+        "Rules: avoid rank claims unless obvious from filename, avoid all-caps spam, avoid emojis."
+    )
+    response = client.chat.completions.create(
+        model=model,
+        response_format={"type": "json_object"},
+        temperature=0.8,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    )
+    raw = response.choices[0].message.content or "{}"
+    return parse_json_response(raw)
+
+
+def finalize_metadata(raw: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str, Any]:
+    title = trim_title(str(raw.get("title") or fallback["title"]))
+    description = str(raw.get("description") or fallback["description"]).strip()
+    cta = str(raw.get("cta") or fallback["cta"]).strip()
+
+    raw_tags = raw.get("tags")
+    tags_input = raw_tags if isinstance(raw_tags, list) else fallback["tags"]
+    tags = normalize_tags([str(x) for x in tags_input])
+    if "valorant" not in tags:
+        tags = normalize_tags(["valorant"] + tags)
+    if "shorts" not in tags:
+        tags = normalize_tags(tags + ["shorts"])
+
+    raw_hashtags = raw.get("hashtags")
+    hashtags_input = raw_hashtags if isinstance(raw_hashtags, list) else fallback["hashtags"]
+    hashtags = []
+    seen = set()
+    for value in hashtags_input:
+        tag = normalize_hashtag(str(value))
+        if tag and tag not in seen:
+            hashtags.append(tag)
+            seen.add(tag)
+    for required in ("#shorts", "#valorant"):
+        if required not in seen:
+            hashtags.append(required)
+            seen.add(required)
+    hashtags = hashtags[:5]
+
+    lines = [description]
+    if cta:
+        lines.extend(["", cta])
+    if hashtags:
+        lines.extend(["", " ".join(hashtags)])
+    final_description = "\n".join(line.strip() for line in lines if line is not None).strip()
+    if len(final_description) > 5000:
+        final_description = final_description[:4999]
+
+    return {
+        "title": title,
+        "description": final_description,
+        "tags": tags,
+        "hashtags": hashtags,
+        "cta": cta,
+    }
+
+
+def resolve_playlist_id(youtube, playlist_name: str) -> Optional[str]:
+    if not playlist_name.strip():
+        return None
+
+    wanted = clean_text(playlist_name).lower()
+    next_page_token: Optional[str] = None
+    fallback_id: Optional[str] = None
+
+    while True:
+        response = youtube.playlists().list(
+            part="snippet",
+            mine=True,
+            maxResults=50,
+            pageToken=next_page_token,
+        ).execute()
+
+        for item in response.get("items", []):
+            title = clean_text(item.get("snippet", {}).get("title", ""))
+            if not title:
+                continue
+            playlist_id = item.get("id")
+            if not playlist_id:
+                continue
+            if title.lower() == wanted:
+                return playlist_id
+            if fallback_id is None and wanted in title.lower():
+                fallback_id = playlist_id
+
+        next_page_token = response.get("nextPageToken")
+        if not next_page_token:
+            break
+
+    return fallback_id
+
+
+def add_video_to_playlist(youtube, playlist_id: str, video_id: str) -> str:
+    response = youtube.playlistItems().insert(
+        part="snippet",
+        body={
+            "snippet": {
+                "playlistId": playlist_id,
+                "resourceId": {
+                    "kind": "youtube#video",
+                    "videoId": video_id,
+                },
+            }
+        },
+    ).execute()
+    return str(response.get("id", ""))
+
+
+def upload_video(
+    youtube,
+    file_path: Path,
+    metadata: Dict[str, Any],
+    privacy: str,
+    category_id: str,
+    language: str,
+    notify_subscribers: bool,
+    max_retries: int = 8,
+) -> str:
+    body = {
+        "snippet": {
+            "title": metadata["title"],
+            "description": metadata["description"],
+            "tags": metadata["tags"],
+            "categoryId": category_id,
+            "defaultLanguage": language,
+            "defaultAudioLanguage": language,
+        },
+        "status": {
+            "privacyStatus": privacy,
+            "selfDeclaredMadeForKids": False,
+        },
+    }
+
+    request = youtube.videos().insert(
+        part="snippet,status",
+        body=body,
+        media_body=MediaFileUpload(str(file_path), resumable=True),
+        notifySubscribers=notify_subscribers,
+    )
+
+    response = None
+    retries = 0
+    while response is None:
+        try:
+            _, response = request.next_chunk()
+            if response and "id" in response:
+                return response["id"]
+        except HttpError as exc:
+            if exc.resp.status not in RETRIABLE_STATUS_CODES:
+                raise
+            retries += 1
+        except OSError:
+            retries += 1
+
+        if retries > max_retries:
+            raise RuntimeError(f"Upload failed after {max_retries} retries: {file_path}")
+        sleep_for = min((2 ** retries) + random.random(), 60)
+        time.sleep(sleep_for)
+
+    raise RuntimeError(f"Upload response missing video id for file: {file_path}")
+
+
+def extract_http_error_reason(exc: Exception) -> Tuple[str, str]:
+    if not isinstance(exc, HttpError):
+        return "", ""
+    try:
+        payload = json.loads(exc.content.decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        return "", ""
+
+    error_obj = payload.get("error", {})
+    details = error_obj.get("errors", [])
+    if isinstance(details, list) and details:
+        first = details[0]
+        return str(first.get("reason", "")), str(first.get("message", ""))
+    return "", str(error_obj.get("message", ""))
+
+
+def main() -> int:
+    args = parse_args()
+    root = Path(args.root).resolve()
+    client_secrets = Path(args.client_secrets).resolve()
+    token_file = Path(args.token_file).resolve()
+    state_file = Path(args.state_file).resolve()
+    metadata_dir = Path(args.metadata_dir).resolve()
+    converted_dir = Path(args.converted_dir).resolve()
+
+    if not root.exists():
+        print(f"[error] root path not found: {root}")
+        return 1
+    if not args.dry_run and not client_secrets.exists():
+        print(f"[error] client secrets file not found: {client_secrets}")
+        return 1
+
+    extensions = normalize_extensions(args.extensions)
+    exclude_dirs = normalize_names_csv(args.exclude_dirs)
+    exclude_files = normalize_names_csv(args.exclude_files)
+    videos = discover_videos(root, extensions, exclude_dirs, exclude_files)
+    if not videos:
+        print(f"[info] no videos found under: {root}")
+        return 0
+
+    state = load_json_file(state_file, default={"uploaded": {}})
+    uploaded_state: Dict[str, Any] = state.get("uploaded", {})
+
+    pending: List[Tuple[Path, str, str]] = []
+    for video in videos:
+        rel = video.relative_to(root).as_posix()
+        key = file_key(root, video)
+        if args.skip_uploaded and key in uploaded_state:
+            continue
+        pending.append((video, rel, key))
+
+    if args.max_videos > 0:
+        pending = pending[: args.max_videos]
+
+    if not pending:
+        print("[info] nothing to upload (all files already uploaded or filtered).")
+        return 0
+
+    extra_keywords = [clean_text(x) for x in args.extra_keywords.split(",") if clean_text(x)]
+    ffprobe_bin = args.ffprobe_bin
+    ffmpeg_bin = args.ffmpeg_bin
+
+    if args.shorts_policy != "off":
+        resolved_ffprobe = resolve_media_tool(args.ffprobe_bin)
+        if not resolved_ffprobe:
+            print(f"[error] ffprobe not found: {args.ffprobe_bin}")
+            return 1
+        ffprobe_bin = resolved_ffprobe
+        resolved_ffmpeg = resolve_media_tool(args.ffmpeg_bin)
+        if args.shorts_policy == "convert" and not resolved_ffmpeg:
+            print(f"[error] ffmpeg not found: {args.ffmpeg_bin}")
+            return 1
+        if resolved_ffmpeg:
+            ffmpeg_bin = resolved_ffmpeg
+        print(f"[info] ffprobe: {ffprobe_bin}")
+        if args.shorts_policy == "convert":
+            print(f"[info] ffmpeg: {ffmpeg_bin}")
+    use_ai = not args.no_ai and bool(os.getenv("OPENAI_API_KEY"))
+    if not args.no_ai and OpenAI is None:
+        print("[warn] openai package not installed. Using fallback metadata templates.")
+    openai_client: Optional[OpenAI] = OpenAI() if use_ai else None
+
+    if not use_ai:
+        print("[warn] AI metadata disabled or OPENAI_API_KEY missing. Using fallback metadata templates.")
+
+    youtube = None
+    playlist_id: Optional[str] = None
+    if not args.dry_run:
+        youtube = build_youtube_client(client_secrets, token_file, args.auth_port)
+        if args.playlist_name.strip():
+            try:
+                playlist_id = resolve_playlist_id(youtube, args.playlist_name)
+                if playlist_id:
+                    print(f"[info] playlist resolved: {args.playlist_name} ({playlist_id})")
+                else:
+                    print(f"[warn] playlist not found: {args.playlist_name}")
+            except Exception as exc:  # noqa: BLE001
+                print(f"[warn] playlist lookup failed: {exc}")
+
+    metadata_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"[info] discovered videos: {len(videos)}")
+    print(f"[info] queued videos: {len(pending)}")
+    print(f"[info] dry run: {args.dry_run}")
+
+    uploaded_count = 0
+    skipped_not_shorts = 0
+    hit_upload_limit = False
+    for index, (video_path, rel_path, key) in enumerate(pending, start=1):
+        print(f"\n[{index}/{len(pending)}] processing: {rel_path}")
+        upload_path = video_path
+
+        source_info = probe_video_info(video_path, ffprobe_bin)
+        if source_info:
+            src_w = int(source_info["width"])
+            src_h = int(source_info["height"])
+            src_dur = source_info["duration"]
+            print(f"[video] source: {src_w}x{src_h}, {src_dur:.1f}s")
+        else:
+            print("[warn] could not inspect video dimensions/duration with ffprobe.")
+
+        if args.shorts_policy != "off":
+            if not source_info:
+                print("[warn] skipping because Shorts policy requires valid media info.")
+                skipped_not_shorts += 1
+                continue
+
+            eligible, reasons = is_shorts_eligible(source_info, args.shorts_max_seconds)
+            if not eligible:
+                reason_text = "; ".join(reasons)
+                if args.shorts_policy == "strict":
+                    print(f"[skip] not Shorts-eligible: {reason_text}")
+                    skipped_not_shorts += 1
+                    continue
+                try:
+                    upload_path = convert_to_shorts(
+                        source=video_path,
+                        converted_dir=converted_dir,
+                        ffmpeg_bin=ffmpeg_bin,
+                        shorts_max_seconds=args.shorts_max_seconds,
+                    )
+                    converted_info = probe_video_info(upload_path, ffprobe_bin)
+                    if converted_info:
+                        c_w = int(converted_info["width"])
+                        c_h = int(converted_info["height"])
+                        c_dur = converted_info["duration"]
+                        print(
+                            f"[video] converted for Shorts: {upload_path.name} "
+                            f"({c_w}x{c_h}, {c_dur:.1f}s)"
+                        )
+                    else:
+                        print(f"[video] converted for Shorts: {upload_path.name}")
+                except Exception as exc:  # noqa: BLE001
+                    print(f"[error] conversion failed; skipping file: {exc}")
+                    skipped_not_shorts += 1
+                    continue
+
+        fallback = build_fallback_metadata(video_path, extra_keywords)
+        metadata_raw: Dict[str, Any] = fallback
+
+        if openai_client:
+            try:
+                metadata_raw = generate_ai_metadata(
+                    client=openai_client,
+                    model=args.openai_model,
+                    file_path=video_path,
+                    rel_path=rel_path,
+                    channel_name=args.channel_name,
+                    extra_keywords=extra_keywords,
+                    language=args.language,
+                )
+            except Exception as exc:  # noqa: BLE001
+                print(f"[warn] AI generation failed, using fallback metadata: {exc}")
+                metadata_raw = fallback
+
+        metadata = finalize_metadata(metadata_raw, fallback)
+
+        metadata_record = {
+            "relative_path": rel_path,
+            "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+            "metadata": metadata,
+        }
+        metadata_path = metadata_dir / (video_path.stem + ".metadata.json")
+        save_json_file(metadata_path, metadata_record)
+
+        print(f"[meta] title: {metadata['title']}")
+        print(f"[meta] tags: {', '.join(metadata['tags'][:8])}{' ...' if len(metadata['tags']) > 8 else ''}")
+
+        if args.dry_run:
+            continue
+
+        try:
+            video_id = upload_video(
+                youtube=youtube,
+                file_path=upload_path,
+                metadata=metadata,
+                privacy=args.privacy,
+                category_id=args.category_id,
+                language=args.language,
+                notify_subscribers=args.notify_subscribers,
+            )
+            playlist_item_id = ""
+            if playlist_id:
+                try:
+                    playlist_item_id = add_video_to_playlist(youtube, playlist_id, video_id)
+                    print(f"[ok] added to playlist: {args.playlist_name}")
+                except Exception as exc:  # noqa: BLE001
+                    print(f"[warn] uploaded but failed to add playlist item: {exc}")
+            uploaded_state[key] = {
+                "video_id": video_id,
+                "relative_path": rel_path,
+                "uploaded_at_utc": datetime.now(timezone.utc).isoformat(),
+                "title": metadata["title"],
+                "metadata_file": str(metadata_path),
+                "uploaded_file_path": str(upload_path),
+                "playlist_name": args.playlist_name if playlist_id else "",
+                "playlist_id": playlist_id or "",
+                "playlist_item_id": playlist_item_id,
+            }
+            state["uploaded"] = uploaded_state
+            save_json_file(state_file, state)
+            uploaded_count += 1
+            print(f"[ok] uploaded: https://www.youtube.com/watch?v={video_id}")
+        except Exception as exc:  # noqa: BLE001
+            reason, reason_message = extract_http_error_reason(exc)
+            print(f"[error] upload failed for {rel_path}: {exc}")
+            if reason == "uploadLimitExceeded":
+                hit_upload_limit = True
+                if reason_message:
+                    print(f"[limit] {reason_message}")
+                print(
+                    "[limit] Channel upload limit reached. "
+                    "Stop now and retry after the daily window resets."
+                )
+                break
+
+    if args.dry_run:
+        print("\n[done] dry run completed.")
+    else:
+        print(f"\n[done] uploads completed: {uploaded_count}/{len(pending)}")
+        print(f"[done] state file: {state_file}")
+    if skipped_not_shorts:
+        print(f"[done] skipped by Shorts policy: {skipped_not_shorts}")
+    if hit_upload_limit:
+        print("[done] stopped early due to uploadLimitExceeded.")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
