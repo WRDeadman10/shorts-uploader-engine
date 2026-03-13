@@ -22,6 +22,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime, timezone
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -42,6 +43,26 @@ SCOPES = [
 ]
 RETRIABLE_STATUS_CODES = {500, 502, 503, 504}
 
+# Option 1: set this directly in code.
+# Leave empty ("") to auto-use sibling folder named "VALORANT"
+# or override with --root / --videos-path argument.
+VIDEO_SOURCE_ROOT = ""
+
+
+def get_default_video_root() -> str:
+    if VIDEO_SOURCE_ROOT.strip():
+        return VIDEO_SOURCE_ROOT.strip()
+
+    script_dir = Path(__file__).resolve().parent
+    sibling_valorant = script_dir.parent / "VALORANT"
+    if sibling_valorant.exists():
+        return str(sibling_valorant)
+
+    return "."
+
+
+DEFAULT_VIDEO_ROOT = get_default_video_root()
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -49,8 +70,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--root",
-        default=".",
-        help="Root directory to recursively scan for videos.",
+        "--videos-path",
+        dest="root",
+        default=DEFAULT_VIDEO_ROOT,
+        help=(
+            "Root directory to recursively scan for videos. "
+            "Defaults to sibling folder named 'VALORANT'."
+        ),
     )
     parser.add_argument(
         "--extensions",
@@ -192,6 +218,47 @@ def parse_args() -> argparse.Namespace:
         "--no-ai",
         action="store_true",
         help="Disable OpenAI metadata generation and use fallback metadata.",
+    )
+    parser.add_argument(
+        "--require-ai",
+        action="store_true",
+        default=True,
+        help="Fail/skip upload if OpenAI metadata generation is unavailable.",
+    )
+    parser.add_argument(
+        "--allow-fallback",
+        action="store_false",
+        dest="require_ai",
+        help="Allow fallback template metadata if OpenAI generation fails.",
+    )
+    parser.add_argument(
+        "--metadata-history-file",
+        default=".metadata_history.json",
+        help="Path to persistent history file used to avoid title/description repeats.",
+    )
+    parser.add_argument(
+        "--ai-uniqueness-window",
+        type=int,
+        default=500,
+        help="How many recent title/description entries to compare for uniqueness.",
+    )
+    parser.add_argument(
+        "--ai-metadata-retries",
+        type=int,
+        default=4,
+        help="How many OpenAI regeneration attempts to make for unique metadata.",
+    )
+    parser.add_argument(
+        "--delete-converted-after-upload",
+        action="store_true",
+        default=True,
+        help="Delete temporary converted/cropped file after successful upload.",
+    )
+    parser.add_argument(
+        "--keep-converted-after-upload",
+        action="store_false",
+        dest="delete_converted_after_upload",
+        help="Keep converted/cropped file after successful upload.",
     )
     return parser.parse_args()
 
@@ -492,16 +559,93 @@ def trim_title(title: str, max_len: int = 100) -> str:
     return clean_text(title[: max_len - 3]) + "..."
 
 
-def build_fallback_metadata(file_path: Path, extra_keywords: List[str]) -> Dict[str, Any]:
+def get_sidecar_value(payload: Dict[str, Any], *keys: str) -> Any:
+    normalized = {
+        re.sub(r"[\s_\-]+", "", str(key).lower()): value for key, value in payload.items()
+    }
+    for key in keys:
+        probe = re.sub(r"[\s_\-]+", "", key.lower())
+        if probe in normalized:
+            return normalized[probe]
+    return None
+
+
+def load_clip_context(file_path: Path) -> Optional[Dict[str, Any]]:
+    sidecar_path = file_path.with_suffix(".json")
+    payload = load_json_file(sidecar_path, default=None)
+    if not isinstance(payload, dict):
+        return None
+
+    raw_kills = get_sidecar_value(payload, "kills", "kill_count", "killcount")
+    kills: Optional[int] = None
+    if raw_kills is not None:
+        try:
+            kills = max(int(raw_kills), 1)
+        except (TypeError, ValueError):
+            kills = None
+
+    site_name_raw = get_sidecar_value(payload, "site_name", "site name", "site")
+    agent_name_raw = get_sidecar_value(payload, "agent_name", "agent name", "agent")
+
+    site_name = clean_text(str(site_name_raw or ""))
+    agent_name = clean_text(str(agent_name_raw or ""))
+    if site_name.lower() == "unknown":
+        site_name = ""
+    if agent_name.lower() == "unknown":
+        agent_name = ""
+
+    if kills is None and not site_name and not agent_name:
+        return None
+
+    return {
+        "sidecar_path": str(sidecar_path),
+        "kills": kills,
+        "site_name": site_name,
+        "agent_name": agent_name,
+    }
+
+
+def build_clip_focus(context: Optional[Dict[str, Any]]) -> str:
+    if not context:
+        return ""
+
+    kills = context.get("kills")
+    site_name = clean_text(str(context.get("site_name") or ""))
+    agent_name = clean_text(str(context.get("agent_name") or ""))
+    parts: List[str] = []
+    if kills:
+        kill_word = "Kill" if int(kills) == 1 else "Kills"
+        parts.append(f"{kills} {kill_word}")
+    if site_name:
+        parts.append(f"on {site_name}")
+    if agent_name:
+        parts.append(f"with {agent_name}")
+    return clean_text(" ".join(parts))
+
+
+def build_fallback_metadata(
+    file_path: Path,
+    extra_keywords: List[str],
+    clip_context: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     base_name = file_path.stem.replace("_", " ")
     base_name = re.sub(r"[-]+", " ", base_name)
     base_name = clean_text(base_name)
-    title = f"{base_name} | Valorant Shorts"
-    description = (
-        f"Clean VALORANT clip from session: {base_name}.\n"
-        "More clutch and aim clips coming daily.\n"
-        "Like + subscribe for consistent highlights."
-    )
+    focus = build_clip_focus(clip_context)
+    if focus:
+        title = f"{focus} | Valorant Shorts"
+        description = (
+            f"VALORANT short featuring {focus.lower()}.\n"
+            f"Clip source: {base_name}.\n"
+            "More clutch and aim clips coming daily."
+        )
+    else:
+        title = f"{base_name} | Valorant Shorts"
+        description = (
+            f"Clean VALORANT clip from session: {base_name}.\n"
+            "More clutch and aim clips coming daily.\n"
+            "Like + subscribe for consistent highlights."
+        )
     tags = [
         "valorant",
         "valorant clips",
@@ -509,7 +653,15 @@ def build_fallback_metadata(file_path: Path, extra_keywords: List[str]) -> Dict[
         "fps",
         "gaming",
         "valorant gameplay",
-    ] + extra_keywords
+    ]
+    if clip_context:
+        if clip_context.get("agent_name"):
+            tags.append(str(clip_context["agent_name"]))
+        if clip_context.get("site_name"):
+            tags.append(f"{clip_context['site_name']} site")
+        if clip_context.get("kills"):
+            tags.append(f"{clip_context['kills']} kill")
+    tags += extra_keywords
     return {
         "title": title,
         "description": description,
@@ -527,11 +679,17 @@ def generate_ai_metadata(
     channel_name: str,
     extra_keywords: List[str],
     language: str,
+    recent_titles: List[str],
+    recent_descriptions: List[str],
+    clip_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     system_prompt = (
         "You are a YouTube Shorts growth strategist for gaming channels. "
         "Generate metadata for a single VALORANT short-form clip. "
         "Return only strict JSON."
+    )
+    clip_context_text = (
+        json.dumps(clip_context, ensure_ascii=False) if clip_context else "none"
     )
     user_prompt = (
         "Create metadata with better CTR + search relevance while staying realistic.\n"
@@ -540,6 +698,14 @@ def generate_ai_metadata(
         f"Channel name/style: {channel_name or 'not provided'}\n"
         f"Language: {language}\n"
         f"Extra keywords: {', '.join(extra_keywords) if extra_keywords else 'none'}\n\n"
+        f"Sibling sidecar JSON facts: {clip_context_text}\n\n"
+        "Writing style constraints:\n"
+        "- Sound human, natural, and conversational.\n"
+        "- Avoid robotic templates and repetitive phrasing.\n"
+        "- Vary sentence openings and rhythm.\n"
+        "- Keep it believable and specific to gameplay context.\n\n"
+        f"Recent titles to avoid repeating:\n{json.dumps(recent_titles, ensure_ascii=False)}\n\n"
+        f"Recent descriptions to avoid repeating:\n{json.dumps(recent_descriptions, ensure_ascii=False)}\n\n"
         "Output JSON schema:\n"
         "{\n"
         '  "title": "string <= 100 chars, compelling, no clickbait lies",\n'
@@ -548,7 +714,12 @@ def generate_ai_metadata(
         '  "hashtags": ["3-5 hashtags including shorts and valorant"],\n'
         '  "cta": "one short call-to-action sentence"\n'
         "}\n"
-        "Rules: avoid rank claims unless obvious from filename, avoid all-caps spam, avoid emojis."
+        "Rules: avoid rank claims unless obvious from filename, avoid all-caps spam, avoid emojis.\n"
+        "If sibling sidecar JSON facts are present, use them as the primary source of truth.\n"
+        "If kills is 0, treat it as 1.\n"
+        "Do not mention unknown agent/site values.\n"
+        "Use the kill count naturally in the title or description.\n"
+        "Use the site name or agent name when it fits naturally, and prefer at least one of them in the metadata."
     )
     response = client.chat.completions.create(
         model=model,
@@ -607,6 +778,40 @@ def finalize_metadata(raw: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str
         "hashtags": hashtags,
         "cta": cta,
     }
+
+
+def normalize_compare_text(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+
+
+def text_similarity(a: str, b: str) -> float:
+    return SequenceMatcher(None, normalize_compare_text(a), normalize_compare_text(b)).ratio()
+
+
+def is_metadata_unique(
+    title: str,
+    description: str,
+    recent_titles: List[str],
+    recent_descriptions: List[str],
+) -> Tuple[bool, str]:
+    norm_title = normalize_compare_text(title)
+    norm_description = normalize_compare_text(description)
+
+    for old_title in recent_titles:
+        old_norm = normalize_compare_text(old_title)
+        if old_norm and old_norm == norm_title:
+            return False, "exact title duplicate"
+        if text_similarity(title, old_title) >= 0.90:
+            return False, "title too similar to previous upload"
+
+    for old_description in recent_descriptions:
+        old_norm = normalize_compare_text(old_description)
+        if old_norm and old_norm == norm_description:
+            return False, "exact description duplicate"
+        if text_similarity(description, old_description) >= 0.86:
+            return False, "description too similar to previous upload"
+
+    return True, ""
 
 
 def resolve_playlist_id(youtube, playlist_name: str) -> Optional[str]:
@@ -737,6 +942,7 @@ def main() -> int:
     token_file = Path(args.token_file).resolve()
     state_file = Path(args.state_file).resolve()
     metadata_dir = Path(args.metadata_dir).resolve()
+    metadata_history_file = Path(args.metadata_history_file).resolve()
     converted_dir = Path(args.converted_dir).resolve()
 
     if not root.exists():
@@ -756,6 +962,18 @@ def main() -> int:
 
     state = load_json_file(state_file, default={"uploaded": {}})
     uploaded_state: Dict[str, Any] = state.get("uploaded", {})
+    metadata_history = load_json_file(
+        metadata_history_file,
+        default={"titles": [], "descriptions": []},
+    )
+    history_titles = [
+        str(x) for x in metadata_history.get("titles", [])
+        if isinstance(x, str) and x.strip()
+    ]
+    history_descriptions = [
+        str(x) for x in metadata_history.get("descriptions", [])
+        if isinstance(x, str) and x.strip()
+    ]
 
     pending: List[Tuple[Path, str, str]] = []
     for video in videos:
@@ -798,6 +1016,9 @@ def main() -> int:
 
     if not use_ai:
         print("[warn] AI metadata disabled or OPENAI_API_KEY missing. Using fallback metadata templates.")
+        if args.require_ai:
+            print("[error] --require-ai is enabled but OpenAI metadata is unavailable.")
+            return 1
 
     youtube = None
     playlist_id: Optional[str] = None
@@ -822,6 +1043,8 @@ def main() -> int:
     uploaded_count = 0
     skipped_not_shorts = 0
     hit_upload_limit = False
+    session_titles: List[str] = []
+    session_descriptions: List[str] = []
     for index, (video_path, rel_path, key) in enumerate(pending, start=1):
         print(f"\n[{index}/{len(pending)}] processing: {rel_path}")
         upload_path = video_path
@@ -871,25 +1094,64 @@ def main() -> int:
                     skipped_not_shorts += 1
                     continue
 
-        fallback = build_fallback_metadata(video_path, extra_keywords)
-        metadata_raw: Dict[str, Any] = fallback
+        clip_context = load_clip_context(video_path)
+        if clip_context:
+            print(
+                "[meta] sidecar context: "
+                f"kills={clip_context.get('kills')}, "
+                f"site={clip_context.get('site_name') or '-'}, "
+                f"agent={clip_context.get('agent_name') or '-'}"
+            )
+
+        fallback = build_fallback_metadata(video_path, extra_keywords, clip_context)
+        metadata: Dict[str, Any] = finalize_metadata(fallback, fallback)
+        metadata_generated_by_ai = False
+
+        recent_titles_pool = (history_titles + session_titles)[-max(args.ai_uniqueness_window, 1):]
+        recent_descriptions_pool = (
+            history_descriptions + session_descriptions
+        )[-max(args.ai_uniqueness_window, 1):]
 
         if openai_client:
-            try:
-                metadata_raw = generate_ai_metadata(
-                    client=openai_client,
-                    model=args.openai_model,
-                    file_path=video_path,
-                    rel_path=rel_path,
-                    channel_name=args.channel_name,
-                    extra_keywords=extra_keywords,
-                    language=args.language,
-                )
-            except Exception as exc:  # noqa: BLE001
-                print(f"[warn] AI generation failed, using fallback metadata: {exc}")
-                metadata_raw = fallback
+            ai_success = False
+            for attempt in range(1, max(args.ai_metadata_retries, 1) + 1):
+                try:
+                    metadata_raw = generate_ai_metadata(
+                        client=openai_client,
+                        model=args.openai_model,
+                        file_path=video_path,
+                        rel_path=rel_path,
+                        channel_name=args.channel_name,
+                        extra_keywords=extra_keywords,
+                        language=args.language,
+                        recent_titles=recent_titles_pool[-30:],
+                        recent_descriptions=recent_descriptions_pool[-15:],
+                        clip_context=clip_context,
+                    )
+                    candidate = finalize_metadata(metadata_raw, fallback)
+                    unique_ok, unique_reason = is_metadata_unique(
+                        title=candidate["title"],
+                        description=candidate["description"],
+                        recent_titles=recent_titles_pool,
+                        recent_descriptions=recent_descriptions_pool,
+                    )
+                    if unique_ok:
+                        metadata = candidate
+                        ai_success = True
+                        metadata_generated_by_ai = True
+                        break
+                    print(
+                        f"[warn] AI metadata attempt {attempt} not unique enough "
+                        f"({unique_reason}); retrying."
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    print(f"[warn] AI generation attempt {attempt} failed: {exc}")
 
-        metadata = finalize_metadata(metadata_raw, fallback)
+            if not ai_success:
+                if args.require_ai:
+                    print("[error] Could not generate unique AI metadata. Skipping upload for this file.")
+                    continue
+                print("[warn] falling back to template metadata for this file.")
 
         metadata_record = {
             "relative_path": rel_path,
@@ -901,6 +1163,15 @@ def main() -> int:
 
         print(f"[meta] title: {metadata['title']}")
         print(f"[meta] tags: {', '.join(metadata['tags'][:8])}{' ...' if len(metadata['tags']) > 8 else ''}")
+        if metadata_generated_by_ai:
+            print("[meta] source: OpenAI")
+        else:
+            print("[meta] source: fallback")
+
+        session_titles.append(metadata["title"])
+        session_descriptions.append(metadata["description"])
+        session_titles = session_titles[-max(args.ai_uniqueness_window, 1):]
+        session_descriptions = session_descriptions[-max(args.ai_uniqueness_window, 1):]
 
         if args.dry_run:
             continue
@@ -935,8 +1206,27 @@ def main() -> int:
             }
             state["uploaded"] = uploaded_state
             save_json_file(state_file, state)
+            history_titles.append(metadata["title"])
+            history_descriptions.append(metadata["description"])
+            metadata_history["titles"] = history_titles[-5000:]
+            metadata_history["descriptions"] = history_descriptions[-5000:]
+            save_json_file(metadata_history_file, metadata_history)
             uploaded_count += 1
             print(f"[ok] uploaded: https://www.youtube.com/watch?v={video_id}")
+            if args.delete_converted_after_upload and upload_path != video_path:
+                try:
+                    is_converted_temp = False
+                    try:
+                        upload_path.resolve().relative_to(converted_dir.resolve())
+                        is_converted_temp = True
+                    except ValueError:
+                        is_converted_temp = False
+
+                    if is_converted_temp and upload_path.exists():
+                        upload_path.unlink()
+                        print(f"[cleanup] deleted converted file: {upload_path.name}")
+                except Exception as exc:  # noqa: BLE001
+                    print(f"[warn] uploaded but failed to delete converted file: {exc}")
         except Exception as exc:  # noqa: BLE001
             reason, reason_message = extract_http_error_reason(exc)
             print(f"[error] upload failed for {rel_path}: {exc}")
