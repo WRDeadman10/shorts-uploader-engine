@@ -192,6 +192,19 @@ def parse_args() -> argparse.Namespace:
         help="Optional channel name/style for AI prompt.",
     )
     parser.add_argument(
+        "--instagram-username",
+        default=os.getenv("INSTAGRAM_USERNAME", "").strip(),
+        help="Instagram username/handle to mention in YouTube descriptions.",
+    )
+    parser.add_argument(
+        "--youtube-username",
+        default=(
+            os.getenv("YOUTUBE_USERNAME", "").strip()
+            or os.getenv("YOUTUBE_CHANNEL_USERNAME", "").strip()
+        ),
+        help="YouTube username/handle to mention in Instagram captions.",
+    )
+    parser.add_argument(
         "--extra-keywords",
         default="valorant,valorant clips,shorts,gaming,fps",
         help="Comma-separated keywords to guide metadata generation.",
@@ -343,6 +356,18 @@ def parse_args() -> argparse.Namespace:
         action="store_false",
         dest="meta_skip_uploaded",
         help="Do not skip Meta cross-posts already present in the Meta reels state file.",
+    )
+    parser.add_argument(
+        "--meta-instagram-retries",
+        type=int,
+        default=3,
+        help="How many times to retry Instagram cross-posting when Meta returns a transient processing failure.",
+    )
+    parser.add_argument(
+        "--meta-instagram-retry-delay-seconds",
+        type=float,
+        default=20.0,
+        help="Seconds to wait between Instagram processing-failure retries.",
     )
     return parser.parse_args()
 
@@ -578,10 +603,28 @@ def convert_to_shorts(
             "medium",
             "-crf",
             "20",
+            "-pix_fmt",
+            "yuv420p",
+            "-profile:v",
+            "high",
+            "-level:v",
+            "4.1",
+            "-r",
+            "30",
+            "-g",
+            "60",
+            "-maxrate",
+            "8M",
+            "-bufsize",
+            "16M",
             "-c:a",
             "aac",
             "-b:a",
             "128k",
+            "-ar",
+            "44100",
+            "-ac",
+            "2",
             "-movflags",
             "+faststart",
             str(output),
@@ -818,7 +861,16 @@ def generate_ai_metadata(
     return parse_json_response(raw)
 
 
-def finalize_metadata(raw: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str, Any]:
+def normalize_handle(value: str) -> str:
+    cleaned = clean_text(value).lstrip("@")
+    return f"@{cleaned}" if cleaned else ""
+
+
+def finalize_metadata(
+    raw: Dict[str, Any],
+    fallback: Dict[str, Any],
+    instagram_username: str = "",
+) -> Dict[str, Any]:
     title = trim_title(str(raw.get("title") or fallback["title"]))
     description = str(raw.get("description") or fallback["description"]).strip()
     cta = str(raw.get("cta") or fallback["cta"]).strip()
@@ -851,6 +903,9 @@ def finalize_metadata(raw: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str
         lines.extend(["", cta])
     if hashtags:
         lines.extend(["", " ".join(hashtags)])
+    insta_handle = normalize_handle(instagram_username)
+    if insta_handle:
+        lines.extend(["", f"Instagram: {insta_handle}"])
     final_description = "\n".join(line.strip() for line in lines if line is not None).strip()
     if len(final_description) > 5000:
         final_description = final_description[:4999]
@@ -898,7 +953,11 @@ def is_metadata_unique(
     return True, ""
 
 
-def build_meta_captions(metadata: Dict[str, Any]) -> Tuple[str, str, str]:
+def build_meta_captions(
+    metadata: Dict[str, Any],
+    youtube_username: str = "",
+    instagram_username: str = "",
+) -> Tuple[str, str, str]:
     title = clean_text(str(metadata.get("title", "")))
     description = str(metadata.get("description", "")).strip()
 
@@ -911,7 +970,32 @@ def build_meta_captions(metadata: Dict[str, Any]) -> Tuple[str, str, str]:
         ig_caption = title
         fb_description = title
 
+    youtube_handle = normalize_handle(youtube_username)
+    if youtube_handle:
+        promo_line = f"YouTube: {youtube_handle}"
+        ig_caption = f"{ig_caption}\n\n{promo_line}".strip()
+
+    footer_lines: List[str] = []
+    insta_handle = normalize_handle(instagram_username)
+    if insta_handle:
+        footer_lines.append(f"Instagram: {insta_handle}")
+    if youtube_handle:
+        footer_lines.append(f"YouTube: {youtube_handle}")
+    if footer_lines:
+        fb_description = f"{fb_description}\n\n" + "\n".join(footer_lines)
+
     return ig_caption[:2200].rstrip(), fb_description[:5000].rstrip(), title[:255].rstrip()
+
+
+def is_retryable_instagram_processing_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    markers = [
+        "processingfailederror",
+        "generic internal error",
+        "internal server error occurred",
+        "meta api error (500)",
+    ]
+    return any(marker in message for marker in markers)
 
 
 def crosspost_meta_reel(
@@ -941,56 +1025,72 @@ def crosspost_meta_reel(
         print("[meta-crosspost] skipped: already uploaded on selected platform(s)")
         return
 
-    ig_caption, fb_description, fb_title = build_meta_captions(metadata)
+    ig_caption, fb_description, fb_title = build_meta_captions(
+        metadata,
+        youtube_username=args.youtube_username,
+        instagram_username=args.instagram_username,
+    )
     print(f"[meta-crosspost] source file: {source_file}")
 
     if do_instagram:
-        try:
-            container_id = ig_create_reel_container(
-                graph_version=args.meta_graph_version,
-                ig_user_id=clean_text(args.meta_ig_user_id),
-                access_token=clean_text(args.meta_access_token),
-                caption=ig_caption,
-                timeout=args.meta_request_timeout_seconds,
-            )
-            ig_upload_reel_binary(
-                graph_version=args.meta_graph_version,
-                container_id=container_id,
-                access_token=clean_text(args.meta_access_token),
-                file_path=source_file,
-                timeout=args.meta_request_timeout_seconds,
-            )
-            ig_wait_until_ready(
-                graph_version=args.meta_graph_version,
-                container_id=container_id,
-                access_token=clean_text(args.meta_access_token),
-                attempts=args.meta_poll_attempts,
-                interval_seconds=args.meta_poll_interval_seconds,
-                timeout=args.meta_request_timeout_seconds,
-            )
-            ig_media_id = ig_publish_reel(
-                graph_version=args.meta_graph_version,
-                ig_user_id=clean_text(args.meta_ig_user_id),
-                container_id=container_id,
-                access_token=clean_text(args.meta_access_token),
-                timeout=args.meta_request_timeout_seconds,
-            )
-            state_row["instagram"] = {
-                "status": "ok",
-                "container_id": container_id,
-                "media_id": ig_media_id,
-                "published_at_utc": meta_now_utc_iso(),
-                "source_file": str(source_file),
-            }
-            print(f"[ok][instagram] media_id={ig_media_id}")
-        except Exception as exc:  # noqa: BLE001
-            state_row["instagram"] = {
-                "status": "error",
-                "error": str(exc),
-                "updated_at_utc": meta_now_utc_iso(),
-                "source_file": str(source_file),
-            }
-            print(f"[error][instagram] {exc}")
+        for attempt in range(1, max(args.meta_instagram_retries, 1) + 1):
+            try:
+                container_id = ig_create_reel_container(
+                    graph_version=args.meta_graph_version,
+                    ig_user_id=clean_text(args.meta_ig_user_id),
+                    access_token=clean_text(args.meta_access_token),
+                    caption=ig_caption,
+                    timeout=args.meta_request_timeout_seconds,
+                )
+                ig_upload_reel_binary(
+                    graph_version=args.meta_graph_version,
+                    container_id=container_id,
+                    access_token=clean_text(args.meta_access_token),
+                    file_path=source_file,
+                    timeout=args.meta_request_timeout_seconds,
+                )
+                ig_wait_until_ready(
+                    graph_version=args.meta_graph_version,
+                    container_id=container_id,
+                    access_token=clean_text(args.meta_access_token),
+                    attempts=args.meta_poll_attempts,
+                    interval_seconds=args.meta_poll_interval_seconds,
+                    timeout=args.meta_request_timeout_seconds,
+                )
+                ig_media_id = ig_publish_reel(
+                    graph_version=args.meta_graph_version,
+                    ig_user_id=clean_text(args.meta_ig_user_id),
+                    container_id=container_id,
+                    access_token=clean_text(args.meta_access_token),
+                    timeout=args.meta_request_timeout_seconds,
+                )
+                state_row["instagram"] = {
+                    "status": "ok",
+                    "container_id": container_id,
+                    "media_id": ig_media_id,
+                    "published_at_utc": meta_now_utc_iso(),
+                    "source_file": str(source_file),
+                }
+                print(f"[ok][instagram] media_id={ig_media_id}")
+                break
+            except Exception as exc:  # noqa: BLE001
+                retryable = is_retryable_instagram_processing_error(exc)
+                is_last_attempt = attempt >= max(args.meta_instagram_retries, 1)
+                if retryable and not is_last_attempt:
+                    print(
+                        f"[warn][instagram] transient processing failure on attempt {attempt}; "
+                        f"retrying in {args.meta_instagram_retry_delay_seconds:.1f}s"
+                    )
+                    time.sleep(max(args.meta_instagram_retry_delay_seconds, 0.0))
+                    continue
+                state_row["instagram"] = {
+                    "status": "error",
+                    "error": str(exc),
+                    "updated_at_utc": meta_now_utc_iso(),
+                    "source_file": str(source_file),
+                }
+                print(f"[error][instagram] {exc}")
+                break
 
     if do_facebook:
         try:
@@ -1351,7 +1451,11 @@ def main() -> int:
             )
 
         fallback = build_fallback_metadata(video_path, extra_keywords, clip_context)
-        metadata: Dict[str, Any] = finalize_metadata(fallback, fallback)
+        metadata: Dict[str, Any] = finalize_metadata(
+            fallback,
+            fallback,
+            instagram_username=args.instagram_username,
+        )
         metadata_generated_by_ai = False
 
         recent_titles_pool = (history_titles + session_titles)[-max(args.ai_uniqueness_window, 1):]
@@ -1375,7 +1479,11 @@ def main() -> int:
                         recent_descriptions=recent_descriptions_pool[-15:],
                         clip_context=clip_context,
                     )
-                    candidate = finalize_metadata(metadata_raw, fallback)
+                    candidate = finalize_metadata(
+                        metadata_raw,
+                        fallback,
+                        instagram_username=args.instagram_username,
+                    )
                     unique_ok, unique_reason = is_metadata_unique(
                         title=candidate["title"],
                         description=candidate["description"],
