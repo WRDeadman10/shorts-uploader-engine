@@ -32,6 +32,20 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
+from metaBatchReelsUpload import (
+    ensure_meta_state_shape,
+    fb_finish_reel_publish,
+    fb_start_reel_session,
+    fb_upload_reel_binary,
+    ig_create_reel_container,
+    ig_publish_reel,
+    ig_upload_reel_binary,
+    ig_wait_until_ready,
+    now_utc_iso as meta_now_utc_iso,
+    platform_enabled as meta_platform_enabled,
+    requests as meta_requests,
+    should_skip_platform as meta_should_skip_platform,
+)
 try:
     from openai import OpenAI
 except ImportError:  # pragma: no cover - handled at runtime.
@@ -259,6 +273,76 @@ def parse_args() -> argparse.Namespace:
         action="store_false",
         dest="delete_converted_after_upload",
         help="Keep converted/cropped file after successful upload.",
+    )
+    parser.add_argument(
+        "--crosspost-meta",
+        action="store_true",
+        help="After a successful YouTube upload, also upload the same file to Instagram/Facebook Reels.",
+    )
+    parser.add_argument(
+        "--meta-platform",
+        choices=["both", "instagram", "facebook"],
+        default="both",
+        help="Which Meta platform(s) to cross-post to when --crosspost-meta is enabled.",
+    )
+    parser.add_argument(
+        "--meta-reels-state-file",
+        default=".meta_reels_upload_state.json",
+        help="Path to save Instagram/Facebook reels upload state during YouTube runs.",
+    )
+    parser.add_argument(
+        "--meta-graph-version",
+        default="v25.0",
+        help="Meta Graph API version used for cross-posting.",
+    )
+    parser.add_argument(
+        "--meta-access-token",
+        default=(
+            os.getenv("META_PAGE_ACCESS_TOKEN", "").strip()
+            or os.getenv("META_ACCESS_TOKEN", "").strip()
+            or os.getenv("FACEBOOK_PAGE_ACCESS_TOKEN", "").strip()
+        ),
+        help="Meta Page access token for Instagram/Facebook cross-posting.",
+    )
+    parser.add_argument(
+        "--meta-ig-user-id",
+        default=os.getenv("INSTAGRAM_USER_ID", "").strip() or os.getenv("IG_USER_ID", "").strip(),
+        help="Instagram professional account ID for cross-posting.",
+    )
+    parser.add_argument(
+        "--meta-facebook-page-id",
+        default=os.getenv("FACEBOOK_PAGE_ID", "").strip() or os.getenv("FB_PAGE_ID", "").strip(),
+        help="Facebook Page ID for cross-posting.",
+    )
+    parser.add_argument(
+        "--meta-poll-attempts",
+        type=int,
+        default=30,
+        help="Max status polling attempts for Instagram reel readiness during cross-posting.",
+    )
+    parser.add_argument(
+        "--meta-poll-interval-seconds",
+        type=float,
+        default=4.0,
+        help="Seconds between Instagram reel status polls during cross-posting.",
+    )
+    parser.add_argument(
+        "--meta-request-timeout-seconds",
+        type=float,
+        default=120.0,
+        help="HTTP timeout for each Meta API request during cross-posting.",
+    )
+    parser.add_argument(
+        "--meta-skip-uploaded",
+        action="store_true",
+        default=True,
+        help="Skip Meta cross-posts already marked successful in the Meta reels state file.",
+    )
+    parser.add_argument(
+        "--no-meta-skip-uploaded",
+        action="store_false",
+        dest="meta_skip_uploaded",
+        help="Do not skip Meta cross-posts already present in the Meta reels state file.",
     )
     return parser.parse_args()
 
@@ -814,6 +898,145 @@ def is_metadata_unique(
     return True, ""
 
 
+def build_meta_captions(metadata: Dict[str, Any]) -> Tuple[str, str, str]:
+    title = clean_text(str(metadata.get("title", "")))
+    description = str(metadata.get("description", "")).strip()
+
+    if description:
+        ig_caption = description
+        if title and title.lower() not in description.lower():
+            ig_caption = f"{title}\n\n{description}"
+        fb_description = description
+    else:
+        ig_caption = title
+        fb_description = title
+
+    return ig_caption[:2200].rstrip(), fb_description[:5000].rstrip(), title[:255].rstrip()
+
+
+def crosspost_meta_reel(
+    *,
+    args: argparse.Namespace,
+    reels_state: Dict[str, Any],
+    state_key: str,
+    rel_path: str,
+    source_file: Path,
+    metadata: Dict[str, Any],
+    metadata_path: Path,
+    youtube_video_id: str,
+) -> None:
+    reels_entries = reels_state["entries"]
+    state_row = reels_entries.get(state_key, {})
+    if not isinstance(state_row, dict):
+        state_row = {}
+        reels_entries[state_key] = state_row
+
+    do_instagram = meta_platform_enabled(args.meta_platform, "instagram") and not meta_should_skip_platform(
+        reels_entries, state_key, "instagram", args.meta_skip_uploaded
+    )
+    do_facebook = meta_platform_enabled(args.meta_platform, "facebook") and not meta_should_skip_platform(
+        reels_entries, state_key, "facebook", args.meta_skip_uploaded
+    )
+    if not do_instagram and not do_facebook:
+        print("[meta-crosspost] skipped: already uploaded on selected platform(s)")
+        return
+
+    ig_caption, fb_description, fb_title = build_meta_captions(metadata)
+    print(f"[meta-crosspost] source file: {source_file}")
+
+    if do_instagram:
+        try:
+            container_id = ig_create_reel_container(
+                graph_version=args.meta_graph_version,
+                ig_user_id=clean_text(args.meta_ig_user_id),
+                access_token=clean_text(args.meta_access_token),
+                caption=ig_caption,
+                timeout=args.meta_request_timeout_seconds,
+            )
+            ig_upload_reel_binary(
+                graph_version=args.meta_graph_version,
+                container_id=container_id,
+                access_token=clean_text(args.meta_access_token),
+                file_path=source_file,
+                timeout=args.meta_request_timeout_seconds,
+            )
+            ig_wait_until_ready(
+                graph_version=args.meta_graph_version,
+                container_id=container_id,
+                access_token=clean_text(args.meta_access_token),
+                attempts=args.meta_poll_attempts,
+                interval_seconds=args.meta_poll_interval_seconds,
+                timeout=args.meta_request_timeout_seconds,
+            )
+            ig_media_id = ig_publish_reel(
+                graph_version=args.meta_graph_version,
+                ig_user_id=clean_text(args.meta_ig_user_id),
+                container_id=container_id,
+                access_token=clean_text(args.meta_access_token),
+                timeout=args.meta_request_timeout_seconds,
+            )
+            state_row["instagram"] = {
+                "status": "ok",
+                "container_id": container_id,
+                "media_id": ig_media_id,
+                "published_at_utc": meta_now_utc_iso(),
+                "source_file": str(source_file),
+            }
+            print(f"[ok][instagram] media_id={ig_media_id}")
+        except Exception as exc:  # noqa: BLE001
+            state_row["instagram"] = {
+                "status": "error",
+                "error": str(exc),
+                "updated_at_utc": meta_now_utc_iso(),
+                "source_file": str(source_file),
+            }
+            print(f"[error][instagram] {exc}")
+
+    if do_facebook:
+        try:
+            fb_video_id, upload_url = fb_start_reel_session(
+                graph_version=args.meta_graph_version,
+                page_id=clean_text(args.meta_facebook_page_id),
+                access_token=clean_text(args.meta_access_token),
+                timeout=args.meta_request_timeout_seconds,
+            )
+            fb_upload_reel_binary(
+                upload_url=upload_url,
+                access_token=clean_text(args.meta_access_token),
+                file_path=source_file,
+                timeout=args.meta_request_timeout_seconds,
+            )
+            finish_response = fb_finish_reel_publish(
+                graph_version=args.meta_graph_version,
+                page_id=clean_text(args.meta_facebook_page_id),
+                access_token=clean_text(args.meta_access_token),
+                video_id=fb_video_id,
+                description=fb_description,
+                title=fb_title,
+                timeout=args.meta_request_timeout_seconds,
+            )
+            state_row["facebook"] = {
+                "status": "ok",
+                "video_id": fb_video_id,
+                "publish_response": finish_response,
+                "published_at_utc": meta_now_utc_iso(),
+                "source_file": str(source_file),
+            }
+            print(f"[ok][facebook] video_id={fb_video_id}")
+        except Exception as exc:  # noqa: BLE001
+            state_row["facebook"] = {
+                "status": "error",
+                "error": str(exc),
+                "updated_at_utc": meta_now_utc_iso(),
+                "source_file": str(source_file),
+            }
+            print(f"[error][facebook] {exc}")
+
+    state_row["relative_path"] = rel_path
+    state_row["youtube_video_id"] = youtube_video_id
+    state_row["metadata_file"] = str(metadata_path)
+
+
 def resolve_playlist_id(youtube, playlist_name: str) -> Optional[str]:
     if not playlist_name.strip():
         return None
@@ -944,6 +1167,7 @@ def main() -> int:
     metadata_dir = Path(args.metadata_dir).resolve()
     metadata_history_file = Path(args.metadata_history_file).resolve()
     converted_dir = Path(args.converted_dir).resolve()
+    meta_reels_state_file = Path(args.meta_reels_state_file).resolve()
 
     if not root.exists():
         print(f"[error] root path not found: {root}")
@@ -974,6 +1198,24 @@ def main() -> int:
         str(x) for x in metadata_history.get("descriptions", [])
         if isinstance(x, str) and x.strip()
     ]
+    meta_crosspost_enabled = bool(args.crosspost_meta)
+    meta_reels_state = ensure_meta_state_shape({"entries": {}})
+    if meta_crosspost_enabled:
+        if meta_requests is None:
+            print("[error] Meta cross-posting requires requests. Run: pip install -r requirements.txt")
+            return 2
+        if not clean_text(args.meta_access_token):
+            print("[error] Meta cross-posting enabled but access token is missing.")
+            return 2
+        if meta_platform_enabled(args.meta_platform, "instagram") and not clean_text(args.meta_ig_user_id):
+            print("[error] Meta cross-posting enabled for Instagram but IG user id is missing.")
+            return 2
+        if meta_platform_enabled(args.meta_platform, "facebook") and not clean_text(args.meta_facebook_page_id):
+            print("[error] Meta cross-posting enabled for Facebook but page id is missing.")
+            return 2
+        meta_reels_state = ensure_meta_state_shape(
+            load_json_file(meta_reels_state_file, default={"entries": {}})
+        )
 
     pending: List[Tuple[Path, str, str]] = []
     for video in videos:
@@ -1039,6 +1281,11 @@ def main() -> int:
     print(f"[info] discovered videos: {len(videos)}")
     print(f"[info] queued videos: {len(pending)}")
     print(f"[info] dry run: {args.dry_run}")
+    if meta_crosspost_enabled:
+        print(
+            f"[info] Meta cross-posting enabled: platform={args.meta_platform} "
+            f"| state={meta_reels_state_file}"
+        )
 
     uploaded_count = 0
     skipped_not_shorts = 0
@@ -1213,6 +1460,18 @@ def main() -> int:
             save_json_file(metadata_history_file, metadata_history)
             uploaded_count += 1
             print(f"[ok] uploaded: https://www.youtube.com/watch?v={video_id}")
+            if meta_crosspost_enabled:
+                crosspost_meta_reel(
+                    args=args,
+                    reels_state=meta_reels_state,
+                    state_key=key,
+                    rel_path=rel_path,
+                    source_file=upload_path,
+                    metadata=metadata,
+                    metadata_path=metadata_path,
+                    youtube_video_id=video_id,
+                )
+                save_json_file(meta_reels_state_file, meta_reels_state)
             if args.delete_converted_after_upload and upload_path != video_path:
                 try:
                     is_converted_temp = False
