@@ -1,0 +1,11 @@
+{
+  "completed_step_ids": [
+    "create_app",
+    "fb_login_setup",
+    "ig_content_publish_doc",
+    "fb_reels_doc",
+    "permissions_reference",
+    "token_docs",
+    "page_token_docs"
+  ]
+}

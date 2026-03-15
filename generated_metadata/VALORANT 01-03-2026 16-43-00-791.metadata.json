@@ -1,0 +1,52 @@
+{
+  "relative_path": "VALORANT_01-03-2026_16-03-59-277/VALORANT 01-03-2026 16-43-00-791.mp4",
+  "generated_at_utc": "2026-03-06T17:35:39.820955+00:00",
+  "metadata": {
+    "title": "Surprise Flank Secures Fast Double Kill in VALORANT Mid Fight",
+    "description": "Just caught these two off guard with a quick flank and clean shots. Timing was everything here. Who\u2019s your go-to agent for plays like this?\n\nLet me know your favorite surprise play in the comments!\n\n#valorant #shorts #gaming #fps #valorantclips",
+    "tags": [
+      "valorant",
+      "valorant clips",
+      "gaming",
+      "fps",
+      "valorant gameplay",
+      "mid fight",
+      "quick kills",
+      "shorts",
+      "clutch moments",
+      "agent plays",
+      "competitive fps",
+      "gaming clips",
+      "reaction plays",
+      "multikill",
+      "fast reflexes"
+    ],
+    "hashtags": [
+      "#valorant",
+      "#shorts",
+      "#gaming",
+      "#fps",
+      "#valorantclips"
+    ],
+    "cta": "Let me know your favorite surprise play in the comments!"
+  },
+  "kills": 1,
+  "agent_name": "Sage",
+  "kill_events": [
+    15.8
+  ],
+  "analysis_generated_at_utc": "2026-03-07T07:19:41.935020+00:00",
+  "kill_event_details": [
+    {
+      "timestamp": 15.8,
+      "site_name": "A",
+      "weapon_used": "Unknown",
+      "agent_name": "Breach",
+      "kill_banner_template": "normal_headshot_Kill_Banner.png",
+      "kill_banner_score": 0.252,
+      "username_left_score": 0.751,
+      "kill_feed_ui_score": 0.486
+    }
+  ],
+  "analysis_method": "fixed_roi_kill_banner_feed_v2"
+}

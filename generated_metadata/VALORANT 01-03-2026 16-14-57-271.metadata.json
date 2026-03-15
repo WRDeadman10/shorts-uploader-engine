@@ -1,0 +1,63 @@
+{
+  "relative_path": "VALORANT_01-03-2026_16-03-59-277/VALORANT 01-03-2026 16-14-57-271.mp4",
+  "generated_at_utc": "2026-03-05T17:00:06.800528+00:00",
+  "metadata": {
+    "title": "Insane VALORANT Clutch Moment You Can\u2019t Miss | Quick FPS Action | 01-03 16:14:57",
+    "description": "Watch an intense clutch play in VALORANT that turns the round around. Perfect for fans of fast-paced FPS action and smart gameplay. Don\u2019t blink or you'll miss the highlight!\n\nSubscribe for more epic VALORANT highlights and fast-paced gameplay!\n\n#valorant #gaming #fps #shorts #valorantclips\n\nSource clip: VALORANT 01-03-2026 16-14-57-271",
+    "tags": [
+      "valorant",
+      "valorant clips",
+      "valorant clutch",
+      "gaming",
+      "fps",
+      "valorant gameplay",
+      "shorts",
+      "valorant highlights",
+      "valorant moments",
+      "competitive gaming",
+      "shooter games",
+      "gaming shorts",
+      "valorant 2026",
+      "quick gameplay",
+      "fps clips"
+    ],
+    "hashtags": [
+      "#valorant",
+      "#gaming",
+      "#fps",
+      "#shorts",
+      "#valorantclips"
+    ],
+    "cta": "Subscribe for more epic VALORANT highlights and fast-paced gameplay!"
+  },
+  "kills": 2,
+  "agent_name": "Sage",
+  "kill_events": [
+    15.7,
+    17.6
+  ],
+  "analysis_generated_at_utc": "2026-03-07T07:16:26.536994+00:00",
+  "kill_event_details": [
+    {
+      "timestamp": 15.7,
+      "site_name": "Unknown",
+      "weapon_used": "Unknown",
+      "agent_name": "Sage",
+      "kill_banner_template": "normal_Kill_Banner.png",
+      "kill_banner_score": 0.32,
+      "username_left_score": 0.6,
+      "kill_feed_ui_score": 0.495
+    },
+    {
+      "timestamp": 17.6,
+      "site_name": "A",
+      "weapon_used": "Unknown",
+      "agent_name": "Unknown",
+      "kill_banner_template": "normal_Kill_Banner.png",
+      "kill_banner_score": 0.329,
+      "username_left_score": 0.751,
+      "kill_feed_ui_score": 0.499
+    }
+  ],
+  "analysis_method": "fixed_roi_kill_banner_feed_v2"
+}

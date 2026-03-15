@@ -1,0 +1,63 @@
+{
+  "relative_path": "VALORANT_01-03-2026_16-03-59-277/VALORANT 01-03-2026 16-21-54-521.mp4",
+  "generated_at_utc": "2026-03-06T17:30:40.688389+00:00",
+  "metadata": {
+    "title": "Quick Double Kill with Sage \u2013 Turning the Tide in VALORANT",
+    "description": "Watch how a well-timed flash and precise aim secure two kills in a clutch moment. This Sage play proves that support agents can shine under pressure. What\u2019s your favorite agent to clutch with?\n\nLet me know your best clutch moment in the comments!\n\n#valorant #shorts #gaming #fps #valorantclips",
+    "tags": [
+      "valorant",
+      "valorant clips",
+      "fps",
+      "gaming",
+      "sage valorant",
+      "clutch moments",
+      "short gameplay",
+      "quick kills",
+      "support agent",
+      "valorant short",
+      "competitive gaming",
+      "tactical shooter",
+      "valorant gameplay",
+      "headshots",
+      "fast reaction"
+    ],
+    "hashtags": [
+      "#valorant",
+      "#shorts",
+      "#gaming",
+      "#fps",
+      "#valorantclips"
+    ],
+    "cta": "Let me know your best clutch moment in the comments!"
+  },
+  "kills": 2,
+  "agent_name": "Sage",
+  "kill_events": [
+    5.1,
+    7.0
+  ],
+  "analysis_generated_at_utc": "2026-03-07T07:17:30.589977+00:00",
+  "kill_event_details": [
+    {
+      "timestamp": 5.1,
+      "site_name": "Unknown",
+      "weapon_used": "Unknown",
+      "agent_name": "Sage",
+      "kill_banner_template": "normal_Kill_Banner.png",
+      "kill_banner_score": 0.386,
+      "username_left_score": 0.667,
+      "kill_feed_ui_score": 0.481
+    },
+    {
+      "timestamp": 7.0,
+      "site_name": "A",
+      "weapon_used": "Unknown",
+      "agent_name": "Sage",
+      "kill_banner_template": "normal_Kill_Banner.png",
+      "kill_banner_score": 0.45,
+      "username_left_score": 0.667,
+      "kill_feed_ui_score": 0.482
+    }
+  ],
+  "analysis_method": "fixed_roi_kill_banner_feed_v2"
+}

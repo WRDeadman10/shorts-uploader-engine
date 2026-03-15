@@ -1,0 +1,51 @@
+{
+  "relative_path": "VALORANT_01-01-2026_22-20-21-067/VALORANT 01-01-2026 22-27-44-486.mp4",
+  "generated_at_utc": "2026-03-05T17:11:45.658392+00:00",
+  "metadata": {
+    "title": "Epic Clutch Moment in VALORANT - Fast-Paced FPS Action! | 01-01 22:27:44",
+    "description": "Watch this intense VALORANT clutch that turned the game around. Perfect for fans of quick, skillful plays in FPS games. Stay tuned for more exciting clips!\n\nSubscribe for more quick VALORANT highlights!\n\n#shorts #valorant #gaming #fps #gamers\n\nSource clip: VALORANT 01-01-2026 22-27-44-486",
+    "tags": [
+      "valorant",
+      "valorant clips",
+      "valorant highlights",
+      "valorant gameplay",
+      "fps",
+      "gaming",
+      "phoenix valorant",
+      "valorant clutch",
+      "shorts",
+      "gaming shorts",
+      "valorant moments",
+      "competitive fps",
+      "valorant 1v2",
+      "quick play"
+    ],
+    "hashtags": [
+      "#valorant",
+      "#shorts",
+      "#gaming",
+      "#fps",
+      "#valorantclips"
+    ],
+    "cta": "Hit like if you love clutch plays and want more quick VALORANT action!"
+  },
+  "kills": 1,
+  "agent_name": "Unknown",
+  "kill_events": [
+    15.9
+  ],
+  "analysis_generated_at_utc": "2026-03-07T07:23:37.482032+00:00",
+  "kill_event_details": [
+    {
+      "timestamp": 15.9,
+      "site_name": "A",
+      "weapon_used": "Unknown",
+      "agent_name": "Unknown",
+      "kill_banner_template": "normal_headshot_Kill_Banner.png",
+      "kill_banner_score": 0.175,
+      "username_left_score": 0.869,
+      "kill_feed_ui_score": 0.485
+    }
+  ],
+  "analysis_method": "fixed_roi_kill_banner_feed_v2"
+}
