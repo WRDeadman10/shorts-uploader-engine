@@ -711,17 +711,55 @@ def load_clip_context(file_path: Path) -> Optional[Dict[str, Any]]:
         except (TypeError, ValueError):
             kills = None
 
-    site_name_raw = get_sidecar_value(payload, "site_name", "site name", "site")
+    site_name_raw = get_sidecar_value(payload, "site_name", "site name", "site", "map")
     agent_name_raw = get_sidecar_value(payload, "agent_name", "agent name", "agent")
+    round_details = payload.get("round_details", {})
+    if not isinstance(round_details, dict):
+        round_details = {}
+    kills_breakdown = round_details.get("kills_breakdown", [])
+    if not isinstance(kills_breakdown, list):
+        kills_breakdown = []
+    first_kill = kills_breakdown[0] if kills_breakdown and isinstance(kills_breakdown[0], dict) else {}
+
+    weapon_raw = get_sidecar_value(payload, "weapon")
+    if weapon_raw is None and isinstance(first_kill, dict):
+        weapon_raw = first_kill.get("weapon")
+
+    headshots_raw = get_sidecar_value(payload, "headshots", "total_headshots")
+    if headshots_raw is None:
+        headshots_raw = round_details.get("total_headshots")
+
+    victim_agent_raw = get_sidecar_value(payload, "victim_agent", "victim agent")
+    if victim_agent_raw is None and isinstance(first_kill, dict):
+        victim_agent_raw = first_kill.get("victim_agent")
 
     site_name = clean_text(str(site_name_raw or ""))
     agent_name = clean_text(str(agent_name_raw or ""))
+    weapon = clean_text(str(weapon_raw or ""))
+    victim_agent = clean_text(str(victim_agent_raw or ""))
+    headshots: Optional[int] = None
+    if headshots_raw is not None:
+        try:
+            headshots = max(int(headshots_raw), 0)
+        except (TypeError, ValueError):
+            headshots = None
     if site_name.lower() == "unknown":
         site_name = ""
     if agent_name.lower() == "unknown":
         agent_name = ""
+    if weapon.lower() == "unknown":
+        weapon = ""
+    if victim_agent.lower() == "unknown":
+        victim_agent = ""
 
-    if kills is None and not site_name and not agent_name:
+    if (
+        kills is None
+        and not site_name
+        and not agent_name
+        and not weapon
+        and headshots is None
+        and not victim_agent
+    ):
         return None
 
     return {
@@ -729,6 +767,9 @@ def load_clip_context(file_path: Path) -> Optional[Dict[str, Any]]:
         "kills": kills,
         "site_name": site_name,
         "agent_name": agent_name,
+        "weapon": weapon,
+        "headshots": headshots,
+        "victim_agent": victim_agent,
     }
 
 
@@ -739,6 +780,7 @@ def build_clip_focus(context: Optional[Dict[str, Any]]) -> str:
     kills = context.get("kills")
     site_name = clean_text(str(context.get("site_name") or ""))
     agent_name = clean_text(str(context.get("agent_name") or ""))
+    weapon = clean_text(str(context.get("weapon") or ""))
     parts: List[str] = []
     if kills:
         kill_word = "Kill" if int(kills) == 1 else "Kills"
@@ -747,6 +789,8 @@ def build_clip_focus(context: Optional[Dict[str, Any]]) -> str:
         parts.append(f"on {site_name}")
     if agent_name:
         parts.append(f"with {agent_name}")
+    if weapon:
+        parts.append(f"using {weapon}")
     return clean_text(" ".join(parts))
 
 
@@ -788,6 +832,12 @@ def build_fallback_metadata(
             tags.append(f"{clip_context['site_name']} site")
         if clip_context.get("kills"):
             tags.append(f"{clip_context['kills']} kill")
+        if clip_context.get("weapon"):
+            tags.append(str(clip_context["weapon"]))
+        if clip_context.get("victim_agent"):
+            tags.append(str(clip_context["victim_agent"]))
+        if clip_context.get("headshots"):
+            tags.append("headshot")
     tags += extra_keywords
     return {
         "title": title,
@@ -846,7 +896,10 @@ def generate_ai_metadata(
         "If kills is 0, treat it as 1.\n"
         "Do not mention unknown agent/site values.\n"
         "Use the kill count naturally in the title or description.\n"
-        "Use the site name or agent name when it fits naturally, and prefer at least one of them in the metadata."
+        "Use the site name or map name and agent name when they fit naturally.\n"
+        "Use weapon, headshots, and victim agent when present and when it sounds natural.\n"
+        "Treat site/site_name as the same concept as map for metadata generation.\n"
+        "Do not use round number in the title or description."
     )
     response = client.chat.completions.create(
         model=model,
