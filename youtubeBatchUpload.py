@@ -288,6 +288,22 @@ def parse_args() -> argparse.Namespace:
         help="Keep converted/cropped file after successful upload.",
     )
     parser.add_argument(
+        "--music-dir",
+        default=os.getenv("BG_MUSIC_DIR", "").strip(),
+        help="Optional directory of MP3 files to mix under each uploaded short/reel.",
+    )
+    parser.add_argument(
+        "--music-inventory-file",
+        default="hollywood_music_inventory.json",
+        help="Path to save the discovered MP3 inventory when --music-dir is enabled.",
+    )
+    parser.add_argument(
+        "--music-bg-volume",
+        type=float,
+        default=0.18,
+        help="Relative background music volume/weight when mixing under the original clip audio.",
+    )
+    parser.add_argument(
         "--crosspost-meta",
         action="store_true",
         help="After a successful YouTube upload, also upload the same file to Instagram/Facebook Reels.",
@@ -638,6 +654,156 @@ def convert_to_shorts(
         tail = "\n".join((proc.stderr or "").splitlines()[-20:])
         raise RuntimeError(f"ffmpeg conversion failed for {source}:\n{tail}")
 
+    return output
+
+
+def build_music_inventory(music_dir: Path) -> List[Dict[str, str]]:
+    tracks: List[Dict[str, str]] = []
+    for path in sorted(music_dir.rglob("*.mp3")):
+        tracks.append(
+            {
+                "name": path.name,
+                "path": str(path.resolve()),
+            }
+        )
+    return tracks
+
+
+def video_has_audio_stream(file_path: Path, ffprobe_bin: str) -> bool:
+    try:
+        proc = subprocess.run(
+            [
+                ffprobe_bin,
+                "-v",
+                "error",
+                "-select_streams",
+                "a",
+                "-show_entries",
+                "stream=codec_type",
+                "-of",
+                "json",
+                str(file_path),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return False
+
+    if proc.returncode != 0:
+        return False
+
+    try:
+        payload = json.loads(proc.stdout or "{}")
+        streams = payload.get("streams", [])
+        return bool(streams)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return False
+
+
+def build_mixed_music_path(
+    source: Path,
+    music_path: Path,
+    converted_dir: Path,
+    bg_volume: float,
+) -> Path:
+    profile = "bgmixv1"
+    digest = hashlib.sha1(
+        f"{source.resolve()}|{music_path.resolve()}|{bg_volume:.3f}|{profile}".encode("utf-8")
+    ).hexdigest()[:10]
+    safe_stem = re.sub(r"[^a-zA-Z0-9._-]", "_", source.stem)[:80]
+    return converted_dir / f"{safe_stem}.{digest}.{profile}.mp4"
+
+
+def mix_background_music(
+    *,
+    source: Path,
+    music_path: Path,
+    converted_dir: Path,
+    ffmpeg_bin: str,
+    ffprobe_bin: str,
+    bg_volume: float,
+) -> Path:
+    converted_dir.mkdir(parents=True, exist_ok=True)
+    output = build_mixed_music_path(source, music_path, converted_dir, bg_volume)
+    newest_input_mtime = max(source.stat().st_mtime, music_path.stat().st_mtime)
+    if output.exists() and output.stat().st_mtime >= newest_input_mtime:
+        return output
+
+    source_info = probe_video_info(source, ffprobe_bin)
+    if not source_info:
+        raise RuntimeError(f"Could not inspect video duration for music mix: {source}")
+    duration = float(source_info["duration"])
+    if duration <= 0:
+        raise RuntimeError(f"Invalid video duration for music mix: {source}")
+
+    has_audio = video_has_audio_stream(source, ffprobe_bin)
+    if has_audio:
+        bg_weight = max(bg_volume, 0.01)
+        filter_complex = (
+            f"[1:a]atrim=0:{duration:.3f},asetpts=N/SR/TB,volume={bg_volume:.3f}[bg];"
+            "[0:a]volume=1.0[main];"
+            f"[main][bg]amix=inputs=2:duration=first:weights='1 {bg_weight:.3f}':normalize=0[aout]"
+        )
+        cmd = [
+            ffmpeg_bin,
+            "-y",
+            "-i",
+            str(source),
+            "-i",
+            str(music_path),
+            "-filter_complex",
+            filter_complex,
+            "-map",
+            "0:v:0",
+            "-map",
+            "[aout]",
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            "-shortest",
+            str(output),
+        ]
+    else:
+        cmd = [
+            ffmpeg_bin,
+            "-y",
+            "-i",
+            str(source),
+            "-i",
+            str(music_path),
+            "-map",
+            "0:v:0",
+            "-map",
+            "1:a:0",
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            "-t",
+            f"{duration:.3f}",
+            str(output),
+        ]
+
+    proc = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        tail = "\n".join((proc.stderr or "").splitlines()[-30:])
+        raise RuntimeError(
+            f"ffmpeg background music mix failed for {source} using {music_path.name}:\n{tail}"
+        )
     return output
 
 
@@ -1321,6 +1487,8 @@ def main() -> int:
     metadata_history_file = Path(args.metadata_history_file).resolve()
     converted_dir = Path(args.converted_dir).resolve()
     meta_reels_state_file = Path(args.meta_reels_state_file).resolve()
+    music_dir = Path(args.music_dir).resolve() if args.music_dir.strip() else None
+    music_inventory_file = Path(args.music_inventory_file).resolve()
 
     if not root.exists():
         print(f"[error] root path not found: {root}")
@@ -1353,6 +1521,8 @@ def main() -> int:
     ]
     meta_crosspost_enabled = bool(args.crosspost_meta)
     meta_reels_state = ensure_meta_state_shape({"entries": {}})
+    music_inventory: List[Dict[str, str]] = []
+    music_enabled = bool(music_dir)
     if meta_crosspost_enabled:
         if meta_requests is None:
             print("[error] Meta cross-posting requires requests. Run: pip install -r requirements.txt")
@@ -1368,6 +1538,22 @@ def main() -> int:
             return 2
         meta_reels_state = ensure_meta_state_shape(
             load_json_file(meta_reels_state_file, default={"entries": {}})
+        )
+    if music_enabled:
+        if not music_dir or not music_dir.exists():
+            print(f"[error] music directory not found: {music_dir}")
+            return 2
+        music_inventory = build_music_inventory(music_dir)
+        if not music_inventory:
+            print(f"[error] no MP3 files found in music directory: {music_dir}")
+            return 2
+        save_json_file(
+            music_inventory_file,
+            {
+                "music_dir": str(music_dir),
+                "count": len(music_inventory),
+                "tracks": music_inventory,
+            },
         )
 
     pending: List[Tuple[Path, str, str]] = []
@@ -1434,6 +1620,11 @@ def main() -> int:
     print(f"[info] discovered videos: {len(videos)}")
     print(f"[info] queued videos: {len(pending)}")
     print(f"[info] dry run: {args.dry_run}")
+    if music_enabled:
+        print(
+            f"[info] background music enabled: tracks={len(music_inventory)} "
+            f"| volume={args.music_bg_volume:.3f} | inventory={music_inventory_file}"
+        )
     if meta_crosspost_enabled:
         print(
             f"[info] Meta cross-posting enabled: platform={args.meta_platform} "
@@ -1448,6 +1639,8 @@ def main() -> int:
     for index, (video_path, rel_path, key) in enumerate(pending, start=1):
         print(f"\n[{index}/{len(pending)}] processing: {rel_path}")
         upload_path = video_path
+        cleanup_candidates: List[Path] = []
+        chosen_music_path: Optional[Path] = None
 
         source_info = probe_video_info(video_path, ffprobe_bin)
         if source_info:
@@ -1478,6 +1671,8 @@ def main() -> int:
                         ffmpeg_bin=ffmpeg_bin,
                         shorts_max_seconds=args.shorts_max_seconds,
                     )
+                    if upload_path != video_path:
+                        cleanup_candidates.append(upload_path)
                     converted_info = probe_video_info(upload_path, ffprobe_bin)
                     if converted_info:
                         c_w = int(converted_info["width"])
@@ -1493,6 +1688,28 @@ def main() -> int:
                     print(f"[error] conversion failed; skipping file: {exc}")
                     skipped_not_shorts += 1
                     continue
+
+        if music_enabled:
+            try:
+                chosen_music = random.choice(music_inventory)
+                chosen_music_path = Path(chosen_music["path"])
+                upload_path = mix_background_music(
+                    source=upload_path,
+                    music_path=chosen_music_path,
+                    converted_dir=converted_dir,
+                    ffmpeg_bin=ffmpeg_bin,
+                    ffprobe_bin=ffprobe_bin,
+                    bg_volume=args.music_bg_volume,
+                )
+                if upload_path != video_path:
+                    cleanup_candidates.append(upload_path)
+                print(
+                    f"[audio] background music mixed: {chosen_music_path.name} "
+                    f"(volume={args.music_bg_volume:.3f})"
+                )
+            except Exception as exc:  # noqa: BLE001
+                print(f"[error] background music mix failed; skipping file: {exc}")
+                continue
 
         clip_context = load_clip_context(video_path)
         if clip_context:
@@ -1608,6 +1825,7 @@ def main() -> int:
                 "title": metadata["title"],
                 "metadata_file": str(metadata_path),
                 "uploaded_file_path": str(upload_path),
+                "background_music_file": str(chosen_music_path) if chosen_music_path else "",
                 "playlist_name": args.playlist_name if playlist_id else "",
                 "playlist_id": playlist_id or "",
                 "playlist_item_id": playlist_item_id,
@@ -1633,30 +1851,36 @@ def main() -> int:
                     youtube_video_id=video_id,
                 )
                 save_json_file(meta_reels_state_file, meta_reels_state)
-            if args.delete_converted_after_upload and upload_path != video_path:
-                try:
-                    is_converted_temp = False
+            if args.delete_converted_after_upload:
+                seen_cleanup = set()
+                for temp_path in cleanup_candidates:
+                    temp_path_str = str(temp_path.resolve())
+                    if temp_path_str in seen_cleanup:
+                        continue
+                    seen_cleanup.add(temp_path_str)
                     try:
-                        upload_path.resolve().relative_to(converted_dir.resolve())
-                        is_converted_temp = True
-                    except ValueError:
                         is_converted_temp = False
+                        try:
+                            temp_path.resolve().relative_to(converted_dir.resolve())
+                            is_converted_temp = True
+                        except ValueError:
+                            is_converted_temp = False
 
-                    if is_converted_temp and upload_path.exists():
-                        upload_path.unlink()
-                        print(f"[cleanup] deleted converted file: {upload_path.name}")
-                except Exception as exc:  # noqa: BLE001
-                    print(f"[warn] uploaded but failed to delete converted file: {exc}")
+                        if is_converted_temp and temp_path.exists():
+                            temp_path.unlink()
+                            print(f"[cleanup] deleted converted file: {temp_path.name}")
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"[warn] uploaded but failed to delete converted file: {exc}")
         except Exception as exc:  # noqa: BLE001
             reason, reason_message = extract_http_error_reason(exc)
             print(f"[error] upload failed for {rel_path}: {exc}")
-            if reason == "uploadLimitExceeded":
+            if reason in {"uploadLimitExceeded", "quotaExceeded"}:
                 hit_upload_limit = True
                 if reason_message:
                     print(f"[limit] {reason_message}")
                 print(
-                    "[limit] Channel upload limit reached. "
-                    "Stop now and retry after the daily window resets."
+                    "[limit] YouTube quota limit reached. "
+                    "Stop now and retry after the quota window resets."
                 )
                 break
 
@@ -1668,7 +1892,7 @@ def main() -> int:
     if skipped_not_shorts:
         print(f"[done] skipped by Shorts policy: {skipped_not_shorts}")
     if hit_upload_limit:
-        print("[done] stopped early due to uploadLimitExceeded.")
+        print("[done] stopped early due to YouTube quota limit.")
 
     return 0
 
