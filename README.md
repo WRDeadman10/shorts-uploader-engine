@@ -16,6 +16,7 @@ Primary YouTube uploader.
 
 Responsibilities:
 - scan a local video root
+- choose a target upload platform from one centralized entry point
 - skip already uploaded files by checking `.youtube_upload_state.json`
 - optionally convert videos into Shorts format
 - optionally add background music
@@ -28,6 +29,28 @@ Typical usage:
 
 ```powershell
 python youtubeBatchUpload.py --root "E:\New folder\Valorant Tracker\VALORANT" --privacy public
+```
+
+Centralized oldest-first platform uploads:
+
+```powershell
+python youtubeBatchUpload.py --root "E:\New folder\Valorant Tracker\VALORANT" --upload-platform youtube --max-videos 10
+python youtubeBatchUpload.py --root "E:\New folder\Valorant Tracker\VALORANT" --upload-platform instagram --max-videos 10
+python youtubeBatchUpload.py --root "E:\New folder\Valorant Tracker\VALORANT" --upload-platform facebook --max-videos 10
+```
+
+Behavior:
+- videos are queued oldest-first by file modified time
+- the queue is filtered by offline platform state only
+- the target platform is always treated as required missing
+- if no compare filters are passed, the clip must be missing on all platforms
+
+Comparison examples:
+
+```powershell
+python youtubeBatchUpload.py --upload-platform instagram --require-uploaded-on youtube --require-missing-on instagram --max-videos 30
+python youtubeBatchUpload.py --upload-platform facebook --require-uploaded-on youtube --require-missing-on facebook --max-videos 30
+python youtubeBatchUpload.py --upload-platform facebook --require-uploaded-on instagram --require-missing-on facebook --max-videos 30
 ```
 
 ### `metaBatchReelsUpload.py`

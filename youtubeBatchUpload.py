@@ -128,6 +128,22 @@ def parse_args() -> argparse.Namespace:
         help="Playlist title to add each uploaded video to (empty to disable).",
     )
     parser.add_argument(
+        "--upload-platform",
+        choices=["youtube", "instagram", "facebook"],
+        default="youtube",
+        help="Choose which platform this run should upload to.",
+    )
+    parser.add_argument(
+        "--require-uploaded-on",
+        default="",
+        help="Comma-separated platforms that must already have the clip uploaded before it is queued.",
+    )
+    parser.add_argument(
+        "--require-missing-on",
+        default="",
+        help="Comma-separated platforms that must not already have the clip uploaded before it is queued.",
+    )
+    parser.add_argument(
         "--client-secrets",
         default="client_secret.json",
         help="Path to YouTube OAuth client secrets JSON.",
@@ -463,6 +479,49 @@ def update_platform_upload_ledger(
     ledger_state["entries"][state_key] = row
 
 
+def is_platform_upload_completed(ledger_state: Dict[str, Any], state_key: str) -> bool:
+    entries = ledger_state.get("entries", {})
+    if not isinstance(entries, dict):
+        return False
+    row = entries.get(state_key, {})
+    if not isinstance(row, dict):
+        return False
+    return str(row.get("status", "")).strip().lower() == "ok"
+
+
+def normalize_platform_names_csv(raw: str) -> List[str]:
+    values: List[str] = []
+    seen: set[str] = set()
+    for item in raw.split(","):
+        cleaned = item.strip().lower()
+        if not cleaned:
+            continue
+        if cleaned not in {"youtube", "instagram", "facebook"}:
+            raise ValueError(f"Unsupported platform name: {cleaned}")
+        if cleaned in seen:
+            continue
+        seen.add(cleaned)
+        values.append(cleaned)
+    return values
+
+
+def is_uploaded_on_platform(
+    platform_name: str,
+    *,
+    state_key: str,
+    uploaded_state: Dict[str, Any],
+    instagram_upload_ledger: Dict[str, Any],
+    facebook_upload_ledger: Dict[str, Any],
+) -> bool:
+    if platform_name == "youtube":
+        return state_key in uploaded_state
+    if platform_name == "instagram":
+        return is_platform_upload_completed(instagram_upload_ledger, state_key)
+    if platform_name == "facebook":
+        return is_platform_upload_completed(facebook_upload_ledger, state_key)
+    return False
+
+
 def normalize_extensions(raw_extensions: str) -> set[str]:
     exts: set[str] = set()
     for item in raw_extensions.split(","):
@@ -623,6 +682,37 @@ def probe_video_info(file_path: Path, ffprobe_bin: str) -> Optional[Dict[str, fl
     }
 
 
+def delete_file_if_exists(file_path: Path) -> None:
+    try:
+        if file_path.exists():
+            file_path.unlink()
+    except OSError:
+        pass
+
+
+def build_temp_media_output_path(output: Path) -> Path:
+    return output.with_name(f"{output.stem}.{os.getpid()}.tmp{output.suffix}")
+
+
+def reuse_valid_cached_video(
+    *,
+    output: Path,
+    newest_input_mtime: float,
+    ffprobe_bin: str,
+    cache_label: str,
+) -> bool:
+    if not output.exists():
+        return False
+    if output.stat().st_mtime < newest_input_mtime:
+        return False
+    if probe_video_info(output, ffprobe_bin):
+        return True
+
+    print(f"[warn] invalid cached {cache_label} file detected; rebuilding: {output.name}")
+    delete_file_if_exists(output)
+    return False
+
+
 def is_shorts_eligible(
     video_info: Dict[str, float],
     shorts_max_seconds: int,
@@ -650,13 +740,23 @@ def convert_to_shorts(
     source: Path,
     converted_dir: Path,
     ffmpeg_bin: str,
+    ffprobe_bin: str,
     shorts_max_seconds: int,
 ) -> Path:
     converted_dir.mkdir(parents=True, exist_ok=True)
     output = build_converted_path(source, converted_dir)
+    newest_input_mtime = source.stat().st_mtime
 
-    if output.exists() and output.stat().st_mtime >= source.stat().st_mtime:
+    if reuse_valid_cached_video(
+        output=output,
+        newest_input_mtime=newest_input_mtime,
+        ffprobe_bin=ffprobe_bin,
+        cache_label="converted",
+    ):
         return output
+
+    temp_output = build_temp_media_output_path(output)
+    delete_file_if_exists(temp_output)
 
     filter_graph = (
         "crop="
@@ -704,7 +804,7 @@ def convert_to_shorts(
             "2",
             "-movflags",
             "+faststart",
-            str(output),
+            str(temp_output),
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -712,8 +812,16 @@ def convert_to_shorts(
         check=False,
     )
     if proc.returncode != 0:
+        delete_file_if_exists(temp_output)
         tail = "\n".join((proc.stderr or "").splitlines()[-20:])
         raise RuntimeError(f"ffmpeg conversion failed for {source}:\n{tail}")
+
+    converted_info = probe_video_info(temp_output, ffprobe_bin)
+    if not converted_info:
+        delete_file_if_exists(temp_output)
+        raise RuntimeError(f"Converted Shorts output is invalid or unreadable: {temp_output}")
+
+    temp_output.replace(output)
 
     return output
 
@@ -790,8 +898,16 @@ def mix_background_music(
     converted_dir.mkdir(parents=True, exist_ok=True)
     output = build_mixed_music_path(source, music_path, converted_dir, bg_volume)
     newest_input_mtime = max(source.stat().st_mtime, music_path.stat().st_mtime)
-    if output.exists() and output.stat().st_mtime >= newest_input_mtime:
+    if reuse_valid_cached_video(
+        output=output,
+        newest_input_mtime=newest_input_mtime,
+        ffprobe_bin=ffprobe_bin,
+        cache_label="music-mixed",
+    ):
         return output
+
+    temp_output = build_temp_media_output_path(output)
+    delete_file_if_exists(temp_output)
 
     source_info = probe_video_info(source, ffprobe_bin)
     if not source_info:
@@ -828,7 +944,7 @@ def mix_background_music(
             "-b:a",
             "192k",
             "-shortest",
-            str(output),
+            str(temp_output),
         ]
     else:
         cmd = [
@@ -850,7 +966,7 @@ def mix_background_music(
             "192k",
             "-t",
             f"{duration:.3f}",
-            str(output),
+            str(temp_output),
         ]
 
     proc = subprocess.run(
@@ -861,10 +977,17 @@ def mix_background_music(
         check=False,
     )
     if proc.returncode != 0:
+        delete_file_if_exists(temp_output)
         tail = "\n".join((proc.stderr or "").splitlines()[-30:])
         raise RuntimeError(
             f"ffmpeg background music mix failed for {source} using {music_path.name}:\n{tail}"
         )
+    mixed_info = probe_video_info(temp_output, ffprobe_bin)
+    if not mixed_info:
+        delete_file_if_exists(temp_output)
+        raise RuntimeError(f"Mixed video output is invalid or unreadable: {temp_output}")
+
+    temp_output.replace(output)
     return output
 
 
@@ -1654,6 +1777,7 @@ def extract_http_error_reason(exc: Exception) -> Tuple[str, str]:
 
 def main() -> int:
     args = parse_args()
+    target_platform = args.upload_platform
     root = Path(args.root).resolve()
     client_secrets = Path(args.client_secrets).resolve()
     token_file = Path(args.token_file).resolve()
@@ -1671,7 +1795,7 @@ def main() -> int:
     if not root.exists():
         print(f"[error] root path not found: {root}")
         return 1
-    if not args.dry_run and not client_secrets.exists():
+    if target_platform == "youtube" and not args.dry_run and not client_secrets.exists():
         print(f"[error] client secrets file not found: {client_secrets}")
         return 1
 
@@ -1694,6 +1818,19 @@ def main() -> int:
     facebook_upload_ledger = ensure_platform_upload_ledger_shape(
         load_json_file(facebook_upload_ledger_file, default={"entries": {}})
     )
+    try:
+        required_uploaded_platforms = normalize_platform_names_csv(args.require_uploaded_on)
+        required_missing_platforms = normalize_platform_names_csv(args.require_missing_on)
+    except ValueError as exc:
+        print(f"[error] {exc}")
+        return 2
+
+    if not required_uploaded_platforms and not required_missing_platforms:
+        required_missing_platforms = ["youtube", "instagram", "facebook"]
+
+    if target_platform not in required_missing_platforms:
+        required_missing_platforms.append(target_platform)
+
     metadata_history = load_json_file(
         metadata_history_file,
         default={"titles": [], "descriptions": []},
@@ -1706,23 +1843,28 @@ def main() -> int:
         str(x) for x in metadata_history.get("descriptions", [])
         if isinstance(x, str) and x.strip()
     ]
-    meta_crosspost_enabled = bool(args.crosspost_meta)
+    meta_crosspost_enabled = bool(args.crosspost_meta and target_platform == "youtube")
+    meta_upload_enabled = meta_crosspost_enabled or target_platform in {"instagram", "facebook"}
     meta_reels_state = ensure_meta_state_shape({"entries": {}})
     facebook_blocked_for_run = {"blocked": False}
     music_inventory: List[Dict[str, str]] = []
     music_enabled = bool(music_dir)
-    if meta_crosspost_enabled:
+    if meta_upload_enabled:
         if meta_requests is None:
             print("[error] Meta cross-posting requires requests. Run: pip install -r requirements.txt")
             return 2
         if not clean_text(args.meta_access_token):
-            print("[error] Meta cross-posting enabled but access token is missing.")
+            print("[error] Meta upload is enabled but access token is missing.")
             return 2
+        effective_meta_platform = args.meta_platform
+        if target_platform in {"instagram", "facebook"}:
+            effective_meta_platform = target_platform
+        args.meta_platform = effective_meta_platform
         if meta_platform_enabled(args.meta_platform, "instagram") and not clean_text(args.meta_ig_user_id):
-            print("[error] Meta cross-posting enabled for Instagram but IG user id is missing.")
+            print("[error] Meta upload enabled for Instagram but IG user id is missing.")
             return 2
         if meta_platform_enabled(args.meta_platform, "facebook") and not clean_text(args.meta_facebook_page_id):
-            print("[error] Meta cross-posting enabled for Facebook but page id is missing.")
+            print("[error] Meta upload enabled for Facebook but page id is missing.")
             return 2
         meta_reels_state = ensure_meta_state_shape(
             load_json_file(meta_reels_state_file, default={"entries": {}})
@@ -1744,13 +1886,43 @@ def main() -> int:
             },
         )
 
-    pending: List[Tuple[Path, str, str]] = []
+    pending: List[Tuple[Path, str, str, float]] = []
     for video in videos:
         rel = video.relative_to(root).as_posix()
         key = file_key(root, video)
-        if args.skip_uploaded and key in uploaded_state:
+        is_allowed = True
+
+        for platform_name in required_uploaded_platforms:
+            if not is_uploaded_on_platform(
+                platform_name,
+                state_key=key,
+                uploaded_state=uploaded_state,
+                instagram_upload_ledger=instagram_upload_ledger,
+                facebook_upload_ledger=facebook_upload_ledger,
+            ):
+                is_allowed = False
+                break
+
+        if not is_allowed:
             continue
-        pending.append((video, rel, key))
+
+        for platform_name in required_missing_platforms:
+            if is_uploaded_on_platform(
+                platform_name,
+                state_key=key,
+                uploaded_state=uploaded_state,
+                instagram_upload_ledger=instagram_upload_ledger,
+                facebook_upload_ledger=facebook_upload_ledger,
+            ):
+                is_allowed = False
+                break
+
+        if not is_allowed:
+            continue
+
+        pending.append((video, rel, key, video.stat().st_mtime))
+
+    pending.sort(key=lambda item: item[3])
 
     if args.max_videos > 0:
         pending = pending[: args.max_videos]
@@ -1791,7 +1963,7 @@ def main() -> int:
 
     youtube = None
     playlist_id: Optional[str] = None
-    if not args.dry_run:
+    if target_platform == "youtube" and not args.dry_run:
         youtube = build_youtube_client(client_secrets, token_file, args.auth_port)
         if args.playlist_name.strip():
             try:
@@ -1807,6 +1979,15 @@ def main() -> int:
 
     print(f"[info] discovered videos: {len(videos)}")
     print(f"[info] queued videos: {len(pending)}")
+    print(f"[info] target platform: {target_platform}")
+    print(
+        f"[info] require uploaded on: "
+        f"{', '.join(required_uploaded_platforms) if required_uploaded_platforms else '-'}"
+    )
+    print(
+        f"[info] require missing on: "
+        f"{', '.join(required_missing_platforms) if required_missing_platforms else '-'}"
+    )
     print(f"[info] dry run: {args.dry_run}")
     if music_enabled:
         print(
@@ -1818,13 +1999,18 @@ def main() -> int:
             f"[info] Meta cross-posting enabled: platform={args.meta_platform} "
             f"| state={meta_reels_state_file}"
         )
+    elif target_platform in {"instagram", "facebook"}:
+        print(
+            f"[info] Meta direct upload enabled: platform={args.meta_platform} "
+            f"| state={meta_reels_state_file}"
+        )
 
     uploaded_count = 0
     skipped_not_shorts = 0
     hit_upload_limit = False
     session_titles: List[str] = []
     session_descriptions: List[str] = []
-    for index, (video_path, rel_path, key) in enumerate(pending, start=1):
+    for index, (video_path, rel_path, key, _) in enumerate(pending, start=1):
         print(f"\n[{index}/{len(pending)}] processing: {rel_path}")
         upload_path = video_path
         cleanup_candidates: List[Path] = []
@@ -1857,6 +2043,7 @@ def main() -> int:
                         source=video_path,
                         converted_dir=converted_dir,
                         ffmpeg_bin=ffmpeg_bin,
+                        ffprobe_bin=ffprobe_bin,
                         shorts_max_seconds=args.shorts_max_seconds,
                     )
                     if upload_path != video_path:
@@ -2002,129 +2189,158 @@ def main() -> int:
         if args.dry_run:
             continue
 
-        try:
-            video_id = upload_video(
-                youtube=youtube,
-                file_path=upload_path,
-                metadata=metadata,
-                privacy=args.privacy,
-                category_id=args.category_id,
-                language=args.language,
-                notify_subscribers=args.notify_subscribers,
-            )
-            playlist_item_id = ""
-            if playlist_id:
-                try:
-                    playlist_item_id = add_video_to_playlist(youtube, playlist_id, video_id)
-                    print(f"[ok] added to playlist: {args.playlist_name}")
-                except Exception as exc:  # noqa: BLE001
-                    print(f"[warn] uploaded but failed to add playlist item: {exc}")
-            uploaded_state[key] = {
-                "video_id": video_id,
-                "relative_path": rel_path,
-                "uploaded_at_utc": datetime.now(timezone.utc).isoformat(),
-                "title": metadata["title"],
-                "metadata_file": str(metadata_path),
-                "uploaded_file_path": str(upload_path),
-                "background_music_file": str(chosen_music_path) if chosen_music_path else "",
-                "playlist_name": args.playlist_name if playlist_id else "",
-                "playlist_id": playlist_id or "",
-                "playlist_item_id": playlist_item_id,
-            }
-            state["uploaded"] = uploaded_state
-            save_json_file(state_file, state)
-            update_platform_upload_ledger(
-                youtube_upload_ledger,
-                state_key=key,
-                status="ok",
-                relative_path=rel_path,
-                source_file=upload_path,
-                metadata_file=metadata_path,
-                title=metadata["title"],
-                platform_id_key="video_id",
-                platform_id_value=video_id,
-                extra_fields={
+        if target_platform == "youtube":
+            try:
+                video_id = upload_video(
+                    youtube=youtube,
+                    file_path=upload_path,
+                    metadata=metadata,
+                    privacy=args.privacy,
+                    category_id=args.category_id,
+                    language=args.language,
+                    notify_subscribers=args.notify_subscribers,
+                )
+                playlist_item_id = ""
+                if playlist_id:
+                    try:
+                        playlist_item_id = add_video_to_playlist(youtube, playlist_id, video_id)
+                        print(f"[ok] added to playlist: {args.playlist_name}")
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"[warn] uploaded but failed to add playlist item: {exc}")
+                uploaded_state[key] = {
+                    "video_id": video_id,
+                    "relative_path": rel_path,
+                    "uploaded_at_utc": datetime.now(timezone.utc).isoformat(),
+                    "title": metadata["title"],
+                    "metadata_file": str(metadata_path),
+                    "uploaded_file_path": str(upload_path),
+                    "background_music_file": str(chosen_music_path) if chosen_music_path else "",
                     "playlist_name": args.playlist_name if playlist_id else "",
                     "playlist_id": playlist_id or "",
                     "playlist_item_id": playlist_item_id,
-                    "uploaded_file_path": str(upload_path),
-                    "background_music_file": str(chosen_music_path) if chosen_music_path else "",
-                },
+                }
+                state["uploaded"] = uploaded_state
+                save_json_file(state_file, state)
+                update_platform_upload_ledger(
+                    youtube_upload_ledger,
+                    state_key=key,
+                    status="ok",
+                    relative_path=rel_path,
+                    source_file=upload_path,
+                    metadata_file=metadata_path,
+                    title=metadata["title"],
+                    platform_id_key="video_id",
+                    platform_id_value=video_id,
+                    extra_fields={
+                        "playlist_name": args.playlist_name if playlist_id else "",
+                        "playlist_id": playlist_id or "",
+                        "playlist_item_id": playlist_item_id,
+                        "uploaded_file_path": str(upload_path),
+                        "background_music_file": str(chosen_music_path) if chosen_music_path else "",
+                    },
+                )
+                save_json_file(youtube_upload_ledger_file, youtube_upload_ledger)
+                history_titles.append(metadata["title"])
+                history_descriptions.append(metadata["description"])
+                metadata_history["titles"] = history_titles[-5000:]
+                metadata_history["descriptions"] = history_descriptions[-5000:]
+                save_json_file(metadata_history_file, metadata_history)
+                uploaded_count += 1
+                print(f"[ok] uploaded: https://www.youtube.com/watch?v={video_id}")
+                if meta_crosspost_enabled:
+                    crosspost_meta_reel(
+                        args=args,
+                        reels_state=meta_reels_state,
+                        instagram_upload_ledger=instagram_upload_ledger,
+                        facebook_upload_ledger=facebook_upload_ledger,
+                        state_key=key,
+                        rel_path=rel_path,
+                        source_file=upload_path,
+                        metadata=metadata,
+                        metadata_path=metadata_path,
+                        youtube_video_id=video_id,
+                        facebook_blocked_for_run=facebook_blocked_for_run,
+                    )
+                    save_json_file(meta_reels_state_file, meta_reels_state)
+                    save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
+                    save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
+                if args.delete_converted_after_upload:
+                    seen_cleanup = set()
+                    for temp_path in cleanup_candidates:
+                        temp_path_str = str(temp_path.resolve())
+                        if temp_path_str in seen_cleanup:
+                            continue
+                        seen_cleanup.add(temp_path_str)
+                        try:
+                            is_converted_temp = False
+                            try:
+                                temp_path.resolve().relative_to(converted_dir.resolve())
+                                is_converted_temp = True
+                            except ValueError:
+                                is_converted_temp = False
+
+                            if is_converted_temp and temp_path.exists():
+                                temp_path.unlink()
+                                print(f"[cleanup] deleted converted file: {temp_path.name}")
+                        except Exception as exc:  # noqa: BLE001
+                            print(f"[warn] uploaded but failed to delete converted file: {exc}")
+            except Exception as exc:  # noqa: BLE001
+                reason, reason_message = extract_http_error_reason(exc)
+                update_platform_upload_ledger(
+                    youtube_upload_ledger,
+                    state_key=key,
+                    status="error",
+                    relative_path=rel_path,
+                    source_file=upload_path,
+                    metadata_file=metadata_path,
+                    title=metadata["title"],
+                    platform_id_key="video_id",
+                    platform_id_value="",
+                    extra_fields={
+                        "uploaded_file_path": str(upload_path),
+                        "background_music_file": str(chosen_music_path) if chosen_music_path else "",
+                    },
+                    error_message=str(exc),
+                )
+                save_json_file(youtube_upload_ledger_file, youtube_upload_ledger)
+                print(f"[error] upload failed for {rel_path}: {exc}")
+                if reason in {"uploadLimitExceeded", "quotaExceeded"}:
+                    hit_upload_limit = True
+                    if reason_message:
+                        print(f"[limit] {reason_message}")
+                    print(
+                        "[limit] YouTube quota limit reached. "
+                        "Stop now and retry after the quota window resets."
+                    )
+                    break
+        else:
+            crosspost_meta_reel(
+                args=args,
+                reels_state=meta_reels_state,
+                instagram_upload_ledger=instagram_upload_ledger,
+                facebook_upload_ledger=facebook_upload_ledger,
+                state_key=key,
+                rel_path=rel_path,
+                source_file=upload_path,
+                metadata=metadata,
+                metadata_path=metadata_path,
+                youtube_video_id="",
+                facebook_blocked_for_run=facebook_blocked_for_run,
             )
-            save_json_file(youtube_upload_ledger_file, youtube_upload_ledger)
+            save_json_file(meta_reels_state_file, meta_reels_state)
+            save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
+            save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
             history_titles.append(metadata["title"])
             history_descriptions.append(metadata["description"])
             metadata_history["titles"] = history_titles[-5000:]
             metadata_history["descriptions"] = history_descriptions[-5000:]
             save_json_file(metadata_history_file, metadata_history)
-            uploaded_count += 1
-            print(f"[ok] uploaded: https://www.youtube.com/watch?v={video_id}")
-            if meta_crosspost_enabled:
-                crosspost_meta_reel(
-                    args=args,
-                    reels_state=meta_reels_state,
-                    instagram_upload_ledger=instagram_upload_ledger,
-                    facebook_upload_ledger=facebook_upload_ledger,
-                    state_key=key,
-                    rel_path=rel_path,
-                    source_file=upload_path,
-                    metadata=metadata,
-                    metadata_path=metadata_path,
-                    youtube_video_id=video_id,
-                    facebook_blocked_for_run=facebook_blocked_for_run,
-                )
-                save_json_file(meta_reels_state_file, meta_reels_state)
-                save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
-                save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
-            if args.delete_converted_after_upload:
-                seen_cleanup = set()
-                for temp_path in cleanup_candidates:
-                    temp_path_str = str(temp_path.resolve())
-                    if temp_path_str in seen_cleanup:
-                        continue
-                    seen_cleanup.add(temp_path_str)
-                    try:
-                        is_converted_temp = False
-                        try:
-                            temp_path.resolve().relative_to(converted_dir.resolve())
-                            is_converted_temp = True
-                        except ValueError:
-                            is_converted_temp = False
-
-                        if is_converted_temp and temp_path.exists():
-                            temp_path.unlink()
-                            print(f"[cleanup] deleted converted file: {temp_path.name}")
-                    except Exception as exc:  # noqa: BLE001
-                        print(f"[warn] uploaded but failed to delete converted file: {exc}")
-        except Exception as exc:  # noqa: BLE001
-            reason, reason_message = extract_http_error_reason(exc)
-            update_platform_upload_ledger(
-                youtube_upload_ledger,
-                state_key=key,
-                status="error",
-                relative_path=rel_path,
-                source_file=upload_path,
-                metadata_file=metadata_path,
-                title=metadata["title"],
-                platform_id_key="video_id",
-                platform_id_value="",
-                extra_fields={
-                    "uploaded_file_path": str(upload_path),
-                    "background_music_file": str(chosen_music_path) if chosen_music_path else "",
-                },
-                error_message=str(exc),
-            )
-            save_json_file(youtube_upload_ledger_file, youtube_upload_ledger)
-            print(f"[error] upload failed for {rel_path}: {exc}")
-            if reason in {"uploadLimitExceeded", "quotaExceeded"}:
-                hit_upload_limit = True
-                if reason_message:
-                    print(f"[limit] {reason_message}")
-                print(
-                    "[limit] YouTube quota limit reached. "
-                    "Stop now and retry after the quota window resets."
-                )
-                break
+            if target_platform == "instagram" and is_platform_upload_completed(instagram_upload_ledger, key):
+                uploaded_count += 1
+                print(f"[ok][instagram] uploaded: {rel_path}")
+            elif target_platform == "facebook" and is_platform_upload_completed(facebook_upload_ledger, key):
+                uploaded_count += 1
+                print(f"[ok][facebook] uploaded: {rel_path}")
 
     if args.dry_run:
         print("\n[done] dry run completed.")

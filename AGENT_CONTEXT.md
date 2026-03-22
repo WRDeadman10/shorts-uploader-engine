@@ -36,6 +36,7 @@ Primary orchestration script.
 Responsibilities:
 - discover local videos
 - compute stable file keys
+- choose the target upload platform from one centralized script entry point
 - skip previously uploaded files
 - inspect media with ffmpeg/ffprobe
 - convert videos to 9:16 Shorts format when needed
@@ -80,6 +81,9 @@ Responsibilities:
 - build `upload_comparison.json`
 
 Important detail:
+- `--upload-platform` can run oldest-first uploads for `youtube`, `instagram`, or `facebook`
+- `--require-uploaded-on` and `--require-missing-on` define cross-platform queue filters
+- if both compare filters are omitted, queue selection defaults to clips missing on all platforms
 - `uploaded_count` in comparison is count-based
 - `matched_state_keys_count` is match-based
 - `matched_state_keys` and `not_uploaded_state_keys` are preserved for traceability
