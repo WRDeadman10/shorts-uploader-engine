@@ -56,6 +56,9 @@ SCOPES = [
     "https://www.googleapis.com/auth/youtube",
 ]
 RETRIABLE_STATUS_CODES = {500, 502, 503, 504}
+DEFAULT_YOUTUBE_UPLOAD_LEDGER_FILE = ".youtube_uploaded_videos.json"
+DEFAULT_INSTAGRAM_UPLOAD_LEDGER_FILE = ".instagram_uploaded_videos.json"
+DEFAULT_FACEBOOK_UPLOAD_LEDGER_FILE = ".facebook_uploaded_videos.json"
 
 # Option 1: set this directly in code.
 # Leave empty ("") to auto-use sibling folder named "VALORANT"
@@ -144,6 +147,21 @@ def parse_args() -> argparse.Namespace:
         "--state-file",
         default=".youtube_upload_state.json",
         help="Path to upload state file (used to skip already uploaded videos).",
+    )
+    parser.add_argument(
+        "--youtube-upload-ledger-file",
+        default=DEFAULT_YOUTUBE_UPLOAD_LEDGER_FILE,
+        help="Path to per-video YouTube upload ledger JSON.",
+    )
+    parser.add_argument(
+        "--instagram-upload-ledger-file",
+        default=DEFAULT_INSTAGRAM_UPLOAD_LEDGER_FILE,
+        help="Path to per-video Instagram upload ledger JSON.",
+    )
+    parser.add_argument(
+        "--facebook-upload-ledger-file",
+        default=DEFAULT_FACEBOOK_UPLOAD_LEDGER_FILE,
+        help="Path to per-video Facebook upload ledger JSON.",
     )
     parser.add_argument(
         "--metadata-dir",
@@ -400,6 +418,49 @@ def load_json_file(path: Path, default: Any) -> Any:
 def save_json_file(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def ensure_platform_upload_ledger_shape(data: Any) -> Dict[str, Any]:
+    if not isinstance(data, dict):
+        data = {}
+    entries = data.get("entries")
+    if not isinstance(entries, dict):
+        data["entries"] = {}
+    return data
+
+
+def update_platform_upload_ledger(
+    ledger_state: Dict[str, Any],
+    *,
+    state_key: str,
+    status: str,
+    relative_path: str,
+    source_file: Path,
+    metadata_file: Path,
+    title: str,
+    platform_id_key: str,
+    platform_id_value: str,
+    extra_fields: Optional[Dict[str, Any]] = None,
+    error_message: str = "",
+) -> None:
+    row: Dict[str, Any] = {
+        "status": status,
+        "relative_path": relative_path,
+        "source_file": str(source_file),
+        "metadata_file": str(metadata_file),
+        "title": title,
+        "updated_at_utc": datetime.now(timezone.utc).isoformat(),
+    }
+    if platform_id_key:
+        row[platform_id_key] = platform_id_value
+    if status == "ok":
+        row["uploaded_at_utc"] = datetime.now(timezone.utc).isoformat()
+    elif error_message:
+        row["error"] = error_message
+    if extra_fields:
+        for field_name, field_value in extra_fields.items():
+            row[field_name] = field_value
+    ledger_state["entries"][state_key] = row
 
 
 def normalize_extensions(raw_extensions: str) -> set[str]:
@@ -805,6 +866,44 @@ def mix_background_music(
             f"ffmpeg background music mix failed for {source} using {music_path.name}:\n{tail}"
         )
     return output
+
+
+def try_mix_background_music(
+    *,
+    source: Path,
+    music_inventory: List[Dict[str, str]],
+    converted_dir: Path,
+    ffmpeg_bin: str,
+    ffprobe_bin: str,
+    bg_volume: float,
+) -> Tuple[Path, Optional[Path], List[str]]:
+    failures: List[str] = []
+    if not music_inventory:
+        return source, None, failures
+
+    candidates: List[Dict[str, str]] = list(music_inventory)
+    random.shuffle(candidates)
+
+    for chosen_music in candidates:
+        chosen_music_path = Path(str(chosen_music.get("path", "")).strip())
+        if not chosen_music_path.exists():
+            failures.append(f"{chosen_music_path.name or 'unknown'}: music file not found")
+            continue
+
+        try:
+            mixed_output = mix_background_music(
+                source=source,
+                music_path=chosen_music_path,
+                converted_dir=converted_dir,
+                ffmpeg_bin=ffmpeg_bin,
+                ffprobe_bin=ffprobe_bin,
+                bg_volume=bg_volume,
+            )
+            return mixed_output, chosen_music_path, failures
+        except Exception as exc:  # noqa: BLE001
+            failures.append(f"{chosen_music_path.name}: {exc}")
+
+    return source, None, failures
 
 
 def clean_text(value: str) -> str:
@@ -1217,16 +1316,24 @@ def is_retryable_instagram_processing_error(exc: Exception) -> bool:
     return any(marker in message for marker in markers)
 
 
+def is_facebook_rate_limited_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return "code=368" in message and "subcode=1390008" in message
+
+
 def crosspost_meta_reel(
     *,
     args: argparse.Namespace,
     reels_state: Dict[str, Any],
+    instagram_upload_ledger: Dict[str, Any],
+    facebook_upload_ledger: Dict[str, Any],
     state_key: str,
     rel_path: str,
     source_file: Path,
     metadata: Dict[str, Any],
     metadata_path: Path,
     youtube_video_id: str,
+    facebook_blocked_for_run: Dict[str, bool],
 ) -> None:
     reels_entries = reels_state["entries"]
     state_row = reels_entries.get(state_key, {})
@@ -1240,6 +1347,8 @@ def crosspost_meta_reel(
     do_facebook = meta_platform_enabled(args.meta_platform, "facebook") and not meta_should_skip_platform(
         reels_entries, state_key, "facebook", args.meta_skip_uploaded
     )
+    if facebook_blocked_for_run.get("blocked"):
+        do_facebook = False
     if not do_instagram and not do_facebook:
         print("[meta-crosspost] skipped: already uploaded on selected platform(s)")
         return
@@ -1290,6 +1399,21 @@ def crosspost_meta_reel(
                     "published_at_utc": meta_now_utc_iso(),
                     "source_file": str(source_file),
                 }
+                update_platform_upload_ledger(
+                    instagram_upload_ledger,
+                    state_key=state_key,
+                    status="ok",
+                    relative_path=rel_path,
+                    source_file=source_file,
+                    metadata_file=metadata_path,
+                    title=str(metadata.get("title", "")),
+                    platform_id_key="media_id",
+                    platform_id_value=ig_media_id,
+                    extra_fields={
+                        "container_id": container_id,
+                        "youtube_video_id": youtube_video_id,
+                    },
+                )
                 print(f"[ok][instagram] media_id={ig_media_id}")
                 break
             except Exception as exc:  # noqa: BLE001
@@ -1308,6 +1432,21 @@ def crosspost_meta_reel(
                     "updated_at_utc": meta_now_utc_iso(),
                     "source_file": str(source_file),
                 }
+                update_platform_upload_ledger(
+                    instagram_upload_ledger,
+                    state_key=state_key,
+                    status="error",
+                    relative_path=rel_path,
+                    source_file=source_file,
+                    metadata_file=metadata_path,
+                    title=str(metadata.get("title", "")),
+                    platform_id_key="media_id",
+                    platform_id_value="",
+                    extra_fields={
+                        "youtube_video_id": youtube_video_id,
+                    },
+                    error_message=str(exc),
+                )
                 print(f"[error][instagram] {exc}")
                 break
 
@@ -1341,6 +1480,21 @@ def crosspost_meta_reel(
                 "published_at_utc": meta_now_utc_iso(),
                 "source_file": str(source_file),
             }
+            update_platform_upload_ledger(
+                facebook_upload_ledger,
+                state_key=state_key,
+                status="ok",
+                relative_path=rel_path,
+                source_file=source_file,
+                metadata_file=metadata_path,
+                title=str(metadata.get("title", "")),
+                platform_id_key="video_id",
+                platform_id_value=fb_video_id,
+                extra_fields={
+                    "publish_response": finish_response,
+                    "youtube_video_id": youtube_video_id,
+                },
+            )
             print(f"[ok][facebook] video_id={fb_video_id}")
         except Exception as exc:  # noqa: BLE001
             state_row["facebook"] = {
@@ -1349,7 +1503,28 @@ def crosspost_meta_reel(
                 "updated_at_utc": meta_now_utc_iso(),
                 "source_file": str(source_file),
             }
+            update_platform_upload_ledger(
+                facebook_upload_ledger,
+                state_key=state_key,
+                status="error",
+                relative_path=rel_path,
+                source_file=source_file,
+                metadata_file=metadata_path,
+                title=str(metadata.get("title", "")),
+                platform_id_key="video_id",
+                platform_id_value="",
+                extra_fields={
+                    "youtube_video_id": youtube_video_id,
+                },
+                error_message=str(exc),
+            )
             print(f"[error][facebook] {exc}")
+            if is_facebook_rate_limited_error(exc):
+                facebook_blocked_for_run["blocked"] = True
+                print(
+                    "[warn][facebook] Facebook returned code 368/subcode 1390008. "
+                    "Skipping Facebook uploads for the rest of this run."
+                )
 
     state_row["relative_path"] = rel_path
     state_row["youtube_video_id"] = youtube_video_id
@@ -1483,6 +1658,9 @@ def main() -> int:
     client_secrets = Path(args.client_secrets).resolve()
     token_file = Path(args.token_file).resolve()
     state_file = Path(args.state_file).resolve()
+    youtube_upload_ledger_file = Path(args.youtube_upload_ledger_file).resolve()
+    instagram_upload_ledger_file = Path(args.instagram_upload_ledger_file).resolve()
+    facebook_upload_ledger_file = Path(args.facebook_upload_ledger_file).resolve()
     metadata_dir = Path(args.metadata_dir).resolve()
     metadata_history_file = Path(args.metadata_history_file).resolve()
     converted_dir = Path(args.converted_dir).resolve()
@@ -1507,6 +1685,15 @@ def main() -> int:
 
     state = load_json_file(state_file, default={"uploaded": {}})
     uploaded_state: Dict[str, Any] = state.get("uploaded", {})
+    youtube_upload_ledger = ensure_platform_upload_ledger_shape(
+        load_json_file(youtube_upload_ledger_file, default={"entries": {}})
+    )
+    instagram_upload_ledger = ensure_platform_upload_ledger_shape(
+        load_json_file(instagram_upload_ledger_file, default={"entries": {}})
+    )
+    facebook_upload_ledger = ensure_platform_upload_ledger_shape(
+        load_json_file(facebook_upload_ledger_file, default={"entries": {}})
+    )
     metadata_history = load_json_file(
         metadata_history_file,
         default={"titles": [], "descriptions": []},
@@ -1521,6 +1708,7 @@ def main() -> int:
     ]
     meta_crosspost_enabled = bool(args.crosspost_meta)
     meta_reels_state = ensure_meta_state_shape({"entries": {}})
+    facebook_blocked_for_run = {"blocked": False}
     music_inventory: List[Dict[str, str]] = []
     music_enabled = bool(music_dir)
     if meta_crosspost_enabled:
@@ -1690,26 +1878,39 @@ def main() -> int:
                     continue
 
         if music_enabled:
-            try:
-                chosen_music = random.choice(music_inventory)
-                chosen_music_path = Path(chosen_music["path"])
-                upload_path = mix_background_music(
-                    source=upload_path,
-                    music_path=chosen_music_path,
-                    converted_dir=converted_dir,
-                    ffmpeg_bin=ffmpeg_bin,
-                    ffprobe_bin=ffprobe_bin,
-                    bg_volume=args.music_bg_volume,
-                )
+            original_upload_path = upload_path
+            mixed_upload_path, chosen_music_path, music_failures = try_mix_background_music(
+                source=upload_path,
+                music_inventory=music_inventory,
+                converted_dir=converted_dir,
+                ffmpeg_bin=ffmpeg_bin,
+                ffprobe_bin=ffprobe_bin,
+                bg_volume=args.music_bg_volume,
+            )
+            if chosen_music_path:
+                upload_path = mixed_upload_path
                 if upload_path != video_path:
                     cleanup_candidates.append(upload_path)
                 print(
                     f"[audio] background music mixed: {chosen_music_path.name} "
                     f"(volume={args.music_bg_volume:.3f})"
                 )
-            except Exception as exc:  # noqa: BLE001
-                print(f"[error] background music mix failed; skipping file: {exc}")
-                continue
+            else:
+                upload_path = original_upload_path
+                if music_failures:
+                    print(
+                        "[warn] background music mix failed for all available tracks; "
+                        "uploading video without music."
+                    )
+                    for failure in music_failures[:3]:
+                        print(f"[warn] music attempt failed: {failure}")
+                    if len(music_failures) > 3:
+                        print(
+                            f"[warn] additional music failures not shown: "
+                            f"{len(music_failures) - 3}"
+                        )
+                else:
+                    print("[warn] no usable background music tracks found; uploading video without music.")
 
         clip_context = load_clip_context(video_path)
         if clip_context:
@@ -1832,6 +2033,25 @@ def main() -> int:
             }
             state["uploaded"] = uploaded_state
             save_json_file(state_file, state)
+            update_platform_upload_ledger(
+                youtube_upload_ledger,
+                state_key=key,
+                status="ok",
+                relative_path=rel_path,
+                source_file=upload_path,
+                metadata_file=metadata_path,
+                title=metadata["title"],
+                platform_id_key="video_id",
+                platform_id_value=video_id,
+                extra_fields={
+                    "playlist_name": args.playlist_name if playlist_id else "",
+                    "playlist_id": playlist_id or "",
+                    "playlist_item_id": playlist_item_id,
+                    "uploaded_file_path": str(upload_path),
+                    "background_music_file": str(chosen_music_path) if chosen_music_path else "",
+                },
+            )
+            save_json_file(youtube_upload_ledger_file, youtube_upload_ledger)
             history_titles.append(metadata["title"])
             history_descriptions.append(metadata["description"])
             metadata_history["titles"] = history_titles[-5000:]
@@ -1843,14 +2063,19 @@ def main() -> int:
                 crosspost_meta_reel(
                     args=args,
                     reels_state=meta_reels_state,
+                    instagram_upload_ledger=instagram_upload_ledger,
+                    facebook_upload_ledger=facebook_upload_ledger,
                     state_key=key,
                     rel_path=rel_path,
                     source_file=upload_path,
                     metadata=metadata,
                     metadata_path=metadata_path,
                     youtube_video_id=video_id,
+                    facebook_blocked_for_run=facebook_blocked_for_run,
                 )
                 save_json_file(meta_reels_state_file, meta_reels_state)
+                save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
+                save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
             if args.delete_converted_after_upload:
                 seen_cleanup = set()
                 for temp_path in cleanup_candidates:
@@ -1873,6 +2098,23 @@ def main() -> int:
                         print(f"[warn] uploaded but failed to delete converted file: {exc}")
         except Exception as exc:  # noqa: BLE001
             reason, reason_message = extract_http_error_reason(exc)
+            update_platform_upload_ledger(
+                youtube_upload_ledger,
+                state_key=key,
+                status="error",
+                relative_path=rel_path,
+                source_file=upload_path,
+                metadata_file=metadata_path,
+                title=metadata["title"],
+                platform_id_key="video_id",
+                platform_id_value="",
+                extra_fields={
+                    "uploaded_file_path": str(upload_path),
+                    "background_music_file": str(chosen_music_path) if chosen_music_path else "",
+                },
+                error_message=str(exc),
+            )
+            save_json_file(youtube_upload_ledger_file, youtube_upload_ledger)
             print(f"[error] upload failed for {rel_path}: {exc}")
             if reason in {"uploadLimitExceeded", "quotaExceeded"}:
                 hit_upload_limit = True

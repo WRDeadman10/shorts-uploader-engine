@@ -50,6 +50,8 @@ DEFAULT_VIDEO_ROOT = get_default_video_root()
 DEFAULT_SOURCE_STATE_FILE = ".youtube_upload_state.json"
 DEFAULT_REELS_STATE_FILE = ".meta_reels_upload_state.json"
 DEFAULT_GRAPH_VERSION = "v25.0"
+DEFAULT_INSTAGRAM_UPLOAD_LEDGER_FILE = ".instagram_uploaded_videos.json"
+DEFAULT_FACEBOOK_UPLOAD_LEDGER_FILE = ".facebook_uploaded_videos.json"
 
 
 def parse_args() -> argparse.Namespace:
@@ -65,6 +67,16 @@ def parse_args() -> argparse.Namespace:
         "--reels-state-file",
         default=DEFAULT_REELS_STATE_FILE,
         help="Path to save Instagram/Facebook reels upload state.",
+    )
+    parser.add_argument(
+        "--instagram-upload-ledger-file",
+        default=DEFAULT_INSTAGRAM_UPLOAD_LEDGER_FILE,
+        help="Path to per-video Instagram upload ledger JSON.",
+    )
+    parser.add_argument(
+        "--facebook-upload-ledger-file",
+        default=DEFAULT_FACEBOOK_UPLOAD_LEDGER_FILE,
+        help="Path to per-video Facebook upload ledger JSON.",
     )
     parser.add_argument(
         "--videos-root",
@@ -164,6 +176,49 @@ def load_json_file(path: Path, default: Any) -> Any:
 def save_json_file(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def ensure_platform_upload_ledger_shape(data: Any) -> Dict[str, Any]:
+    if not isinstance(data, dict):
+        data = {}
+    entries = data.get("entries")
+    if not isinstance(entries, dict):
+        data["entries"] = {}
+    return data
+
+
+def update_platform_upload_ledger(
+    ledger_state: Dict[str, Any],
+    *,
+    state_key: str,
+    status: str,
+    relative_path: str,
+    source_file: Path,
+    metadata_file: str,
+    title: str,
+    platform_id_key: str,
+    platform_id_value: str,
+    extra_fields: Optional[Dict[str, Any]] = None,
+    error_message: str = "",
+) -> None:
+    row: Dict[str, Any] = {
+        "status": status,
+        "relative_path": relative_path,
+        "source_file": str(source_file),
+        "metadata_file": metadata_file,
+        "title": title,
+        "updated_at_utc": now_utc_iso(),
+    }
+    if platform_id_key:
+        row[platform_id_key] = platform_id_value
+    if status == "ok":
+        row["uploaded_at_utc"] = now_utc_iso()
+    elif error_message:
+        row["error"] = error_message
+    if extra_fields:
+        for field_name, field_value in extra_fields.items():
+            row[field_name] = field_value
+    ledger_state["entries"][state_key] = row
 
 
 def parse_iso_utc(value: str) -> datetime:
@@ -280,6 +335,11 @@ def extract_meta_error_message(payload: Any) -> str:
     subcode = str(error.get("error_subcode", "")).strip()
     parts = [p for p in [message, f"type={error_type}" if error_type else "", f"code={code}" if code else "", f"subcode={subcode}" if subcode else ""] if p]
     return " | ".join(parts)
+
+
+def is_facebook_rate_limited_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return "code=368" in message and "subcode=1390008" in message
 
 
 def request_json(
@@ -502,6 +562,8 @@ def main() -> int:
 
     source_state_file = Path(args.source_state_file).resolve()
     reels_state_file = Path(args.reels_state_file).resolve()
+    instagram_upload_ledger_file = Path(args.instagram_upload_ledger_file).resolve()
+    facebook_upload_ledger_file = Path(args.facebook_upload_ledger_file).resolve()
     videos_root = Path(args.videos_root).resolve()
 
     if not source_state_file.exists():
@@ -531,6 +593,12 @@ def main() -> int:
         load_json_file(reels_state_file, default={"entries": {}})
     )
     reels_entries = reels_state["entries"]
+    instagram_upload_ledger = ensure_platform_upload_ledger_shape(
+        load_json_file(instagram_upload_ledger_file, default={"entries": {}})
+    )
+    facebook_upload_ledger = ensure_platform_upload_ledger_shape(
+        load_json_file(facebook_upload_ledger_file, default={"entries": {}})
+    )
 
     selected_entries = source_entries
     if args.max_videos > 0:
@@ -547,6 +615,7 @@ def main() -> int:
     failed_instagram = 0
     failed_facebook = 0
     skipped_all = 0
+    facebook_blocked_for_run = False
 
     for entry in selected_entries:
         state_key = entry["state_key"]
@@ -561,6 +630,8 @@ def main() -> int:
         do_facebook = platform_enabled(args.platform, "facebook") and not should_skip_platform(
             reels_entries, state_key, "facebook", args.skip_uploaded
         )
+        if facebook_blocked_for_run:
+            do_facebook = False
 
         if not do_instagram and not do_facebook:
             skipped_all += 1
@@ -574,8 +645,40 @@ def main() -> int:
             )
             if do_instagram:
                 failed_instagram += 1
+                update_platform_upload_ledger(
+                    instagram_upload_ledger,
+                    state_key=state_key,
+                    status="error",
+                    relative_path=str(entry.get("relative_path", "")).strip(),
+                    source_file=videos_root / Path(str(entry.get("relative_path", "")).strip()),
+                    metadata_file=str(entry.get("metadata_file", "")).strip(),
+                    title=str(entry.get("title", "")).strip(),
+                    platform_id_key="media_id",
+                    platform_id_value="",
+                    extra_fields={
+                        "youtube_video_id": str(entry.get("video_id", "")).strip(),
+                    },
+                    error_message="source file missing",
+                )
             if do_facebook:
                 failed_facebook += 1
+                update_platform_upload_ledger(
+                    facebook_upload_ledger,
+                    state_key=state_key,
+                    status="error",
+                    relative_path=str(entry.get("relative_path", "")).strip(),
+                    source_file=videos_root / Path(str(entry.get("relative_path", "")).strip()),
+                    metadata_file=str(entry.get("metadata_file", "")).strip(),
+                    title=str(entry.get("title", "")).strip(),
+                    platform_id_key="video_id",
+                    platform_id_value="",
+                    extra_fields={
+                        "youtube_video_id": str(entry.get("video_id", "")).strip(),
+                    },
+                    error_message="source file missing",
+                )
+            save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
+            save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
             continue
 
         ig_caption, fb_description, fb_title = build_caption_from_entry(entry)
@@ -628,6 +731,21 @@ def main() -> int:
                     "published_at_utc": now_utc_iso(),
                     "source_file": str(source_file),
                 }
+                update_platform_upload_ledger(
+                    instagram_upload_ledger,
+                    state_key=state_key,
+                    status="ok",
+                    relative_path=str(entry.get("relative_path", "")).strip(),
+                    source_file=source_file,
+                    metadata_file=str(entry.get("metadata_file", "")).strip(),
+                    title=str(entry.get("title", "")).strip(),
+                    platform_id_key="media_id",
+                    platform_id_value=ig_media_id,
+                    extra_fields={
+                        "container_id": container_id,
+                        "youtube_video_id": str(entry.get("video_id", "")).strip(),
+                    },
+                )
                 print(f"[ok][instagram] media_id={ig_media_id}")
             except Exception as exc:  # noqa: BLE001
                 failed_instagram += 1
@@ -637,6 +755,21 @@ def main() -> int:
                     "updated_at_utc": now_utc_iso(),
                     "source_file": str(source_file),
                 }
+                update_platform_upload_ledger(
+                    instagram_upload_ledger,
+                    state_key=state_key,
+                    status="error",
+                    relative_path=str(entry.get("relative_path", "")).strip(),
+                    source_file=source_file,
+                    metadata_file=str(entry.get("metadata_file", "")).strip(),
+                    title=str(entry.get("title", "")).strip(),
+                    platform_id_key="media_id",
+                    platform_id_value="",
+                    extra_fields={
+                        "youtube_video_id": str(entry.get("video_id", "")).strip(),
+                    },
+                    error_message=str(exc),
+                )
                 print(f"[error][instagram] {exc}")
 
         if do_facebook:
@@ -670,6 +803,21 @@ def main() -> int:
                     "published_at_utc": now_utc_iso(),
                     "source_file": str(source_file),
                 }
+                update_platform_upload_ledger(
+                    facebook_upload_ledger,
+                    state_key=state_key,
+                    status="ok",
+                    relative_path=str(entry.get("relative_path", "")).strip(),
+                    source_file=source_file,
+                    metadata_file=str(entry.get("metadata_file", "")).strip(),
+                    title=str(entry.get("title", "")).strip(),
+                    platform_id_key="video_id",
+                    platform_id_value=fb_video_id,
+                    extra_fields={
+                        "publish_response": finish_response,
+                        "youtube_video_id": str(entry.get("video_id", "")).strip(),
+                    },
+                )
                 print(f"[ok][facebook] video_id={fb_video_id}")
             except Exception as exc:  # noqa: BLE001
                 failed_facebook += 1
@@ -679,12 +827,37 @@ def main() -> int:
                     "updated_at_utc": now_utc_iso(),
                     "source_file": str(source_file),
                 }
+                update_platform_upload_ledger(
+                    facebook_upload_ledger,
+                    state_key=state_key,
+                    status="error",
+                    relative_path=str(entry.get("relative_path", "")).strip(),
+                    source_file=source_file,
+                    metadata_file=str(entry.get("metadata_file", "")).strip(),
+                    title=str(entry.get("title", "")).strip(),
+                    platform_id_key="video_id",
+                    platform_id_value="",
+                    extra_fields={
+                        "youtube_video_id": str(entry.get("video_id", "")).strip(),
+                    },
+                    error_message=str(exc),
+                )
                 print(f"[error][facebook] {exc}")
+                if is_facebook_rate_limited_error(exc):
+                    facebook_blocked_for_run = True
+                    print(
+                        "[warn][facebook] Facebook returned code 368/subcode 1390008. "
+                        "Skipping Facebook uploads for the rest of this run."
+                    )
 
         save_json_file(reels_state_file, reels_state)
+        save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
+        save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
 
     if not args.dry_run:
         save_json_file(reels_state_file, reels_state)
+        save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
+        save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
 
     print("\n[done] summary")
     print(f"[done] skipped (already uploaded on selected platforms): {skipped_all}")

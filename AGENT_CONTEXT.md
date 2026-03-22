@@ -130,6 +130,9 @@ Experimental or utility script related to mixing background music onto videos.
 
 - `.youtube_upload_state.json`
 - `.meta_reels_upload_state.json`
+- `.youtube_uploaded_videos.json`
+- `.instagram_uploaded_videos.json`
+- `.facebook_uploaded_videos.json`
 - `.metadata_history.json`
 - `.meta_setup_progress.json`
 
@@ -194,6 +197,10 @@ Files:
 - `facebook_uploaded_videos.json`
 - `upload_comparison.json`
 
+Important distinction:
+- root-level `.youtube_uploaded_videos.json` / `.instagram_uploaded_videos.json` / `.facebook_uploaded_videos.json` are local upload ledgers written during upload execution
+- `live_upload_audit/*.json` files are audit snapshots produced by the audit scripts
+
 ## Current Capabilities
 
 - upload local clips to YouTube Shorts
@@ -202,6 +209,7 @@ Files:
 - optionally add background music
 - cross-post uploaded clips to Instagram and Facebook
 - persist upload state locally
+- persist per-platform upload ledgers locally for both successful and failed attempts
 - fetch live upload inventories from all supported platforms
 - compare live uploads against the local clip inventory
 - rebuild comparison output without hitting APIs again

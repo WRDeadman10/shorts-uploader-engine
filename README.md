@@ -108,6 +108,16 @@ Structure:
 - `entries[state_key].instagram`
 - `entries[state_key].facebook`
 
+### Per-platform upload ledgers
+
+These files are updated during upload runs and keep both successful and failed upload attempts:
+
+- `.youtube_uploaded_videos.json`
+- `.instagram_uploaded_videos.json`
+- `.facebook_uploaded_videos.json`
+
+These are local execution ledgers, not live audit snapshots.
+
 ### `generated_metadata/`
 
 Stores metadata JSON files generated per uploaded clip.
