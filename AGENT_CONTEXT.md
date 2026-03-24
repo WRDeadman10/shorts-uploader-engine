@@ -10,9 +10,14 @@ This repository is a script-driven pipeline for uploading Valorant gameplay clip
 
 It also includes reporting and audit tooling for comparing the local clip library against live platform upload data.
 
+The repository now has two operator-facing UI layers:
+
+- the existing Tkinter launcher in `projectUiLauncher.py`
+- a newer Electron + React shell in `app/` named Content Command Center
+
 ## Architecture
 
-The architecture is file-based and script-centric.
+The core automation architecture is still file-based and script-centric.
 
 There is no application framework, package layout, or database. State is persisted in JSON files in the repository root.
 
@@ -26,6 +31,15 @@ Core flow:
 6. save local upload state
 7. fetch live platform uploads later for auditing
 8. compare live uploads to the offline library
+
+UI architecture:
+
+- Electron main process creates the desktop window
+- preload uses `contextBridge` to expose a safe renderer API
+- renderer is React-based and must not access Node APIs directly
+- IPC follows `ipcRenderer.invoke` and `ipcMain.handle`
+- Zustand owns shared renderer state
+- current IPC handlers return mock data and do not invoke the Python scripts yet
 
 ## Module Responsibilities
 
@@ -130,6 +144,21 @@ Responsibilities:
 - stream subprocess output live in the UI console
 - persist last-used values in `.project_ui_launcher_state.json`
 
+### `app/`
+
+Electron + React UI shell for the next-generation desktop app.
+
+Current responsibilities:
+- render the main SaaS-style desktop layout
+- provide state-based navigation between Dashboard, Library, Upload, Console, Audit, and Metadata
+- hold shared UI state in Zustand
+- consume mock IPC calls through `window.api`
+- simulate upload state, video lists, and log streaming
+
+Important detail:
+- the renderer is intentionally isolated from Node
+- all desktop-native access must flow through preload
+
 ## File Structure
 
 ### Root scripts
@@ -142,6 +171,17 @@ Responsibilities:
 - `youtubeFixRepeatedMetadata.py`
 - `musicOverlaySample.py`
 - `projectUiLauncher.py`
+
+### Electron / React app
+
+- `app/electron/main.js`
+- `app/electron/preload.js`
+- `app/electron/ipc/uploadHandlers.js`
+- `app/electron/ipc/systemHandlers.js`
+- `app/App.jsx`
+- `app/useAppStore.js`
+- `app/*.jsx` page and shared UI modules
+- `app/global.css`
 
 ### Root state files
 
@@ -232,6 +272,7 @@ Important distinction:
 - persist upload state locally
 - persist per-platform upload ledgers locally for both successful and failed attempts
 - run the upload and maintenance scripts through a desktop UI with saved last-used form values
+- render a modular Electron + React control center shell with mock backend wiring
 - fetch live upload inventories from all supported platforms
 - compare live uploads against the local clip inventory
 - rebuild comparison output without hitting APIs again
@@ -255,6 +296,7 @@ Important distinction:
 - there is no test suite
 - there is no `.editorconfig` in the repo
 - most operational state is local JSON and easy to dirty during manual runs
+- the Electron + React app is currently a UI shell with mocked IPC responses only
 
 ## Pending Improvements
 
@@ -268,6 +310,8 @@ Important distinction:
 - ignore generated audit/media artifacts more aggressively in git
 - add a small command wrapper or task runner for common workflows
 - decide which generated state files should be ignored in git by default
+- replace mock Electron IPC handlers with real process orchestration for the Python scripts
+- decide whether the Tkinter launcher and Electron app will coexist or the Electron app will replace it
 
 ## Recommended Mental Model For Future Agents
 

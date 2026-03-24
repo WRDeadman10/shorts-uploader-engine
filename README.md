@@ -8,6 +8,30 @@ This repository automates a Valorant short-form video pipeline:
 4. cross-post to Instagram and Facebook Reels
 5. audit live platform uploads against the local video library
 
+## Content Command Center
+
+The repository now also contains a modular Electron + React desktop shell under `app/` for a future production UI.
+
+Current UI stack:
+- Electron main process with preload bridge and IPC handlers
+- React renderer with state-based page routing
+- Zustand for shared UI state
+- Framer Motion for transitions and interaction feedback
+
+Current UI modules:
+- `app/electron/main.js`
+- `app/electron/preload.js`
+- `app/electron/ipc/`
+- `app/App.jsx`
+- `app/useAppStore.js`
+- page modules for Dashboard, Library, Upload, Console, Audit, and Metadata
+
+Current UI behavior:
+- renderer does not access Node directly
+- preload exposes a safe `window.api`
+- Electron communication uses `ipcRenderer.invoke` and `ipcMain.handle`
+- renderer pages currently use mock IPC responses for uploads, video inventory, upload status, and log streaming
+
 ## Desktop UI
 
 ### `projectUiLauncher.py`
@@ -251,3 +275,4 @@ In `upload_comparison.json`:
 - Generated files and media files are large and should usually not be committed unless explicitly needed.
 - `.project_ui_launcher_state.json` is local UI state and should usually not be committed.
 - The repo contains operational scripts, not a packaged Python module.
+- `app/` is an in-progress desktop UI shell and is not yet wired to the Python upload pipeline.
