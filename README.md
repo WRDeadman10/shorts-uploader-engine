@@ -8,6 +8,36 @@ This repository automates a Valorant short-form video pipeline:
 4. cross-post to Instagram and Facebook Reels
 5. audit live platform uploads against the local video library
 
+## Desktop UI
+
+### `projectUiLauncher.py`
+
+Tkinter launcher for the existing scripts.
+
+Responsibilities:
+- expose the available CLI arguments as form fields
+- validate common input combinations before launch
+- show the exact generated command before execution
+- stream script output live in the UI console
+- persist the last-used values for each tab in `.project_ui_launcher_state.json`
+
+Covered scripts:
+- `youtubeBatchUpload.py`
+- `metaBatchReelsUpload.py`
+- `youtubeFixRepeatedMetadata.py`
+- `musicOverlaySample.py`
+
+Typical usage:
+
+```powershell
+python projectUiLauncher.py
+```
+
+Behavior:
+- saved form values are restored on the next launch
+- scripts are launched unbuffered so the UI console updates progressively during long runs
+- the UI wraps the existing scripts and does not replace their CLI entry points
+
 ## Main Scripts
 
 ### `youtubeBatchUpload.py`
@@ -109,6 +139,14 @@ Typical usage:
 python generateUploadStatusReport.py --root "E:\New folder\Valorant Tracker\VALORANT"
 ```
 
+### `youtubeFixRepeatedMetadata.py`
+
+Maintenance script for fixing repeated YouTube titles and descriptions on already uploaded videos.
+
+### `musicOverlaySample.py`
+
+Utility script for building a music inventory and creating a sample output with background music mixed under the original video audio.
+
 ## Important Data Files
 
 ### `.youtube_upload_state.json`
@@ -149,6 +187,15 @@ Stores metadata JSON files generated per uploaded clip.
 
 Stores generated Shorts-ready video files and intermediate render outputs.
 
+Notes:
+- converted cache files are validated before reuse
+- invalid cached converted outputs are automatically rebuilt
+- conversion and music-mix outputs are written through temporary files first so partial MP4s are not reused as valid cache entries
+
+### `.project_ui_launcher_state.json`
+
+Stores the last-used values from the desktop UI launcher on a per-script basis.
+
 ### `live_upload_audit/`
 
 Stores audit outputs:
@@ -164,6 +211,12 @@ Install dependencies:
 
 ```powershell
 pip install -r requirements.txt
+```
+
+Launch the desktop UI:
+
+```powershell
+python projectUiLauncher.py
 ```
 
 Required credentials depend on the script:
@@ -196,4 +249,5 @@ In `upload_comparison.json`:
 
 - There is currently no `.editorconfig` in this repository.
 - Generated files and media files are large and should usually not be committed unless explicitly needed.
+- `.project_ui_launcher_state.json` is local UI state and should usually not be committed.
 - The repo contains operational scripts, not a packaged Python module.

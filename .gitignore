@@ -1,2 +1,6 @@
 client_secret.json
 token.json
+*.mp4
+__pycache__/
+*.pyc
+.project_ui_launcher_state.json

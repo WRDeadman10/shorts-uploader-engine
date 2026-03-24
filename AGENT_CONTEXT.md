@@ -118,6 +118,18 @@ Maintenance utility for metadata cleanup or correction in the YouTube upload flo
 
 Experimental or utility script related to mixing background music onto videos.
 
+### `projectUiLauncher.py`
+
+Desktop Tkinter launcher for the existing scripts.
+
+Responsibilities:
+- render a tabbed UI for the main operational scripts
+- expose CLI arguments as form inputs
+- validate common path and credential combinations before execution
+- launch the scripts as subprocesses without changing their internal logic
+- stream subprocess output live in the UI console
+- persist last-used values in `.project_ui_launcher_state.json`
+
 ## File Structure
 
 ### Root scripts
@@ -129,6 +141,7 @@ Experimental or utility script related to mixing background music onto videos.
 - `generateUploadStatusReport.py`
 - `youtubeFixRepeatedMetadata.py`
 - `musicOverlaySample.py`
+- `projectUiLauncher.py`
 
 ### Root state files
 
@@ -139,6 +152,7 @@ Experimental or utility script related to mixing background music onto videos.
 - `.facebook_uploaded_videos.json`
 - `.metadata_history.json`
 - `.meta_setup_progress.json`
+- `.project_ui_launcher_state.json`
 
 ### Credentials
 
@@ -178,6 +192,7 @@ Each entry usually contains:
 - `title`
 - `metadata_file`
 - `uploaded_file_path`
+- `background_music_file`
 - optional playlist fields
 
 ### Meta state
@@ -211,9 +226,12 @@ Important distinction:
 - generate AI titles, descriptions, tags, and hashtags
 - convert videos to Shorts format
 - optionally add background music
+- retry background music selection across multiple tracks and fall back to uploading without music
+- validate cached converted and music-mixed outputs before reuse
 - cross-post uploaded clips to Instagram and Facebook
 - persist upload state locally
 - persist per-platform upload ledgers locally for both successful and failed attempts
+- run the upload and maintenance scripts through a desktop UI with saved last-used form values
 - fetch live upload inventories from all supported platforms
 - compare live uploads against the local clip inventory
 - rebuild comparison output without hitting APIs again
@@ -225,6 +243,7 @@ Important distinction:
 - the local video library is outside or alongside the repo in many cases
 - this is a workflow tool, not a reusable library
 - generated JSON and media outputs can be large
+- the UI launcher state file is local operator state and not a system-of-record artifact
 
 ## Known Constraints
 
@@ -235,6 +254,7 @@ Important distinction:
 - credentials are file/env based
 - there is no test suite
 - there is no `.editorconfig` in the repo
+- most operational state is local JSON and easy to dirty during manual runs
 
 ## Pending Improvements
 
@@ -247,6 +267,7 @@ Important distinction:
 - add log files or structured logging
 - ignore generated audit/media artifacts more aggressively in git
 - add a small command wrapper or task runner for common workflows
+- decide which generated state files should be ignored in git by default
 
 ## Recommended Mental Model For Future Agents
 
