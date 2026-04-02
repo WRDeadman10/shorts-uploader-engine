@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-04-02T00:00:00Z",
+  "project_name": "shorts-uploader-engine",
+  "root_summary": {
+    "has_git": true,
+    "has_python_scripts": true,
+    "has_node_app": true,
+    "has_large_runtime_state": true
+  },
+  "top_level_entries": [
+    ".gitignore",
+    "README.md",
+    "AGENT_CONTEXT.md",
+    "youtubeBatchUpload.py",
+    "metaBatchReelsUpload.py",
+    "generateLiveUploadAudit.py",
+    "generateUploadStatusReport.py",
+    "rebuildUploadComparison.py",
+    "youtubeFixRepeatedMetadata.py",
+    "musicOverlaySample.py",
+    "projectUiLauncher.py",
+    "requirements.txt",
+    "package.json",
+    "vite.config.mjs",
+    "app/",
+    "generated_metadata/",
+    "converted_shorts/",
+    "live_upload_audit/"
+  ],
+  "subtrees": {
+    "app": [
+      "app/App.jsx",
+      "app/Dashboard.jsx",
+      "app/Library.jsx",
+      "app/Upload.jsx",
+      "app/Console.jsx",
+      "app/Audit.jsx",
+      "app/Metadata.jsx",
+      "app/useAppStore.js",
+      "app/global.css",
+      "app/electron/main.js",
+      "app/electron/preload.js",
+      "app/electron/ipc/uploadHandlers.js",
+      "app/electron/ipc/systemHandlers.js",
+      "app/electron/services/dataService.js",
+      "app/electron/services/pathService.js",
+      "app/electron/services/pythonService.js",
+      "app/electron/services/uploadService.js"
+    ],
+    "operational_state": [
+      ".youtube_upload_state.json",
+      ".meta_reels_upload_state.json",
+      ".youtube_uploaded_videos.json",
+      ".instagram_uploaded_videos.json",
+      ".facebook_uploaded_videos.json",
+      ".metadata_history.json",
+      ".project_ui_launcher_state.json"
+    ],
+    "generated_outputs": [
+      "generated_metadata/",
+      "converted_shorts/",
+      "live_upload_audit/"
+    ]
+  },
+  "detected_capabilities": [
+    "YouTube Shorts uploads",
+    "Instagram Reels uploads",
+    "Facebook Reels uploads",
+    "AI metadata generation",
+    "Shorts conversion",
+    "Music overlay workflow",
+    "Live upload auditing",
+    "Offline comparison rebuild",
+    "Tkinter desktop launcher",
+    "Electron + React desktop control center"
+  ],
+  "notes": [
+    "This snapshot intentionally focuses on source, state, and generated artifact structure rather than listing every file under node_modules or runtime directories.",
+    "Future work should treat root JSON files as operational state, not static fixtures."
+  ]
+}

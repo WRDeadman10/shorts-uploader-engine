@@ -1,0 +1,163 @@
+{
+  "generated_at": "2026-04-02T00:00:00Z",
+  "generated_by": "Codex",
+  "project_name": "shorts-uploader-engine",
+  "project_type": "script-driven media upload automation with Electron desktop UI",
+  "primary_languages": [
+    "Python",
+    "JavaScript",
+    "JSX"
+  ],
+  "summary": "A repository for discovering local Valorant clips, generating metadata and derived assets, uploading to YouTube Shorts and Meta Reels, and auditing live platform uploads against local inventory. It uses root-level Python scripts plus two desktop UI layers: a Tkinter launcher and an Electron + React app.",
+  "core_identity": {
+    "stable_file_key": "relative_path|file_size|modified_time",
+    "notes": [
+      "This key links local source clips to YouTube state, Meta state, upload ledgers, and audit matching.",
+      "Most operational bugs should be investigated through the stable key first."
+    ]
+  },
+  "architecture": {
+    "patterns": [
+      "script-first orchestration",
+      "file-based JSON state",
+      "two desktop operator UIs over shared scripts and ledgers",
+      "platform upload pipeline plus live audit pipeline"
+    ],
+    "operator_interfaces": [
+      {
+        "name": "Tkinter launcher",
+        "entry": "projectUiLauncher.py",
+        "status": "active"
+      },
+      {
+        "name": "Content Command Center",
+        "entry": "app/electron/main.js",
+        "status": "active"
+      }
+    ]
+  },
+  "file_registry": [
+    {
+      "path": "youtubeBatchUpload.py",
+      "role": "Primary orchestration script for upload workflows, Shorts conversion, metadata generation, YouTube publishing, and optional Meta cross-posting."
+    },
+    {
+      "path": "metaBatchReelsUpload.py",
+      "role": "Instagram and Facebook reels publisher built on Meta Graph API using YouTube-uploaded items as source inventory."
+    },
+    {
+      "path": "generateLiveUploadAudit.py",
+      "role": "Fetches live platform uploads and compares them against local video inventory, producing audit snapshots and comparison output."
+    },
+    {
+      "path": "rebuildUploadComparison.py",
+      "role": "Recomputes upload_comparison.json from saved audit snapshots without making network calls."
+    },
+    {
+      "path": "generateUploadStatusReport.py",
+      "role": "Builds a local aggregate report of total clips and per-platform upload coverage."
+    },
+    {
+      "path": "youtubeFixRepeatedMetadata.py",
+      "role": "Maintenance utility for correcting repeated or problematic YouTube metadata."
+    },
+    {
+      "path": "musicOverlaySample.py",
+      "role": "Utility/experimental script for music inventory and background audio overlay workflows."
+    },
+    {
+      "path": "projectUiLauncher.py",
+      "role": "Tkinter desktop launcher that wraps script CLIs, validates inputs, previews commands, and streams output."
+    },
+    {
+      "path": "app/electron/main.js",
+      "role": "Electron main process bootstrap for the Content Command Center desktop app."
+    },
+    {
+      "path": "app/electron/preload.js",
+      "role": "Renderer bridge exposing safe APIs from Electron to the React frontend."
+    },
+    {
+      "path": "app/electron/services/uploadService.js",
+      "role": "Runs Python upload scripts as child processes, tracks status, and streams logs back to the renderer."
+    },
+    {
+      "path": "app/electron/services/dataService.js",
+      "role": "Reads root JSON state and ledgers to build video rows and status summaries for the Electron UI."
+    },
+    {
+      "path": "app/electron/services/pathService.js",
+      "role": "Resolves repo paths, renderer build path, and the active video root."
+    },
+    {
+      "path": "app/useAppStore.js",
+      "role": "Central Zustand store for page state, logs, upload status, metadata editing, and video filtering."
+    },
+    {
+      "path": "README.md",
+      "role": "Human-facing operational overview and setup guide."
+    },
+    {
+      "path": "AGENT_CONTEXT.md",
+      "role": "Agent-facing architecture and workflow summary."
+    }
+  ],
+  "state_files": [
+    {
+      "path": ".youtube_upload_state.json",
+      "role": "Primary local YouTube upload state keyed by stable clip key."
+    },
+    {
+      "path": ".meta_reels_upload_state.json",
+      "role": "Primary local Instagram/Facebook upload state keyed by stable clip key."
+    },
+    {
+      "path": ".youtube_uploaded_videos.json",
+      "role": "Execution ledger for YouTube upload attempts."
+    },
+    {
+      "path": ".instagram_uploaded_videos.json",
+      "role": "Execution ledger for Instagram upload attempts."
+    },
+    {
+      "path": ".facebook_uploaded_videos.json",
+      "role": "Execution ledger for Facebook upload attempts."
+    },
+    {
+      "path": ".metadata_history.json",
+      "role": "Accumulated metadata-generation history."
+    },
+    {
+      "path": ".project_ui_launcher_state.json",
+      "role": "Local Tkinter UI form persistence."
+    }
+  ],
+  "generated_directories": [
+    {
+      "path": "generated_metadata",
+      "role": "Per-video generated metadata artifacts."
+    },
+    {
+      "path": "converted_shorts",
+      "role": "Converted or remixed video outputs for upload pipelines."
+    },
+    {
+      "path": "live_upload_audit",
+      "role": "Offline inventory, live platform snapshots, and upload comparison outputs."
+    }
+  ],
+  "constraints": [
+    "No test suite was found.",
+    "Operational state is stored as mutable root JSON files.",
+    "Large generated media and audit artifacts can dirty the repository quickly.",
+    "The upload flow depends on local credentials and API access.",
+    "youtubeBatchUpload.py imports from a sibling valorant_clip_data_extractor_v3 project."
+  ],
+  "follow_up_read_order": [
+    "AI_UNDERSTANDING.md",
+    "bridge_progress/project_knowledge.json",
+    "bridge_progress/project_snapshot.json",
+    "README.md",
+    "AGENT_CONTEXT.md"
+  ]
+}

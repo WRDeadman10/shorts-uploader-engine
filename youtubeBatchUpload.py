@@ -53,8 +53,8 @@ try:
 except ImportError:  # pragma: no cover - handled at runtime.
     OpenAI = None  # type: ignore[assignment]
 
-#sys.path.append(os.path.abspath("../valorant-clip-data-extractor-v3"))
-#from valorant_clip_data_extractor_v3.KillJson import process_video  # your modified function
+sys.path.append(os.path.abspath("../valorant-clip-data-extractor-v3"))
+from valorant_clip_data_extractor_v3.KillJson import process_video  # your modified function
 
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
