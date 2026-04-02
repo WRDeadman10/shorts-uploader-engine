@@ -12,6 +12,16 @@ function registerSystemHandlers(ipcMain)
     {
         return uploadService.streamLog();
     });
+
+    ipcMain.handle("load-workflow-settings", async function handleLoadWorkflowSettings()
+    {
+        return dataService.loadWorkflowSettings();
+    });
+
+    ipcMain.handle("save-workflow-settings", async function handleSaveWorkflowSettings(settings)
+    {
+        return dataService.saveWorkflowSettings(settings);
+    });
 }
 
 module.exports = {
