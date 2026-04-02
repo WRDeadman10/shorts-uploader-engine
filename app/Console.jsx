@@ -1,20 +1,15 @@
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAppStore } from "./useAppStore.js";
 
 function Console()
 {
-    const logs = useAppStore(function selectLogs(state)
+    const logEntries = useAppStore(function selectLogs(state)
     {
-        return state.logLines;
+        return state.logEntries;
     });
-    const isRunning = useAppStore(function selectIsRunning(state)
+    const uploadStatus = useAppStore(function selectUploadStatus(state)
     {
-        return state.isConsoleRunning;
-    });
-    const appendLog = useAppStore(function selectAppendLog(state)
-    {
-        return state.appendLog;
+        return state.uploadStatus;
     });
     const clearLogs = useAppStore(function selectClearLogs(state)
     {
@@ -28,21 +23,7 @@ function Console()
     {
         return state.stopConsole;
     });
-
-    useEffect(function subscribeToLogs()
-    {
-        if (window.api && window.api.onLog)
-        {
-            const unsubscribe = window.api.onLog(function handleIncomingLog(payload)
-            {
-                appendLog(formatLogLine(payload));
-            });
-
-            return unsubscribe;
-        }
-
-        return undefined;
-    }, [appendLog]);
+    const isRunning = uploadStatus.status === "running";
 
     return (
         <section className="console-page page-panel">
@@ -50,7 +31,7 @@ function Console()
                 <div className="page-heading">
                     <span className="page-eyebrow">Live Console</span>
                     <h1 className="page-title">Execution Logs</h1>
-                    <p className="page-placeholder">{isRunning ? "Log stream is active." : "Log stream is idle."}</p>
+                    <p className="page-placeholder">{isRunning ? "Python process is running." : "No active Python process."}</p>
                 </div>
                 <div className="console-actions">
                     <motion.button
@@ -83,11 +64,14 @@ function Console()
                 </div>
             </div>
             <div className="console-viewer" role="log" aria-live="polite">
-                {logs.map(function mapLog(line, index)
+                {logEntries.map(function mapLog(entry)
                 {
+                    const lineClassName = "console-line console-line-" + entry.stream;
+
                     return (
-                        <div key={String(index) + "-" + line} className="console-line">
-                            {line}
+                        <div key={entry.id} className={lineClassName}>
+                            <span className="console-line-meta">[{formatTime(entry.timestamp)}] [{entry.stream}]</span>{" "}
+                            <span>{entry.message}</span>
                         </div>
                     );
                 })}
@@ -96,24 +80,14 @@ function Console()
     );
 }
 
-function formatLogLine(payload)
+function formatTime(timestamp)
 {
-    if (!payload)
+    if (!timestamp)
     {
-        return "[event] empty log payload";
+        return "--:--:--";
     }
 
-    if (typeof payload === "string")
-    {
-        return payload;
-    }
-
-    if (payload.level && payload.message)
-    {
-        return "[" + payload.level + "] " + payload.message;
-    }
-
-    return "[event] log received";
+    return new Date(timestamp).toLocaleTimeString();
 }
 
 export default Console;

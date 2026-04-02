@@ -1,38 +1,22 @@
-function registerUploadHandlers(ipcMain)
+const uploadService = require("../services/uploadService");
+
+function registerUploadHandlers(ipcMain, getMainWindow)
 {
+    uploadService.attachWindowGetter(getMainWindow);
+
     ipcMain.handle("run-upload", async function handleRunUpload(_event, payload)
     {
-        return {
-            success: true,
-            status: "queued",
-            progress: 12,
-            platform: payload && payload.platforms ? Object.keys(payload.platforms).filter(function filterEnabledPlatform(key)
-            {
-                return payload.platforms[key];
-            }).join(",") : "youtube",
-            uploadId: "mock-upload-001",
-            receivedPayload: payload || null
-        };
+        return uploadService.runUpload(payload);
     });
 
     ipcMain.handle("stop-upload", async function handleStopUpload()
     {
-        return {
-            success: true,
-            status: "stopped",
-            progress: 0,
-            uploadId: "mock-upload-001"
-        };
+        return uploadService.stopUpload();
     });
 
     ipcMain.handle("get-upload-status", async function handleGetUploadStatus()
     {
-        return {
-            uploadId: "mock-upload-001",
-            status: "idle",
-            progress: 0,
-            platform: "youtube"
-        };
+        return uploadService.getUploadStatus();
     });
 }
 

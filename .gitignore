@@ -4,3 +4,16 @@ token.json
 __pycache__/
 *.pyc
 .project_ui_launcher_state.json
+node_modules/
+dist/
+generated_metadata/
+__pycache__/*
+__pycache__/metaBatchReelsUpload.cpython-313.pyc
+__pycache__/youtubeBatchUpload.cpython-313.pyc
+.facebook_uploaded_videos.json
+.instagram_uploaded_videos.json
+.metadata_history.json
+.youtube_upload_state.json
+.youtube_uploaded_videos.json
+live_upload_audit/
+.metadata_history.json

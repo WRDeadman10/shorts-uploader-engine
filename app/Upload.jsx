@@ -12,7 +12,7 @@ const platformOptions = [
 const uploadOptions = [
     { id: "includeShorts", label: "Shorts Format" },
     { id: "includeMusic", label: "Music Overlay" },
-    { id: "includeMetadata", label: "Metadata Pack" }
+    { id: "includeMetadata", label: "AI Metadata" }
 ];
 
 function Upload()
@@ -53,44 +53,47 @@ function Upload()
 
     const cliPreview = useMemo(function buildCliPreview()
     {
-        const selectedPlatforms = Object.keys(platforms).filter(function filterPlatform(key)
+        if (!platforms.youtube && !platforms.instagram && !platforms.facebook)
         {
-            return platforms[key];
-        });
-        const args = [];
-
-        if (selectedPlatforms.length > 0)
-        {
-            args.push("--platforms=" + selectedPlatforms.join(","));
+            return "Select at least one platform to build a runnable command.";
         }
 
-        if (options.includeShorts)
+        if (!platforms.youtube)
         {
-            args.push("--shorts");
+            const metaPlatform = platforms.instagram && platforms.facebook ? "both" : platforms.instagram ? "instagram" : "facebook";
+
+            return "python metaBatchReelsUpload.py --platform " + metaPlatform + " --max-videos 1";
         }
 
-        if (options.includeMusic)
+        const args = [
+            "python youtubeBatchUpload.py",
+            "--upload-platform youtube",
+            "--max-videos 1",
+            "--allow-fallback"
+        ];
+
+        args.push(options.includeShorts ? "--shorts-policy convert" : "--shorts-policy off");
+
+        if (!options.includeMetadata)
         {
-            args.push("--music");
+            args.push("--no-ai");
         }
 
-        if (options.includeMetadata)
+        if (!options.includeMusic)
         {
-            args.push("--metadata");
+            args.push("--music-dir=");
         }
 
-        return "uploader-cli run " + args.join(" ");
+        if (platforms.instagram || platforms.facebook)
+        {
+            const metaPlatform = platforms.instagram && platforms.facebook ? "both" : platforms.instagram ? "instagram" : "facebook";
+
+            args.push("--crosspost-meta");
+            args.push("--meta-platform " + metaPlatform);
+        }
+
+        return args.join(" ");
     }, [options, platforms]);
-
-    function handlePlatformToggle(platformId, nextValue)
-    {
-        setUploadPlatform(platformId, nextValue);
-    }
-
-    function handleOptionToggle(optionId, nextValue)
-    {
-        setUploadOption(optionId, nextValue);
-    }
 
     async function handleRunPreview()
     {
@@ -112,7 +115,7 @@ function Upload()
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.97 }}
                 >
-                    Run Mock Upload
+                    Run Upload
                 </motion.button>
             </div>
 
@@ -129,7 +132,7 @@ function Upload()
                                     checked={platforms[platform.id]}
                                     onChange={function handleToggle(nextValue)
                                     {
-                                        handlePlatformToggle(platform.id, nextValue);
+                                        setUploadPlatform(platform.id, nextValue);
                                     }}
                                 />
                             );
@@ -149,7 +152,7 @@ function Upload()
                                     checked={options[option.id]}
                                     onChange={function handleToggle(nextValue)
                                     {
-                                        handleOptionToggle(option.id, nextValue);
+                                        setUploadOption(option.id, nextValue);
                                     }}
                                 />
                             );
@@ -160,7 +163,7 @@ function Upload()
 
             <div className="upload-panel">
                 <h2 className="upload-panel-title">CLI Preview</h2>
-                <pre className="upload-cli-preview">{cliPreview}</pre>
+                <pre className="upload-cli-preview">{uploadStatus.commandPreview || cliPreview}</pre>
             </div>
         </section>
     );

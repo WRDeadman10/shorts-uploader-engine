@@ -9,123 +9,56 @@ export const pageOrder = [
     { id: "metadata", label: "Metadata" }
 ];
 
-const defaultVideoList = [
-    {
-        id: "video-001",
-        title: "Jett Entry Sequence",
-        duration: "00:27",
-        thumbnail: "Gradient Preview",
-        statusText: "Ready for scheduling",
-        statuses: ["YT", "IG"]
-    },
-    {
-        id: "video-002",
-        title: "Clutch Defuse Breakdown",
-        duration: "00:31",
-        thumbnail: "Velocity Frame",
-        statusText: "Awaiting Instagram export",
-        statuses: ["YT", "FB"]
-    },
-    {
-        id: "video-003",
-        title: "Operator Flick Showcase",
-        duration: "00:24",
-        thumbnail: "Arena Snapshot",
-        statusText: "Distribution pack prepared",
-        statuses: ["IG", "FB"]
-    },
-    {
-        id: "video-004",
-        title: "Team Ace Highlights",
-        duration: "00:38",
-        thumbnail: "Studio Render",
-        statusText: "Publishing across all channels",
-        statuses: ["YT", "IG", "FB"]
-    }
-];
+function createInitialUploadStatus()
+{
+    return {
+        success: true,
+        uploadId: "",
+        status: "idle",
+        platform: "",
+        progress: 0,
+        pid: 0,
+        errorMessage: "",
+        commandPreview: "",
+        startedAt: "",
+        completedAt: ""
+    };
+}
 
-const defaultAuditRows = [
+function buildMetadataFromVideo(video)
+{
+    if (!video)
     {
-        id: "row-001",
-        video: "Jett Entry Sequence",
-        yt: true,
-        ig: true,
-        fb: false,
-        status: "partial"
-    },
-    {
-        id: "row-002",
-        video: "Clutch Defuse Breakdown",
-        yt: true,
-        ig: false,
-        fb: false,
-        status: "missing"
-    },
-    {
-        id: "row-003",
-        video: "Operator Flick Showcase",
-        yt: true,
-        ig: true,
-        fb: true,
-        status: "complete"
-    },
-    {
-        id: "row-004",
-        video: "Team Ace Highlights",
-        yt: false,
-        ig: true,
-        fb: true,
-        status: "partial"
+        return {
+            title: "",
+            description: "",
+            musicTrack: "No Track"
+        };
     }
-];
 
-const defaultLogLines = [
-    "[system] renderer console attached",
-    "[upload] waiting for command",
-    "[audit] no blocking issues detected"
-];
+    return {
+        title: video.title || "",
+        description: video.description || "",
+        musicTrack: video.musicTrack || "No Track"
+    };
+}
 
 export const useAppStore = create(function createAppStore(set, get)
 {
     return {
         activePage: "dashboard",
         videoFilter: "ALL",
-        uploadStatus: {
-            uploadId: "mock-upload-001",
-            status: "idle",
-            progress: 0,
-            platform: "youtube"
-        },
-        logLines: defaultLogLines,
-        isConsoleRunning: false,
-        consoleTimerId: null,
-        dashboardStats: [
-            { id: "queued", label: "Queued Uploads", value: "18", detail: "+4 since this morning" },
-            { id: "processed", label: "Processed Today", value: "42", detail: "6 platforms synced" },
-            { id: "success-rate", label: "Success Rate", value: "97.8%", detail: "Last 7 days" },
-            { id: "avg-time", label: "Avg. Publish Time", value: "12m", detail: "Across all channels" }
-        ],
-        uploadPipelines: [
-            { id: "youtube", label: "YouTube Shorts Pipeline", progress: 78, detail: "14 of 18 scheduled uploads prepared" },
-            { id: "instagram", label: "Instagram Reels Pipeline", progress: 61, detail: "11 of 18 assets validated" },
-            { id: "facebook", label: "Facebook Reels Pipeline", progress: 89, detail: "16 of 18 publish packages finalized" }
-        ],
-        videoList: defaultVideoList,
-        auditRows: defaultAuditRows,
-        uploadPlatforms: {
-            youtube: true,
-            instagram: false,
-            facebook: false
-        },
-        uploadOptions: {
-            includeShorts: true,
-            includeMusic: true,
-            includeMetadata: true
-        },
+        selectedVideoId: "",
+        videoList: [],
+        loadingVideos: false,
+        uploadStatus: createInitialUploadStatus(),
+        logEntries: [],
+        errorMessage: "",
+        metadataDirty: false,
         metadata: {
-            title: "Jett Entry Sequence",
-            description: "Fast-paced Valorant short with aggressive site entry highlights.",
-            musicTrack: "Cinematic Pulse"
+            title: "",
+            description: "",
+            musicTrack: "No Track"
         },
         musicOptions: [
             "No Track",
@@ -146,6 +79,12 @@ export const useAppStore = create(function createAppStore(set, get)
                 videoFilter: filter
             });
         },
+        setErrorMessage: function setErrorMessage(message)
+        {
+            set({
+                errorMessage: message || ""
+            });
+        },
         getFilteredVideos: function getFilteredVideos()
         {
             const state = get();
@@ -157,8 +96,167 @@ export const useAppStore = create(function createAppStore(set, get)
 
             return state.videoList.filter(function filterVideo(video)
             {
-                return video.statuses.includes(state.videoFilter);
+                if (state.videoFilter === "YT")
+                {
+                    return video.yt;
+                }
+
+                if (state.videoFilter === "IG")
+                {
+                    return video.ig;
+                }
+
+                if (state.videoFilter === "FB")
+                {
+                    return video.fb;
+                }
+
+                return true;
             });
+        },
+        getAuditRows: function getAuditRows()
+        {
+            return get().videoList.map(function mapAuditRow(video)
+            {
+                return {
+                    id: video.id,
+                    video: video.title,
+                    yt: video.yt,
+                    ig: video.ig,
+                    fb: video.fb,
+                    status: video.status
+                };
+            });
+        },
+        selectVideo: function selectVideo(videoId)
+        {
+            const targetVideo = get().videoList.find(function findVideo(video)
+            {
+                return video.id === videoId;
+            });
+
+            set({
+                selectedVideoId: videoId,
+                metadata: buildMetadataFromVideo(targetVideo),
+                metadataDirty: false
+            });
+        },
+        setMetadataField: function setMetadataField(field, value)
+        {
+            set(function updateMetadataField(state)
+            {
+                return {
+                    metadata: {
+                        ...state.metadata,
+                        [field]: value
+                    },
+                    metadataDirty: true
+                };
+            });
+        },
+        appendLogEntry: function appendLogEntry(entry)
+        {
+            if (!entry || typeof entry !== "object")
+            {
+                return;
+            }
+
+            set(function appendLogLine(state)
+            {
+                const entryId = entry && entry.id ? entry.id : "";
+
+                if (entryId && state.logEntries.some(function hasEntry(logEntry)
+                {
+                    return logEntry.id === entryId;
+                }))
+                {
+                    return {};
+                }
+
+                return {
+                    logEntries: state.logEntries.concat(entry)
+                };
+            });
+        },
+        clearLogs: function clearLogs()
+        {
+            set({
+                logEntries: []
+            });
+        },
+        syncUploadStatus: async function syncUploadStatus()
+        {
+            if (!window.api || !window.api.getUploadStatus)
+            {
+                return;
+            }
+
+            const response = await window.api.getUploadStatus();
+
+            if (response)
+            {
+                set({
+                    uploadStatus: response,
+                    errorMessage: response.errorMessage || ""
+                });
+            }
+        },
+        fetchVideoList: async function fetchVideoList()
+        {
+            if (!window.api || !window.api.getVideoList)
+            {
+                return;
+            }
+
+            set({
+                loadingVideos: true
+            });
+
+            const response = await window.api.getVideoList();
+            const videos = Array.isArray(response) ? response : [];
+            const currentSelectedVideoId = get().selectedVideoId;
+            const matchingVideo = videos.find(function findSelectedVideo(video)
+            {
+                return video.id === currentSelectedVideoId;
+            });
+            const nextSelectedVideo = matchingVideo || videos[0] || null;
+
+            set(function updateVideoList(state)
+            {
+                return {
+                    videoList: videos,
+                    selectedVideoId: nextSelectedVideo ? nextSelectedVideo.id : "",
+                    metadata: state.metadataDirty ? state.metadata : buildMetadataFromVideo(nextSelectedVideo),
+                    loadingVideos: false
+                };
+            });
+        },
+        streamLogs: async function streamLogs()
+        {
+            if (!window.api || !window.api.streamLog)
+            {
+                return null;
+            }
+
+            return window.api.streamLog();
+        },
+        initializeApp: async function initializeApp()
+        {
+            await Promise.all([
+                get().syncUploadStatus(),
+                get().fetchVideoList(),
+                get().streamLogs()
+            ]);
+        },
+        uploadPlatforms: {
+            youtube: true,
+            instagram: false,
+            facebook: false
+        },
+        uploadOptions: {
+            includeShorts: true,
+            includeMusic: true,
+            includeMetadata: true
         },
         setUploadPlatform: function setUploadPlatform(platformId, value)
         {
@@ -184,83 +282,7 @@ export const useAppStore = create(function createAppStore(set, get)
                 };
             });
         },
-        setMetadataField: function setMetadataField(field, value)
-        {
-            set(function updateMetadataField(state)
-            {
-                return {
-                    metadata: {
-                        ...state.metadata,
-                        [field]: value
-                    }
-                };
-            });
-        },
-        appendLog: function appendLog(line)
-        {
-            set(function appendLogLine(state)
-            {
-                return {
-                    logLines: state.logLines.concat(line)
-                };
-            });
-        },
-        clearLogs: function clearLogs()
-        {
-            set({
-                logLines: []
-            });
-        },
-        syncUploadStatus: async function syncUploadStatus()
-        {
-            if (!window.api || !window.api.getUploadStatus)
-            {
-                return;
-            }
-
-            const response = await window.api.getUploadStatus();
-
-            if (response)
-            {
-                set({
-                    uploadStatus: response
-                });
-            }
-        },
-        fetchVideoList: async function fetchVideoList()
-        {
-            if (!window.api || !window.api.getVideoList)
-            {
-                return;
-            }
-
-            const response = await window.api.getVideoList();
-
-            if (Array.isArray(response) && response.length > 0)
-            {
-                set({
-                    videoList: response.map(function mapVideo(video, index)
-                    {
-                        const fallbackStatuses = [
-                            ["YT", "IG"],
-                            ["YT", "FB"],
-                            ["IG", "FB"],
-                            ["YT", "IG", "FB"]
-                        ];
-
-                        return {
-                            id: video.id,
-                            title: video.title,
-                            duration: video.duration,
-                            thumbnail: video.thumbnail || "Preview Frame",
-                            statusText: video.status || "ready",
-                            statuses: video.statuses || fallbackStatuses[index % fallbackStatuses.length]
-                        };
-                    })
-                });
-            }
-        },
-        runUpload: async function runUpload()
+        startConsole: async function startConsole()
         {
             const state = get();
 
@@ -278,14 +300,16 @@ export const useAppStore = create(function createAppStore(set, get)
             if (response)
             {
                 set({
-                    uploadStatus: {
-                        ...state.uploadStatus,
-                        ...response
-                    }
+                    uploadStatus: response,
+                    errorMessage: response.errorMessage || ""
                 });
             }
 
             return response;
+        },
+        runUpload: async function runUpload()
+        {
+            return get().startConsole();
         },
         stopUpload: async function stopUpload()
         {
@@ -298,65 +322,17 @@ export const useAppStore = create(function createAppStore(set, get)
 
             if (response)
             {
-                set(function updateStoppedStatus(state)
-                {
-                    return {
-                        uploadStatus: {
-                            ...state.uploadStatus,
-                            ...response
-                        }
-                    };
+                set({
+                    uploadStatus: response,
+                    errorMessage: response.errorMessage || ""
                 });
             }
 
             return response;
         },
-        streamLogs: async function streamLogs()
-        {
-            if (!window.api || !window.api.streamLog)
-            {
-                return null;
-            }
-
-            return window.api.streamLog();
-        },
-        startConsole: async function startConsole()
-        {
-            const state = get();
-
-            if (state.consoleTimerId)
-            {
-                clearInterval(state.consoleTimerId);
-            }
-
-            await state.runUpload();
-            await state.streamLogs();
-
-            const timerId = window.setInterval(function emitMockLog()
-            {
-                get().appendLog("[mock] processing batch item " + String(get().logLines.length + 1));
-            }, 1200);
-
-            set({
-                isConsoleRunning: true,
-                consoleTimerId: timerId
-            });
-        },
         stopConsole: async function stopConsole()
         {
-            const state = get();
-
-            if (state.consoleTimerId)
-            {
-                clearInterval(state.consoleTimerId);
-            }
-
-            await state.stopUpload();
-
-            set({
-                isConsoleRunning: false,
-                consoleTimerId: null
-            });
+            return get().stopUpload();
         }
     };
 });

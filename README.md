@@ -10,7 +10,7 @@ This repository automates a Valorant short-form video pipeline:
 
 ## Content Command Center
 
-The repository now also contains a modular Electron + React desktop shell under `app/` for a future production UI.
+The repository now also contains a modular Electron + React desktop app under `app/` named Content Command Center.
 
 Current UI stack:
 - Electron main process with preload bridge and IPC handlers
@@ -30,7 +30,9 @@ Current UI behavior:
 - renderer does not access Node directly
 - preload exposes a safe `window.api`
 - Electron communication uses `ipcRenderer.invoke` and `ipcMain.handle`
-- renderer pages currently use mock IPC responses for uploads, video inventory, upload status, and log streaming
+- Electron main can launch the existing Python scripts and stream stdout/stderr to the UI
+- Library and Audit screens read the existing JSON state and ledger files
+- the Tkinter launcher still exists and remains supported
 
 ## Desktop UI
 
@@ -237,6 +239,25 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
+Install the Electron app dependencies:
+
+```powershell
+npm install
+```
+
+Run the Electron app in development mode:
+
+```powershell
+npm run dev
+```
+
+Build the renderer for production and launch Electron:
+
+```powershell
+npm run build
+npm start
+```
+
 Launch the desktop UI:
 
 ```powershell
@@ -275,4 +296,5 @@ In `upload_comparison.json`:
 - Generated files and media files are large and should usually not be committed unless explicitly needed.
 - `.project_ui_launcher_state.json` is local UI state and should usually not be committed.
 - The repo contains operational scripts, not a packaged Python module.
-- `app/` is an in-progress desktop UI shell and is not yet wired to the Python upload pipeline.
+- `app/` is a desktop UI over the same Python scripts and JSON state files used by the existing Tkinter launcher.
+- The Electron app expects Node.js/npm to be installed locally.

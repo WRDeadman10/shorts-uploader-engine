@@ -13,7 +13,7 @@ It also includes reporting and audit tooling for comparing the local clip librar
 The repository now has two operator-facing UI layers:
 
 - the existing Tkinter launcher in `projectUiLauncher.py`
-- a newer Electron + React shell in `app/` named Content Command Center
+- a newer Electron + React desktop app in `app/` named Content Command Center
 
 ## Architecture
 
@@ -152,12 +152,15 @@ Current responsibilities:
 - render the main SaaS-style desktop layout
 - provide state-based navigation between Dashboard, Library, Upload, Console, Audit, and Metadata
 - hold shared UI state in Zustand
-- consume mock IPC calls through `window.api`
-- simulate upload state, video lists, and log streaming
+- consume Electron IPC through `window.api`
+- launch Python scripts from Electron main
+- stream live process logs into the renderer
+- read existing JSON state and upload ledger files for library and audit views
 
 Important detail:
 - the renderer is intentionally isolated from Node
 - all desktop-native access must flow through preload
+- the Electron app and the Tkinter launcher coexist; neither replaces the other yet
 
 ## File Structure
 
@@ -273,6 +276,7 @@ Important distinction:
 - persist per-platform upload ledgers locally for both successful and failed attempts
 - run the upload and maintenance scripts through a desktop UI with saved last-used form values
 - render a modular Electron + React control center shell with mock backend wiring
+- run a modular Electron + React control center against the existing Python scripts and JSON files
 - fetch live upload inventories from all supported platforms
 - compare live uploads against the local clip inventory
 - rebuild comparison output without hitting APIs again
@@ -296,7 +300,7 @@ Important distinction:
 - there is no test suite
 - there is no `.editorconfig` in the repo
 - most operational state is local JSON and easy to dirty during manual runs
-- the Electron + React app is currently a UI shell with mocked IPC responses only
+- the Electron + React app depends on a local Node.js/npm installation
 
 ## Pending Improvements
 

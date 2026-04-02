@@ -4,7 +4,7 @@ function Audit()
 {
     const auditRows = useAppStore(function selectAuditRows(state)
     {
-        return state.auditRows;
+        return state.getAuditRows();
     });
 
     return (
@@ -12,7 +12,7 @@ function Audit()
             <div className="page-heading">
                 <span className="page-eyebrow">Delivery Audit</span>
                 <h1 className="page-title">Platform Coverage</h1>
-                <p className="page-placeholder">Missing and partial deliveries are flagged automatically.</p>
+                <p className="page-placeholder">Rows are derived from the current JSON state and upload ledgers.</p>
             </div>
             <div className="audit-table-shell">
                 <table className="audit-table">

@@ -194,13 +194,24 @@ button
 .page-shell
 {
     display: flex;
+    flex-direction: column;
     flex: 1;
     padding: 28px;
+    gap: 16px;
 }
 
 .page-motion-shell
 {
     width: 100%;
+}
+
+.app-notice
+{
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 107, 122, 0.26);
+    border-radius: 16px;
+    background: rgba(255, 107, 122, 0.12);
+    color: #ffd5db;
 }
 
 .page-panel
@@ -399,6 +410,12 @@ button
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
 }
 
+.library-card-selected
+{
+    border-color: rgba(0, 255, 198, 0.36);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22), inset 0 0 0 1px rgba(0, 255, 198, 0.24);
+}
+
 .library-card-media
 {
     display: flex;
@@ -433,6 +450,15 @@ button
 {
     margin: 0;
     color: var(--muted);
+}
+
+.library-card-path,
+.metadata-preview-path
+{
+    margin: 0;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.84rem;
+    word-break: break-word;
 }
 
 .library-card-statuses
@@ -611,6 +637,21 @@ button
 {
     color: #b9c3d6;
     white-space: pre-wrap;
+}
+
+.console-line-meta
+{
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.console-line-stderr
+{
+    color: #ffb1bc;
+}
+
+.console-line-system
+{
+    color: #8ce7ff;
 }
 
 .audit-table-shell

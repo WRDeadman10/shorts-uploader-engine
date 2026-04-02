@@ -308,8 +308,8 @@ class ScriptTab:
             return [], errors
 
         command: List[str] = [
-            sys.executable,
-            "-u",
+            "py",
+            #"-u",
             str((ROOT_DIR / self.script_spec.script_name).resolve()),
         ]
 

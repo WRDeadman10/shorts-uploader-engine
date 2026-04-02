@@ -7,6 +7,7 @@ function Topbar(props)
     {
         return state.uploadStatus;
     });
+    const statusLabel = uploadStatus.platform ? uploadStatus.status + " - " + uploadStatus.platform : uploadStatus.status;
 
     return (
         <header className="topbar">
@@ -16,7 +17,7 @@ function Topbar(props)
             </div>
             <div className="topbar-status">
                 <span className="status-dot" />
-                <span>{uploadStatus.status}</span>
+                <span>{statusLabel}</span>
             </div>
         </header>
     );

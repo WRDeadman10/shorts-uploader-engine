@@ -5,6 +5,10 @@ import { useAppStore } from "./useAppStore.js";
 
 function Library()
 {
+    const selectedVideoId = useAppStore(function selectSelectedVideoId(state)
+    {
+        return state.selectedVideoId;
+    });
     const videoList = useAppStore(function selectVideoList(state)
     {
         return state.videoList;
@@ -25,6 +29,10 @@ function Library()
     {
         return state.fetchVideoList;
     });
+    const selectVideo = useAppStore(function selectVideoAction(state)
+    {
+        return state.selectVideo;
+    });
 
     useEffect(function loadVideoList()
     {
@@ -37,7 +45,7 @@ function Library()
                 <div className="page-heading">
                     <span className="page-eyebrow">Asset Library</span>
                     <h1 className="page-title">Video Inventory</h1>
-                    <p className="page-placeholder">{videoList.length} assets available in the mock catalog.</p>
+                    <p className="page-placeholder">{videoList.length} tracked videos loaded from Python state files.</p>
                 </div>
                 <label className="library-filter">
                     <span className="library-filter-label">Platform</span>
@@ -59,10 +67,16 @@ function Library()
             <div className="library-grid">
                 {filteredVideoList.map(function mapVideo(item)
                 {
+                    const cardClassName = item.id === selectedVideoId ? "library-card library-card-selected" : "library-card";
+
                     return (
                         <motion.article
                             key={item.id}
-                            className="library-card"
+                            className={cardClassName}
+                            onClick={function handleSelect()
+                            {
+                                selectVideo(item.id);
+                            }}
                             whileHover={{ y: -6, scale: 1.01 }}
                             whileTap={{ scale: 0.99 }}
                             transition={{ duration: 0.18, ease: "easeOut" }}
@@ -74,6 +88,7 @@ function Library()
                             <div className="library-card-body">
                                 <h3 className="library-card-title">{item.title}</h3>
                                 <p className="library-card-subtitle">{item.statusText}</p>
+                                <p className="library-card-path">{item.relativePath || "No relative path available"}</p>
                                 <div className="library-card-statuses">
                                     {item.statuses.map(function mapStatus(status)
                                     {

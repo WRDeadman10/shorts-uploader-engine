@@ -12,6 +12,8 @@ python youtubeBatchUpload.py --root "." --max-videos 10 --privacy public
 
 from __future__ import annotations
 
+
+
 import argparse
 import hashlib
 import json
@@ -50,6 +52,9 @@ try:
     from openai import OpenAI
 except ImportError:  # pragma: no cover - handled at runtime.
     OpenAI = None  # type: ignore[assignment]
+
+#sys.path.append(os.path.abspath("../valorant-clip-data-extractor-v3"))
+#from valorant_clip_data_extractor_v3.KillJson import process_video  # your modified function
 
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
@@ -1087,7 +1092,13 @@ def get_sidecar_value(payload: Dict[str, Any], *keys: str) -> Any:
 
 def load_clip_context(file_path: Path) -> Optional[Dict[str, Any]]:
     sidecar_path = file_path.with_suffix(".json")
+
+    if sidecar_path.exists() == False:
+        process_video(file_path)
+
     payload = load_json_file(sidecar_path, default=None)
+
+    
     if not isinstance(payload, dict):
         return None
 
@@ -1249,45 +1260,91 @@ def generate_ai_metadata(
     clip_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     system_prompt = (
-        "You are a YouTube Shorts growth strategist for gaming channels. "
-        "Generate metadata for a single VALORANT short-form clip. "
-        "Return only strict JSON."
+        "You are a YouTube Shorts growth strategist for VALORANT content who specializes in FUNNY, VIRAL, HIGH-CTR metadata. "
+        "Your goal is to make viewers laugh, relate, or feel curious enough to instantly click. "
+
+        "You ONLY produce funny, entertaining, or ironic content. No serious esports tone.\n\n"
+
+        "Your humor style includes:\n"
+        "- Relatable gamer pain\n"
+        "- Whiffs, fails, lucky shots\n"
+        "- Overconfidence gone wrong\n"
+        "- 'This should not have worked' moments\n"
+        "- Sarcasm, exaggeration, irony\n\n"
+        "- Make fun of gameplay\n\n"
+
+        "Titles must feel like memes or inside jokes gamers instantly understand.\n"
+        "Descriptions should feel like a human reacting, not describing.\n\n"
+
+        "Avoid robotic phrasing, templates, or generic wording.\n"
+        "Return ONLY strict JSON."
     )
     clip_context_text = (
         json.dumps(clip_context, ensure_ascii=False) if clip_context else "none"
     )
     user_prompt = (
-        "Create metadata with better CTR + search relevance while staying realistic.\n"
+        "Create FUNNY, HIGH-CTR metadata for a VALORANT short.\n\n"
+
         f"Video file name: {file_path.name}\n"
         f"Relative path: {rel_path}\n"
         f"Channel name/style: {channel_name or 'not provided'}\n"
         f"Language: {language}\n"
         f"Extra keywords: {', '.join(extra_keywords) if extra_keywords else 'none'}\n\n"
+
         f"Sibling sidecar JSON facts: {clip_context_text}\n\n"
-        "Writing style constraints:\n"
-        "- Sound human, natural, and conversational.\n"
-        "- Avoid robotic templates and repetitive phrasing.\n"
-        "- Vary sentence openings and rhythm.\n"
-        "- Keep it believable and specific to gameplay context.\n\n"
+
+        "CORE GOAL:\n"
+        "- Make the viewer laugh OR say 'I need to see this'\n"
+        "- Focus on relatable or absurd moments\n"
+        "- Prioritize humor over skill\n\n"
+
+        "TITLE RULES:\n"
+        "- Max 100 characters\n"
+        "- Must be funny, ironic, or meme-like\n"
+        "- Create curiosity or confusion ('how did this happen?')\n"
+        "- Use VALORANT terms naturally (ace, clutch, jett, etc.)\n"
+        "- Avoid generic phrases completely\n\n"
+
+        "HUMOR STYLES (IMPORTANT):\n"
+        "- 'this should not have worked'\n"
+        "- 'enemy uninstalling after this'\n"
+        "- 'i did NOT deserve that'\n"
+        "- 'my aim finally clocked in'\n"
+        "- 'valorant logic makes no sense'\n\n"
+
+        "DESCRIPTION RULES:\n"
+        "- 2–4 short lines\n"
+        "- First line = funny hook\n"
+        "- Add reaction-style commentary\n"
+        "- Keep it casual and human\n\n"
+
+        "VARIETY RULE:\n"
+        "- Do NOT repeat phrasing from past outputs\n"
+        "- Each output should feel like a new joke\n\n"
+
         f"Recent titles to avoid repeating:\n{json.dumps(recent_titles, ensure_ascii=False)}\n\n"
         f"Recent descriptions to avoid repeating:\n{json.dumps(recent_descriptions, ensure_ascii=False)}\n\n"
+
         "Output JSON schema:\n"
         "{\n"
-        '  "title": "string <= 100 chars, compelling, no clickbait lies",\n'
-        '  "description": "string 2-4 short lines, natural tone",\n'
-        '  "tags": ["10-15 relevant tags without #"],\n'
-        '  "hashtags": ["3-5 hashtags including shorts and valorant"],\n'
-        '  "cta": "one short call-to-action sentence"\n'
-        "}\n"
-        "Rules: avoid rank claims unless obvious from filename, avoid all-caps spam, avoid emojis.\n"
-        "If sibling sidecar JSON facts are present, use them as the primary source of truth.\n"
-        "If kills is 0, treat it as 1.\n"
-        "Do not mention unknown agent/site values.\n"
-        "Use the kill count naturally in the title or description.\n"
-        "Use the site name or map name and agent name when they fit naturally.\n"
-        "Use weapon, headshots, and victim agent when present and when it sounds natural.\n"
-        "Treat site/site_name as the same concept as map for metadata generation.\n"
-        "Do not use round number in the title or description."
+        '  "title": "funny, high-CTR, <=100 chars",\n'
+        '  "description": "2-4 short funny lines",\n'
+        '  "tags": ["10-15 relevant tags"],\n'
+        '  "hashtags": ["3-5 hashtags"],\n'
+        '  "cta": "short playful call-to-action"\n'
+        "}\n\n"
+
+        "STRICT RULES:\n"
+        "- No emojis\n"
+        "- No serious tone\n"
+        "- No generic phrases\n"
+        "- Use clip context if available\n"
+        "- If kills = 0, treat as 1\n"
+        "- Do not mention unknown info\n"
+        "- Do not use round numbers\n"
+        "- No Agent Name\n"
+        "- No Weapon Name\n"
+        "- No Flick\n"
     )
     response = client.chat.completions.create(
         model=model,

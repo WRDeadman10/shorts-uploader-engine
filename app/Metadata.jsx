@@ -2,6 +2,17 @@ import { useAppStore } from "./useAppStore.js";
 
 function Metadata()
 {
+    const selectedVideoId = useAppStore(function selectSelectedVideoId(state)
+    {
+        return state.selectedVideoId;
+    });
+    const selectedVideo = useAppStore(function selectSelectedVideo(state)
+    {
+        return state.videoList.find(function findVideo(video)
+        {
+            return video.id === state.selectedVideoId;
+        }) || null;
+    });
     const title = useAppStore(function selectTitle(state)
     {
         return state.metadata.title;
@@ -28,7 +39,9 @@ function Metadata()
             <div className="page-heading">
                 <span className="page-eyebrow">Metadata Builder</span>
                 <h1 className="page-title">Content Packaging</h1>
-                <p className="page-placeholder">Editing metadata updates the preview immediately.</p>
+                <p className="page-placeholder">
+                    {selectedVideoId ? "Hydrated from the selected tracked video." : "Select a video in Library to hydrate metadata."}
+                </p>
             </div>
             <div className="metadata-grid">
                 <div className="metadata-form">
@@ -83,6 +96,7 @@ function Metadata()
                         <p className="metadata-preview-title">{title || "Untitled Video"}</p>
                         <p className="metadata-preview-description">{description || "Description preview will appear here."}</p>
                         <p className="metadata-preview-music">Music: {musicTrack}</p>
+                        <p className="metadata-preview-path">{selectedVideo ? selectedVideo.relativePath : "No tracked video selected"}</p>
                         <div className="metadata-preview-placeholder">Preview Placeholder</div>
                     </div>
                 </div>

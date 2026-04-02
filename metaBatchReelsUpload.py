@@ -52,6 +52,7 @@ DEFAULT_REELS_STATE_FILE = ".meta_reels_upload_state.json"
 DEFAULT_GRAPH_VERSION = "v25.0"
 DEFAULT_INSTAGRAM_UPLOAD_LEDGER_FILE = ".instagram_uploaded_videos.json"
 DEFAULT_FACEBOOK_UPLOAD_LEDGER_FILE = ".facebook_uploaded_videos.json"
+DEFAULT_CONVERTED_DIR = "converted_shorts"
 
 
 def parse_args() -> argparse.Namespace:
@@ -82,6 +83,11 @@ def parse_args() -> argparse.Namespace:
         "--videos-root",
         default=DEFAULT_VIDEO_ROOT,
         help="Root directory used to resolve relative source video paths.",
+    )
+    parser.add_argument(
+        "--converted-dir",
+        default=DEFAULT_CONVERTED_DIR,
+        help="Directory containing temporary converted shorts that can be deleted after successful Meta upload.",
     )
     parser.add_argument(
         "--platform",
@@ -149,6 +155,18 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=120.0,
         help="HTTP timeout for each API request.",
+    )
+    parser.add_argument(
+        "--delete-converted-after-upload",
+        action="store_true",
+        default=True,
+        help="Delete temporary converted/cropped files after successful selected-platform uploads.",
+    )
+    parser.add_argument(
+        "--keep-converted-after-upload",
+        action="store_false",
+        dest="delete_converted_after_upload",
+        help="Keep temporary converted/cropped files after successful selected-platform uploads.",
     )
     parser.add_argument(
         "--dry-run",
@@ -553,6 +571,14 @@ def should_skip_platform(
     return clean_one_line(str(platform_row.get("status", ""))).lower() == "ok"
 
 
+def delete_file_if_exists(file_path: Path) -> None:
+    try:
+        if file_path.exists():
+            file_path.unlink()
+    except OSError:
+        pass
+
+
 def main() -> int:
     if requests is None:
         print("[error] missing dependency: requests. Run: pip install -r requirements.txt")
@@ -565,6 +591,7 @@ def main() -> int:
     instagram_upload_ledger_file = Path(args.instagram_upload_ledger_file).resolve()
     facebook_upload_ledger_file = Path(args.facebook_upload_ledger_file).resolve()
     videos_root = Path(args.videos_root).resolve()
+    converted_dir = Path(args.converted_dir).resolve()
 
     if not source_state_file.exists():
         print(f"[error] source state file not found: {source_state_file}")
@@ -849,6 +876,24 @@ def main() -> int:
                         "[warn][facebook] Facebook returned code 368/subcode 1390008. "
                         "Skipping Facebook uploads for the rest of this run."
                     )
+
+        if args.delete_converted_after_upload:
+            selected_instagram_ok = (not do_instagram) or (
+                isinstance(state_row.get("instagram"), dict)
+                and clean_one_line(str(state_row["instagram"].get("status", ""))).lower() == "ok"
+            )
+            selected_facebook_ok = (not do_facebook) or (
+                isinstance(state_row.get("facebook"), dict)
+                and clean_one_line(str(state_row["facebook"].get("status", ""))).lower() == "ok"
+            )
+            if selected_instagram_ok and selected_facebook_ok:
+                try:
+                    source_file.resolve().relative_to(converted_dir.resolve())
+                    if source_file.exists():
+                        delete_file_if_exists(source_file)
+                        print(f"[cleanup] deleted converted file: {source_file.name}")
+                except ValueError:
+                    pass
 
         save_json_file(reels_state_file, reels_state)
         save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
