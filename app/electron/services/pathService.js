@@ -41,8 +41,41 @@ function resolveVideoRoot()
     return repoRoot;
 }
 
+function getSettingsPath()
+{
+    const repoRoot = getRepoRoot();
+    return path.join(repoRoot, "settings.json");
+}
+
+function readSettings()
+{
+    const settingsPath = getSettingsPath();
+
+    if (fs.existsSync(settingsPath))
+    {
+        try
+        {
+            return JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+        }
+        catch (_error)
+        {
+            console.error("Failed to read settings file:", _error);
+        }
+    }
+
+    return {};
+}
+
+function saveSettings(settings)
+{
+    const settingsPath = getSettingsPath();
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 4));
+}
+
 module.exports = {
     getRepoRoot: getRepoRoot,
     getRendererEntryFile: getRendererEntryFile,
-    resolveVideoRoot: resolveVideoRoot
+    resolveVideoRoot: resolveVideoRoot,
+    readSettings: readSettings,
+    saveSettings: saveSettings
 };
