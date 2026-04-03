@@ -67,6 +67,30 @@ export const useAppStore = create(function createAppStore(set, get)
             "Arcade Surge",
             "Victory Loop"
         ],
+        advancedUploadSettings: {},
+        featureStatus: "", // Added feature status field
+        loadAdvancedUploadSettings: function loadAdvancedUploadSettings(settings)
+        {
+            set({
+                advancedUploadSettings: settings
+            });
+        },
+        saveAdvancedUploadSettings: async function saveAdvancedUploadSettings()
+        {
+            if (!window.api || !window.api.saveWorkflowSettings)
+            {
+                return;
+            }
+
+            const response = await window.api.saveWorkflowSettings(get().advancedUploadSettings);
+
+            if (response)
+            {
+                set({
+                    errorMessage: response.errorMessage || ""
+                });
+            }
+        },
         setActivePage: function setActivePage(pageId)
         {
             set({
