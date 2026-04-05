@@ -157,6 +157,40 @@ function Upload()
                                 />
                             );
                         })}
+
+                        <div style={{marginTop: 12, display: "flex", flexDirection: "column", gap: 8}}>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
+                                <span style={{fontSize:14}}>Max Videos</span>
+                                <input type="number" min={1} max={50} value={options.maxVideos || 1}
+                                    onChange={function handleMaxVid(e) { setUploadOption("maxVideos", Math.max(1, parseInt(e.target.value, 10) || 1)); }}
+                                    style={{width:70,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:14}} />
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
+                                <span style={{fontSize:14}}>Videos Root</span>
+                                <input type="text" placeholder="Path to video folder" value={options.videosRoot || ""}
+                                    onChange={function handleRoot(e) { setUploadOption("videosRoot", e.target.value); }}
+                                    style={{width:180,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
+                                <span style={{fontSize:14}}>Privacy</span>
+                                <select value={options.privacy || ""}
+                                    onChange={function handlePrivacy(e) { setUploadOption("privacy", e.target.value); }}
+                                    style={{width:130,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}}>
+                                    <option value="">Default</option>
+                                    <option value="private">Private</option>
+                                    <option value="unlisted">Unlisted</option>
+                                    <option value="public">Public</option>
+                                </select>
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
+                                <span style={{fontSize:14}}>Playlist Name</span>
+                                <input type="text" placeholder="Optional" value={options.playlistName || ""}
+                                    onChange={function handlePlaylist(e) { setUploadOption("playlistName", e.target.value); }}
+                                    style={{width:160,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
+                            </div>
+                            <ToggleSwitch label="Dry Run" checked={options.dryRun || false}
+                                onChange={function handleDryRun(v) { setUploadOption("dryRun", v); }} />
+                        </div>
                     </div>
                 </div>
             </div>

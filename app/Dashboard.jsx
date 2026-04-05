@@ -112,6 +112,20 @@ function Dashboard()
                     );
                 })}
             </div>
+            <div style={{display:"flex",gap:12,marginTop:20}}>
+                <button onClick={function goUpload() { useAppStore.getState().setActivePage("upload"); }}
+                    style={{padding:"10px 20px",borderRadius:8,border:"1px solid #444",background:"#1a1a2e",color:"#fff",cursor:"pointer",fontSize:14}}>
+                    Start Upload
+                </button>
+                <button onClick={function goLibrary() { useAppStore.getState().setActivePage("library"); }}
+                    style={{padding:"10px 20px",borderRadius:8,border:"1px solid #444",background:"#1a1a2e",color:"#fff",cursor:"pointer",fontSize:14}}>
+                    View Library
+                </button>
+                <button onClick={function goConsole() { useAppStore.getState().setActivePage("console"); }}
+                    style={{padding:"10px 20px",borderRadius:8,border:"1px solid #444",background:"#1a1a2e",color:"#fff",cursor:"pointer",fontSize:14}}>
+                    Open Console
+                </button>
+            </div>
         </section>
     );
 }
