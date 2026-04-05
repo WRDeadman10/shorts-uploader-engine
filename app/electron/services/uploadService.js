@@ -296,17 +296,24 @@ function buildUploadCommand(payload)
         throw new Error("Select at least one platform before starting an upload.");
     }
 
+    const maxVid = String((options.maxVideos && Number(options.maxVideos) >= 1) ? Math.round(Number(options.maxVideos)) : 1);
+
     if (!youtubeEnabled && (instagramEnabled || facebookEnabled))
     {
+        const metaArgs = [
+            "--platform",
+            selectedMetaPlatform,
+            "--max-videos",
+            maxVid
+        ];
+        if (options.videosRoot) { metaArgs.push("--root", options.videosRoot); }
+        if (options.dryRun) { metaArgs.push("--dry-run"); }
+        if (options.ffmpegBin) { metaArgs.push("--ffmpeg-bin", options.ffmpegBin); }
+        if (options.ffprobeBin) { metaArgs.push("--ffprobe-bin", options.ffprobeBin); }
         return {
             scriptName: "metaBatchReelsUpload.py",
             platformLabel: selectedMetaPlatform,
-            scriptArgs: [
-                "--platform",
-                selectedMetaPlatform,
-                "--max-videos",
-                "1"
-            ]
+            scriptArgs: metaArgs
         };
     }
 
@@ -314,7 +321,7 @@ function buildUploadCommand(payload)
         "--upload-platform",
         "youtube",
         "--max-videos",
-        "1",
+        maxVid,
         "--allow-fallback"
     ];
 
@@ -342,6 +349,13 @@ function buildUploadCommand(payload)
         args.push("--crosspost-meta");
         args.push("--meta-platform", selectedMetaPlatform);
     }
+
+    if (options.videosRoot) { args.push("--root", options.videosRoot); }
+    if (options.privacy) { args.push("--privacy", options.privacy); }
+    if (options.playlistName) { args.push("--playlist-name", options.playlistName); }
+    if (options.dryRun) { args.push("--dry-run"); }
+    if (options.ffmpegBin) { args.push("--ffmpeg-bin", options.ffmpegBin); }
+    if (options.ffprobeBin) { args.push("--ffprobe-bin", options.ffprobeBin); }
 
     return {
         scriptName: "youtubeBatchUpload.py",

@@ -280,7 +280,14 @@ export const useAppStore = create(function createAppStore(set, get)
         uploadOptions: {
             includeShorts: true,
             includeMusic: true,
-            includeMetadata: true
+            includeMetadata: true,
+            maxVideos: 1,
+            videosRoot: "",
+            privacy: "",
+            playlistName: "",
+            dryRun: false,
+            ffmpegBin: "",
+            ffprobeBin: ""
         },
         setUploadPlatform: function setUploadPlatform(platformId, value)
         {
