@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
+from lib.file_utils import load_json_file
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -19,15 +21,6 @@ def parse_args() -> argparse.Namespace:
         help="Directory containing offline_videos.json and platform upload JSON files.",
     )
     return parser.parse_args()
-
-
-def load_json_file(path: Path, default: Any) -> Any:
-    if not path.exists():
-        return default
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return default
 
 
 def save_json_file(path: Path, payload: Any) -> None:

@@ -9,6 +9,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Set
 
+from lib.file_utils import (
+    load_json_file,
+    normalize_extensions,
+    normalize_names_csv,
+    discover_videos,
+    file_key,
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -52,60 +60,8 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def normalize_extensions(raw_extensions: str) -> Set[str]:
-    extensions: Set[str] = set()
-    for item in raw_extensions.split(","):
-        cleaned = item.strip().lower()
-        if not cleaned:
-            continue
-        if not cleaned.startswith("."):
-            cleaned = f".{cleaned}"
-        extensions.add(cleaned)
-    return extensions
-
-
-def normalize_names_csv(raw_value: str) -> Set[str]:
-    names: Set[str] = set()
-    for item in raw_value.split(","):
-        cleaned = item.strip().lower()
-        if cleaned:
-            names.add(cleaned)
-    return names
-
-
-def discover_videos(
-    root: Path,
-    extensions: Set[str],
-    exclude_dirs: Set[str],
-    exclude_files: Set[str],
-) -> List[Path]:
-    files: List[Path] = []
-    for dir_path, dir_names, file_names in os.walk(root):
-        dir_names[:] = [name for name in dir_names if name.lower() not in exclude_dirs]
-        base_path = Path(dir_path)
-        for file_name in file_names:
-            if file_name.lower() in exclude_files:
-                continue
-            file_path = base_path / file_name
-            if file_path.suffix.lower() in extensions:
-                files.append(file_path)
-    files.sort()
-    return files
-
-
-def file_key(root: Path, file_path: Path) -> str:
-    file_stat = file_path.stat()
-    relative_path = file_path.relative_to(root).as_posix()
-    return f"{relative_path}|{file_stat.st_size}|{int(file_stat.st_mtime)}"
-
-
-def load_json_file(path: Path, default: Any) -> Any:
-    if not path.exists():
-        return default
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return default
+# normalize_extensions, normalize_names_csv, discover_videos, file_key,
+# load_json_file — now imported from lib/file_utils
 
 
 def ensure_dict(value: Any) -> Dict[str, Any]:
