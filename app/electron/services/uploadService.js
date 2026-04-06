@@ -356,6 +356,13 @@ function buildUploadCommand(payload)
     if (options.dryRun) { args.push("--dry-run"); }
     if (options.ffmpegBin) { args.push("--ffmpeg-bin", options.ffmpegBin); }
     if (options.ffprobeBin) { args.push("--ffprobe-bin", options.ffprobeBin); }
+    if (options.extensions) { args.push("--extensions", options.extensions); }
+    if (options.excludeDirectories) { args.push("--exclude-dirs", options.excludeDirectories); }
+    if (options.excludeFiles) { args.push("--exclude-files", options.excludeFiles); }
+    if (options.requireUploadedOn) { args.push("--require-uploaded-on", options.requireUploadedOn); }
+    if (options.requireMissingOn) { args.push("--require-missing-on", options.requireMissingOn); }
+    if (options.clientSecretsPath) { args.push("--client-secrets", options.clientSecretsPath); }
+    if (options.tokenFilePath) { args.push("--token-file", options.tokenFilePath); }
 
     return {
         scriptName: "youtubeBatchUpload.py",

@@ -190,6 +190,42 @@ function Upload()
                             </div>
                             <ToggleSwitch label="Dry Run" checked={options.dryRun || false}
                                 onChange={function handleDryRun(v) { setUploadOption("dryRun", v); }} />
+                            {/* Discovery Filters */}
+                            <div style={{marginTop:16,borderTop:"1px solid #333",paddingTop:12}}>
+                                <span style={{fontSize:12,color:"#888",textTransform:"uppercase",letterSpacing:1}}>Discovery Filters</span>
+                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
+                                    <span style={{fontSize:14}}>Extensions</span>
+                                    <input type="text" placeholder=".mp4,.mov" value={options.extensions || ""} onChange={function(e){setUploadOption("extensions",e.target.value);}} style={{width:140,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
+                                </div>
+                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
+                                    <span style={{fontSize:14}}>Exclude Dirs</span>
+                                    <input type="text" placeholder="drafts,archive" value={options.excludeDirectories || ""} onChange={function(e){setUploadOption("excludeDirectories",e.target.value);}} style={{width:140,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
+                                </div>
+                            </div>
+                            {/* Queue Filters */}
+                            <div style={{marginTop:12,borderTop:"1px solid #333",paddingTop:12}}>
+                                <span style={{fontSize:12,color:"#888",textTransform:"uppercase",letterSpacing:1}}>Queue Filters</span>
+                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
+                                    <span style={{fontSize:14}}>Require Uploaded On</span>
+                                    <input type="text" placeholder="youtube" value={options.requireUploadedOn || ""} onChange={function(e){setUploadOption("requireUploadedOn",e.target.value);}} style={{width:120,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
+                                </div>
+                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
+                                    <span style={{fontSize:14}}>Require Missing On</span>
+                                    <input type="text" placeholder="instagram" value={options.requireMissingOn || ""} onChange={function(e){setUploadOption("requireMissingOn",e.target.value);}} style={{width:120,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
+                                </div>
+                            </div>
+                            {/* Credentials */}
+                            <div style={{marginTop:12,borderTop:"1px solid #333",paddingTop:12}}>
+                                <span style={{fontSize:12,color:"#888",textTransform:"uppercase",letterSpacing:1}}>Credentials</span>
+                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
+                                    <span style={{fontSize:14}}>Client Secrets</span>
+                                    <input type="text" placeholder="path/to/client_secret.json" value={options.clientSecretsPath || ""} onChange={function(e){setUploadOption("clientSecretsPath",e.target.value);}} style={{width:180,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
+                                </div>
+                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
+                                    <span style={{fontSize:14}}>Token File</span>
+                                    <input type="text" placeholder="path/to/token.json" value={options.tokenFilePath || ""} onChange={function(e){setUploadOption("tokenFilePath",e.target.value);}} style={{width:180,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
