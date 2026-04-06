@@ -51,6 +51,7 @@ from lib.music import build_music_inventory, build_mixed_music_path
 from lib.youtube_auth import build_youtube_client
 from lib.youtube_upload import upload_video, resolve_playlist_id, add_video_to_playlist, extract_http_error_reason, RETRIABLE_STATUS_CODES
 from lib.ai_metadata import load_clip_context, build_clip_focus, build_fallback_metadata, finalize_metadata, is_metadata_unique
+from lib.meta_api import is_facebook_rate_limited_error, request_json, ig_create_reel_container, ig_upload_reel_binary, ig_wait_until_ready, ig_publish_reel, fb_start_reel_session, fb_upload_reel_binary, fb_finish_reel_publish, extract_meta_error_message
 from lib.text_utils import (
     clean_text, parse_json_response, normalize_hashtag, normalize_tags,
     trim_title, get_sidecar_value, normalize_handle, normalize_compare_text,
@@ -808,22 +809,6 @@ def build_meta_captions(
         fb_description = f"{fb_description}\n\n" + "\n".join(footer_lines)
 
     return ig_caption[:2200].rstrip(), fb_description[:5000].rstrip(), title[:255].rstrip()
-
-
-def is_retryable_instagram_processing_error(exc: Exception) -> bool:
-    message = str(exc).lower()
-    markers = [
-        "processingfailederror",
-        "generic internal error",
-        "internal server error occurred",
-        "meta api error (500)",
-    ]
-    return any(marker in message for marker in markers)
-
-
-def is_facebook_rate_limited_error(exc: Exception) -> bool:
-    message = str(exc).lower()
-    return "code=368" in message and "subcode=1390008" in message
 
 
 def crosspost_meta_reel(

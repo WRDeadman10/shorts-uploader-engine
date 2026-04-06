@@ -25,6 +25,8 @@ from lib.file_utils import (
     file_key,
 )
 from lib.text_utils import clean_text, normalize_compare_text
+from lib.youtube_auth import build_youtube_client
+from lib.meta_api import request_json
 
 SCOPES: List[str] = [
     "https://www.googleapis.com/auth/youtube.upload",
@@ -118,20 +120,6 @@ def parse_args() -> argparse.Namespace:
 # normalize_extensions, normalize_names_csv, discover_videos, file_key,
 # load_json_file, save_json_file — now imported from lib/
 
-def now_utc_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
-def normalize_text(value: str) -> str:
-    lowered = value.strip().lower()
-    collapsed = re.sub(r"\s+", " ", lowered)
-    return re.sub(r"[^a-z0-9]+", "", collapsed)
-
-
-def clean_text(value: Any) -> str:
-    return str(value or "").strip()
-
-
 def chunked(values: List[str], size: int) -> List[List[str]]:
     chunks: List[List[str]] = []
     index = 0
@@ -139,22 +127,6 @@ def chunked(values: List[str], size: int) -> List[List[str]]:
         chunks.append(values[index:index + size])
         index += size
     return chunks
-
-
-def build_youtube_client(client_secrets: Path, token_file: Path, auth_port: int):
-    credentials: Optional[Credentials] = None
-    if token_file.exists():
-        credentials = Credentials.from_authorized_user_file(str(token_file), SCOPES)
-    if credentials and not credentials.valid:
-        if credentials.expired and credentials.refresh_token:
-            credentials.refresh(Request())
-        else:
-            credentials = None
-    if credentials is None:
-        flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets), SCOPES)
-        credentials = flow.run_local_server(port=auth_port)
-        token_file.write_text(credentials.to_json(), encoding="utf-8")
-    return build("youtube", "v3", credentials=credentials)
 
 
 def fetch_youtube_uploads(
@@ -236,25 +208,6 @@ def fetch_youtube_uploads(
         "count": len(entries),
         "entries": entries,
     }
-
-
-def request_json(
-    method: str,
-    url: str,
-    *,
-    params: Optional[Dict[str, Any]] = None,
-    timeout: float,
-) -> Dict[str, Any]:
-    response = requests.request(method=method, url=url, params=params, timeout=timeout)
-    if response.status_code >= 400:
-        response_text = response.text.strip()
-        raise RuntimeError(
-            f"{response.status_code} {response.reason}: {response_text}"
-        )
-    payload = response.json()
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"Unexpected JSON payload: {payload}")
-    return payload
 
 
 def fetch_paged_graph_entries(
