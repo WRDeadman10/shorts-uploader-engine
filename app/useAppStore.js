@@ -295,7 +295,14 @@ export const useAppStore = create(function createAppStore(set, get)
             playlistName: "",
             dryRun: false,
             ffmpegBin: "",
-            ffprobeBin: ""
+            ffprobeBin: "",
+            extensions: "",
+            excludeDirectories: "",
+            excludeFiles: "",
+            requireUploadedOn: "",
+            requireMissingOn: "",
+            clientSecretsPath: "",
+            tokenFilePath: ""
         },
         setUploadPlatform: function setUploadPlatform(platformId, value)
         {
