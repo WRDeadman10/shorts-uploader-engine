@@ -1,0 +1,17 @@
+{
+  "task_id": 5,
+  "relay_session_id": null,
+  "instruction": "Add a `featureStatus` field (or equivalent) to the store state as required by the instruction, since no feature status tracking was added.",
+  "files": [
+    "app/useAppStore.js"
+  ],
+  "diff": "--- changed files ---\napp/useAppStore.js    | 24 ++++++++++++++++++++++++\n youtubeBatchUpload.py |  7 -------\n 2 files changed, 24 insertions(+), 7 deletions(-)\n\n--- diff ---\ndiff --git a/app/useAppStore.js b/app/useAppStore.js\nindex 8d1ff2a..52704ac 100644\n--- a/app/useAppStore.js\n+++ b/app/useAppStore.js\n@@ -67,6 +67,30 @@ export const useAppStore = create(function createAppStore(set, get)\n             \"Arcade Surge\",\n             \"Victory Loop\"\n         ],\n+        advancedUploadSettings: {},\n+        featureStatus: \"\", // Added feature status field\n+        loadAdvancedUploadSettings: function loadAdvancedUploadSettings(settings)\n+        {\n+            set({\n+                advancedUploadSettings: settings\n+            });\n+        },\n+        saveAdvancedUploadSettings: async function saveAdvancedUploadSettings()\n+        {\n+            if (!window.api || !window.api.saveWorkflowSettings)\n+            {\n+                return;\n+            }\n+\n+            const response = await window.api.saveWorkflowSettings(get().advancedUploadSettings);\n+\n+            if (response)\n+            {\n+                set({\n+                    errorMessage: response.errorMessage || \"\"\n+                });\n+            }\n+        },\n         setActivePage: function setActivePage(pageId)\n         {\n             set({\ndiff --git a/youtubeBatchUpload.py b/youtubeBatchUpload.py\nindex cd263d2..6a08a16 100644\n--- a/youtubeBatchUpload.py\n+++ b/youtubeBatchUpload.py\n@@ -53,9 +53,6 @@ try:\n except ImportError:  # pragma: no cover - handled at runtime.\n     OpenAI = None  # type: ignore[assignment]\n \n-sys.path.append(os.path.abspath(\"../valorant-clip-data-extractor-v3\"))\n-from valorant_clip_data_extractor_v3.KillJson import process_video  # your modified function\n-\n SCOPES = [\n     \"https://www.googleapis.com/auth/youtube.upload\",\n     \"https://www.googleapis.com/auth/youtube\",\n@@ -1092,10 +1089,6 @@ def get_sidecar_value(payload: Dict[str, Any], *keys: str) -> Any:\n \n def load_clip_context(file_path: Path) -> Optional[Dict[str, Any]]:\n     sidecar_path = file_path.with_suffix(\".json\")\n-\n-    if sidecar_path.exists() == False:\n-        process_video(file_path)\n-\n     payload = load_json_file(sidecar_path, default=None)",
+  "file_fingerprints": [
+    {
+      "path": "C:/Users/winss/Documents/Projects/shorts-uploader-engine/app/useAppStore.js",
+      "exists": true,
+      "sha256": "0a86cb26c9864c411d759738b949977125348cc46dff30ff506f7cc9f2bae21e",
+      "size": 10273
+    }
+  ]
+}

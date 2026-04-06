@@ -1,0 +1,47 @@
+{
+  "status": "failure",
+  "planned_tasks": 3,
+  "completed_task_ids": [
+    1
+  ],
+  "completed_tasks": 1,
+  "resumed_completed_task_ids": [],
+  "skipped_tasks": 0,
+  "failed_task_id": 2,
+  "diffs_recorded": 1,
+  "tasks": [
+    {
+      "id": 1,
+      "type": "modify",
+      "files": [
+        "app/useAppStore.js"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": true,
+      "commit_sha": "a3fe1da"
+    },
+    {
+      "id": 2,
+      "type": "modify",
+      "files": [
+        "app/electron/services/uploadService.js"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": false,
+      "commit_sha": null
+    },
+    {
+      "id": 3,
+      "type": "modify",
+      "files": [
+        "app/Upload.jsx"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": false,
+      "commit_sha": null
+    }
+  ]
+}

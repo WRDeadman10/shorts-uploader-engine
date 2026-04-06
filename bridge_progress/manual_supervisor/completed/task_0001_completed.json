@@ -1,0 +1,17 @@
+{
+  "task_id": 1,
+  "relay_session_id": null,
+  "instruction": "In useAppStore.js, find the uploadOptions object literal (around line 280). It currently has properties: includeShorts, includeMusic, includeMetadata, maxVideos, videosRoot, privacy, playlistName, dryRun, ffmpegBin, ffprobeBin. Add these 7 new properties after ffprobeBin:\n\nextensions: \"\",\nexcludeDirectories: \"\",\nexcludeFiles: \"\",\nrequireUploadedOn: \"\",\nrequireMissingOn: \"\",\nclientSecretsPath: \"\",\ntokenFilePath: \"\"\n\nDo not change any other part of the file. Just add these 7 string properties to the uploadOptions object.",
+  "files": [
+    "app/useAppStore.js"
+  ],
+  "diff": "--- changed files ---\napp/useAppStore.js | 9 ++++++++-\n 1 file changed, 8 insertions(+), 1 deletion(-)\n\n--- diff ---\ndiff --git a/app/useAppStore.js b/app/useAppStore.js\nindex b52c9a4..b1f551e 100644\n--- a/app/useAppStore.js\n+++ b/app/useAppStore.js\n@@ -295,7 +295,14 @@ export const useAppStore = create(function createAppStore(set, get)\n             playlistName: \"\",\n             dryRun: false,\n             ffmpegBin: \"\",\n-            ffprobeBin: \"\"\n+            ffprobeBin: \"\",\n+            extensions: \"\",\n+            excludeDirectories: \"\",\n+            excludeFiles: \"\",\n+            requireUploadedOn: \"\",\n+            requireMissingOn: \"\",\n+            clientSecretsPath: \"\",\n+            tokenFilePath: \"\"\n         },\n         setUploadPlatform: function setUploadPlatform(platformId, value)\n         {",
+  "file_fingerprints": [
+    {
+      "path": "D:/BridgeProjectExperiment/app/useAppStore.js",
+      "exists": true,
+      "sha256": "3e9103984203e76e91d00173ce45b5a0bbd7452845447a5049d66c61cd18b157",
+      "size": 11249
+    }
+  ]
+}

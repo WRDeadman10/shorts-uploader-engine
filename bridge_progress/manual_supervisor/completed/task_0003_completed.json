@@ -1,0 +1,17 @@
+{
+  "task_id": 3,
+  "relay_session_id": null,
+  "instruction": "Add IPC handlers for loading and saving Electron UI workflow settings so the renderer can persist advanced upload configuration.",
+  "files": [
+    "app/electron/ipc/systemHandlers.js"
+  ],
+  "diff": "--- changed files ---\napp/electron/ipc/systemHandlers.js | 10 ++++++++++\n 1 file changed, 10 insertions(+)\n\n--- diff ---\ndiff --git a/app/electron/ipc/systemHandlers.js b/app/electron/ipc/systemHandlers.js\nindex 7d51cb1..009c9c7 100644\n--- a/app/electron/ipc/systemHandlers.js\n+++ b/app/electron/ipc/systemHandlers.js\n@@ -12,6 +12,16 @@ function registerSystemHandlers(ipcMain)\n     {\n         return uploadService.streamLog();\n     });\n+\n+    ipcMain.handle(\"load-workflow-settings\", async function handleLoadWorkflowSettings()\n+    {\n+        return dataService.loadWorkflowSettings();\n+    });\n+\n+    ipcMain.handle(\"save-workflow-settings\", async function handleSaveWorkflowSettings(settings)\n+    {\n+        return dataService.saveWorkflowSettings(settings);\n+    });\n }\n \n module.exports = {",
+  "file_fingerprints": [
+    {
+      "path": "C:/Users/winss/Documents/Projects/shorts-uploader-engine/app/electron/ipc/systemHandlers.js",
+      "exists": true,
+      "sha256": "3c780e0455ded32204f93bca0926793db52543d60237173670a02d796ee7d673",
+      "size": 844
+    }
+  ]
+}

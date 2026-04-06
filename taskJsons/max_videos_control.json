@@ -1,0 +1,26 @@
+{
+  "plan_summary": "Implement max-videos-control: add numeric batch-size control to UI, wire to store, pass to upload command",
+  "tasks": [
+    {
+      "id": 1,
+      "files": ["app/useAppStore.js"],
+      "instruction": "In useAppStore.js, find the uploadOptions object literal (around line 280) which currently has three properties: includeShorts, includeMusic, includeMetadata. Add a fourth property 'maxVideos: 1' after includeMetadata. The object is inside a create() Zustand store call. Do not change setUploadOption or any other function — just add the one property to the initial state object.",
+      "type": "modify",
+      "must_exist": ["app/useAppStore.js"]
+    },
+    {
+      "id": 2,
+      "files": ["app/electron/services/uploadService.js"],
+      "instruction": "In uploadService.js, in the function buildUploadCommand(payload), the variable 'options' is set to 'payload.options || {}' on line 288. There are two array literals that contain the element '\"1\"' as a standalone element on its own line, right after the element '\"--max-videos\"'. First occurrence is around line 308 inside the meta-only return block (scriptArgs array). Second occurrence is around line 317 inside the 'args' array. In BOTH places, change the standalone string element '\"1\"' to: String((options.maxVideos && Number(options.maxVideos) >= 1) ? options.maxVideos : 1). Do NOT change the '\"--max-videos\"' element itself — only change the '\"1\"' value on the next line.",
+      "type": "modify",
+      "must_exist": ["app/electron/services/uploadService.js"]
+    },
+    {
+      "id": 3,
+      "files": ["app/Upload.jsx"],
+      "instruction": "In Upload.jsx, find the array 'uploadOptions' (around line 12) which has three objects: includeShorts, includeMusic, includeMetadata. This array drives the ToggleSwitch list in the UI. After the last entry ({ id: 'includeMetadata', label: 'AI Metadata' }), do NOT add maxVideos here — toggles are boolean only. Instead, find the JSX section where uploadOptions.map renders ToggleSwitch components (around line 146). After the closing of that .map() block, add a new div with a label 'Max Videos' and a number input: <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 0'}}><span style={{fontSize:14}}>Max Videos</span><input type='number' min={1} max={50} value={useAppStore(s => s.uploadOptions.maxVideos) || 1} onChange={e => useAppStore.getState().setUploadOption('maxVideos', Math.max(1, parseInt(e.target.value,10) || 1))} style={{width:60,padding:'4px 8px',borderRadius:4,border:'1px solid #444',background:'#1a1a2e',color:'#fff',fontSize:14}} /></div>",
+      "type": "modify",
+      "must_exist": ["app/Upload.jsx"]
+    }
+  ]
+}

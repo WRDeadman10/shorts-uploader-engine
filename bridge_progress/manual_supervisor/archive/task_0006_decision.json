@@ -1,0 +1,5 @@
+{
+  "decision": "rework",
+  "instruction": "Conditionally append `--playlist-name` and its value only when `payload.playlistName` is non-empty instead of always passing it with an empty-string fallback.",
+  "task_id": 6
+}

@@ -1,0 +1,61 @@
+{
+  "task_id": 1,
+  "relay_session_id": null,
+  "task_type": "modify",
+  "files": [
+    "app/useAppStore.js"
+  ],
+  "instruction": "In useAppStore.js, find the uploadOptions object literal (around line 280). It currently has properties: includeShorts, includeMusic, includeMetadata, maxVideos, videosRoot, privacy, playlistName, dryRun, ffmpegBin, ffprobeBin. Add these 7 new properties after ffprobeBin:\n\nextensions: \"\",\nexcludeDirectories: \"\",\nexcludeFiles: \"\",\nrequireUploadedOn: \"\",\nrequireMissingOn: \"\",\nclientSecretsPath: \"\",\ntokenFilePath: \"\"\n\nDo not change any other part of the file. Just add these 7 string properties to the uploadOptions object.",
+  "execution": {
+    "succeeded": true,
+    "exit_code": 0,
+    "stdout": "Can't initialize prompt toolkit: Found xterm-256color, while expecting a \nWindows console. Maybe try to run this program using \"winpty\" or run it in \ncmd.exe instead. Or otherwise, in case of Cygwin, use the Python executable \nthat is compiled for Cygwin.\n\nAider v0.86.2\nModel: ollama/qwen2.5-coder:7b with whole edit format\nGit repo: .git with 485 files\nRepo-map: using 1024 tokens, manual refresh\nAdded app\\useAppStore.js to the chat.\n\napp\\useAppStore.js\n\n```diff\n@@ -293,11 +293,18 @@\n             videosRoot: \"\",\n             privacy: \"\",\n             playlistName: \"\",\n             dryRun: false,\n             ffmpegBin: \"\",\n-            ffprobeBin: \"\"\n+            ffprobeBin: \"\",\n+            extensions: \"\",\n+            excludeDirectories: \"\",\n+            excludeFiles: \"\",\n+            requireUploadedOn: \"\",\n+            requireMissingOn: \"\",\n+            clientSecretsPath: \"\",\n+            tokenFilePath: \"\"\n         },\n         setUploadPlatform: function setUploadPlatform(platformId, value)\n         {\n             set(function updateUploadPlatform(state)\n             {\n```\n\n\nTokens: 3.9k sent, 1.9k received.\nApplied edit to app\\useAppStore.js\nSummarization failed for model ollama/qwen2.5-coder:7b: cannot schedule new futures after shutdown\nSummarization failed for model ollama/qwen2.5-coder:7b: cannot schedule new futures after shutdown\nsummarizer unexpectedly failed for all models",
+    "stderr": "",
+    "duration_seconds": 68.34,
+    "command": [
+      "C:\\Users\\Yash Halari\\.local\\bin\\aider.EXE",
+      "--model",
+      "ollama/qwen2.5-coder:7b",
+      "--yes-always",
+      "--no-pretty",
+      "--no-stream",
+      "--no-auto-lint",
+      "--no-auto-commits",
+      "--no-gitignore",
+      "--no-show-model-warnings",
+      "--no-browser",
+      "--no-detect-urls",
+      "--no-suggest-shell-commands",
+      "--timeout",
+      "660",
+      "--edit-format",
+      "whole",
+      "--map-refresh",
+      "manual",
+      "--message",
+      "GOAL\nImplement video filters, queue filters, credentials\n\nTASK 1 OF 3 (MODIFY)\nIn useAppStore.js, find the uploadOptions object literal (around line 280). It currently has properties: includeShorts, includeMusic, includeMetadata, maxVideos, videosRoot, privacy, playlistName, dryRun, ffmpegBin, ffprobeBin. Add these 7 new properties after ffprobeBin:\n\nextensions: \"\",\nexcludeDirectories: \"\",\nexcludeFiles: \"\",\nrequireUploadedOn: \"\",\nrequireMissingOn: \"\",\nclientSecretsPath: \"\",\ntokenFilePath: \"\"\n\nDo not change any other part of the file. Just add these 7 string properties to the uploadOptions object.\n\nTARGET FILES \u2014 edit ONLY these exact paths, nothing else:\n  D:\\BridgeProjectExperiment\\app\\useAppStore.js\n\nRULES\n  - CRITICAL: edit ONLY the TARGET FILES listed above \u2014 do NOT create, reference, inspect, or add any other files to the chat\n  - CRITICAL: use the exact absolute path shown \u2014 do not change the filename, directory, or extension\n  - CRITICAL: stay scoped \u2014 do NOT mention, import, or reason about files outside the target list.  If you need info from another file, infer from the target file's existing imports and function signatures\n  - Do not ask questions or request clarification \u2014 implement directly\n  - Do not write TODO/stub placeholders \u2014 write complete working code\n  - Do not remove existing unrelated code\n  - Keep your response SHORT \u2014 output only the diff/edit blocks, no explanations",
+      "--map-tokens",
+      "1024",
+      "--file",
+      "D:\\BridgeProjectExperiment\\app\\useAppStore.js"
+    ]
+  },
+  "validation": {
+    "message": "Mechanical checks passed."
+  },
+  "unexpected_files": [],
+  "diff": "--- changed files ---\napp/useAppStore.js | 9 ++++++++-\n 1 file changed, 8 insertions(+), 1 deletion(-)\n\n--- diff ---\ndiff --git a/app/useAppStore.js b/app/useAppStore.js\nindex b52c9a4..b1f551e 100644\n--- a/app/useAppStore.js\n+++ b/app/useAppStore.js\n@@ -295,7 +295,14 @@ export const useAppStore = create(function createAppStore(set, get)\n             playlistName: \"\",\n             dryRun: false,\n             ffmpegBin: \"\",\n-            ffprobeBin: \"\"\n+            ffprobeBin: \"\",\n+            extensions: \"\",\n+            excludeDirectories: \"\",\n+            excludeFiles: \"\",\n+            requireUploadedOn: \"\",\n+            requireMissingOn: \"\",\n+            clientSecretsPath: \"\",\n+            tokenFilePath: \"\"\n         },\n         setUploadPlatform: function setUploadPlatform(platformId, value)\n         {",
+  "response_schema": {
+    "decision": "pass | rework | subplan",
+    "instruction": "required when decision == rework",
+    "sub_tasks": [
+      {
+        "instruction": "required when decision == subplan",
+        "files": [
+          "relative/path.py"
+        ],
+        "type": "create | modify | delete | validate"
+      }
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "plan_summary": "Implement 10 medium features from missingFeatures — Upload.jsx UI fields, Console history, Library search, Settings persistence",
+  "tasks": [
+    {
+      "id": 1,
+      "type": "modify",
+      "files": ["app/Upload.jsx"],
+      "model": "ollama/qwen2.5-coder:7b",
+      "instruction": "In Upload.jsx, after the uploadOptions.map() block that renders ToggleSwitch components (around line 146), add new form fields for the upload options added to the store. Add these as labeled inputs inside a new div after the toggle list:\n\n1. 'Max Videos' — number input, min=1 max=50, value from useAppStore(s => s.uploadOptions.maxVideos), onChange calls setUploadOption('maxVideos', parseInt(value) || 1)\n2. 'Videos Root' — text input with value from useAppStore(s => s.uploadOptions.videosRoot), onChange calls setUploadOption('videosRoot', value)\n3. 'Privacy' — select dropdown with options: '' (default), 'private', 'unlisted', 'public', value from uploadOptions.privacy, onChange calls setUploadOption('privacy', value)\n4. 'Playlist Name' — text input, value from uploadOptions.playlistName, onChange calls setUploadOption('playlistName', value)\n5. 'Dry Run' — a ToggleSwitch, checked from uploadOptions.dryRun, onChange calls setUploadOption('dryRun', !current)\n\nWrap each in a div with style display:flex, alignItems:center, justifyContent:space-between, padding: 8px 0. Label font size 14px. Input widths around 160px, dark background #1a1a2e, border 1px solid #444, color #fff, borderRadius 4, padding 4px 8px."
+    },
+    {
+      "id": 2,
+      "type": "modify",
+      "files": ["app/Upload.jsx"],
+      "model": "ollama/qwen2.5-coder:7b",
+      "instruction": "In Upload.jsx, find the cliPreview useMemo (search for 'useMemo' around line 55-80). The preview currently builds a string showing the command that will run. Update it to include the new options: after the existing preview lines, append:\n- If options.maxVideos and options.maxVideos !== 1, append ' --max-videos ' + options.maxVideos\n- If options.videosRoot, append ' --root ' + options.videosRoot\n- If options.privacy, append ' --privacy ' + options.privacy\n- If options.playlistName, append ' --playlist-name ' + options.playlistName\n- If options.dryRun, append ' --dry-run'\nAdd maxVideos, videosRoot, privacy, playlistName, dryRun to the useMemo dependency array."
+    },
+    {
+      "id": 3,
+      "type": "modify",
+      "files": ["app/Console.jsx"],
+      "model": "ollama/qwen2.5-coder:7b",
+      "instruction": "In Console.jsx, add a command history feature. Currently the component only has a logs array from the store and renders log entries. Add:\n1. A 'Clear' button next to the existing controls that calls clearLogs from the store\n2. An 'Export' button that creates a Blob from logs.map(e => e.message).join('\\n'), creates an object URL, creates a temporary <a> element with download='console_log.txt', clicks it, then revokes the URL\n3. A search input at the top that filters displayed logs — add local state const [filter, setFilter] = useState(''), filter the logs array before mapping: logs.filter(e => !filter || e.message.toLowerCase().includes(filter.toLowerCase()))\nPlace the buttons and search input in a toolbar div at the top with display:flex, gap:8px, padding:8px, borderBottom:1px solid #333."
+    },
+    {
+      "id": 4,
+      "type": "modify",
+      "files": ["app/Library.jsx"],
+      "model": "ollama/qwen2.5-coder:7b",
+      "instruction": "In Library.jsx, add search and sort controls. Currently the component has selectFilteredVideoList and selectSetVideoFilter selectors. Add:\n1. A search text input at the top that calls setVideoFilter on change — this already exists in the store as videoFilter/setVideoFilter. Wire it: value={videoFilter}, onChange={e => setVideoFilter(e.target.value)}\n2. A sort dropdown with options: 'Name A-Z', 'Name Z-A', 'Newest First', 'Oldest First'. Add local state const [sortOrder, setSortOrder] = useState('name-asc'). Before rendering the video list, sort the filtered array: if sortOrder is 'name-asc' sort by name ascending, 'name-desc' descending, etc.\n3. A count badge showing '{filteredList.length} / {videoList.length} videos'\nPlace controls in a toolbar div at the top with display:flex, gap:8px, alignItems:center, padding:8px 0."
+    },
+    {
+      "id": 5,
+      "type": "modify",
+      "files": ["app/electron/services/pathService.js"],
+      "model": "ollama/qwen2.5-coder:7b",
+      "instruction": "In pathService.js, the functions readSettings() at line 50 and saveSettings(settings) at line 69 already exist. They read/write a JSON file at getSettingsPath(). Currently the Upload page options are NOT saved to this file. No code change needed in pathService.js itself — it already has the read/write capability. But verify: readSettings() reads the file at getSettingsPath() and returns the parsed JSON or {} on error. saveSettings(settings) writes JSON.stringify(settings, null, 2) to that path. If these functions exist and work as described, this task is done — the actual persistence wiring happens in useAppStore.js (next task)."
+    },
+    {
+      "id": 6,
+      "type": "modify",
+      "files": ["app/useAppStore.js"],
+      "model": "ollama/qwen2.5-coder:7b",
+      "instruction": "In useAppStore.js, find the function loadAdvancedUploadSettings(settings) at around line 72. This function is called during initialization. It should load the persisted uploadOptions from the settings object. Currently it may be empty or only handle a few fields. Update it to:\n1. If settings.uploadOptions exists, merge it into the store's uploadOptions using set(): set({ uploadOptions: { ...get().uploadOptions, ...settings.uploadOptions } })\n2. Find saveAdvancedUploadSettings() at around line 78. It should save the current uploadOptions to disk. Update it to call window.api.saveWorkflowSettings({ uploadOptions: get().uploadOptions })\n3. In the setUploadOption function (around line 297), after the set() call that updates the option, add a call to get().saveAdvancedUploadSettings() so options persist on every change."
+    },
+    {
+      "id": 7,
+      "type": "modify",
+      "files": ["app/Dashboard.jsx"],
+      "model": "ollama/qwen2.5-coder:7b",
+      "instruction": "In Dashboard.jsx, add action buttons to the dashboard. Currently it only shows stats (video counts per platform). After the stats grid (the mapStat section around line 89), add a new section with 3 action buttons:\n1. 'Start Upload' button — when clicked, calls useAppStore.getState().setActivePage('upload') to navigate to the Upload page\n2. 'View Library' button — calls setActivePage('library')\n3. 'Open Console' button — calls setActivePage('console')\nStyle each button as: padding 10px 20px, borderRadius 8px, border 1px solid #444, background #1a1a2e, color #fff, cursor pointer, fontSize 14px. Wrap in a div with display:flex, gap:12px, marginTop:20px."
+    },
+    {
+      "id": 8,
+      "type": "modify",
+      "files": ["app/Upload.jsx"],
+      "model": "ollama/qwen2.5-coder:7b",
+      "instruction": "In Upload.jsx, add FFmpeg/FFprobe path fields. After the existing new form fields (added in task 1), add two more text inputs:\n1. 'FFmpeg Path' — text input, placeholder='Path to ffmpeg binary (optional)', value from useAppStore(s => s.uploadOptions.ffmpegBin), onChange calls setUploadOption('ffmpegBin', value)\n2. 'FFprobe Path' — text input, placeholder='Path to ffprobe binary (optional)', value from useAppStore(s => s.uploadOptions.ffprobeBin), onChange calls setUploadOption('ffprobeBin', value)\nSame styling as other inputs: dark background #1a1a2e, border 1px solid #444, color #fff, borderRadius 4, padding 4px 8px, width 220px."
+    },
+    {
+      "id": 9,
+      "type": "modify",
+      "files": ["app/electron/ipc/systemHandlers.js"],
+      "model": "ollama/qwen2.5-coder:7b",
+      "instruction": "In systemHandlers.js, the function registerSystemHandlers(ipcMain) registers IPC handlers. It already has handleLoadWorkflowSettings at line 16 and handleSaveWorkflowSettings at line 21. These should call pathService.readSettings() and pathService.saveSettings(settings). Verify they are wired correctly:\n- handleLoadWorkflowSettings should: const settings = readSettings(); return settings;\n- handleSaveWorkflowSettings should receive settings argument and call saveSettings(settings)\nIf they already work this way, this task needs no changes. If they are stubs or empty, implement them by importing readSettings and saveSettings from '../services/pathService.js' and wiring the handlers."
+    },
+    {
+      "id": 10,
+      "type": "modify",
+      "files": ["app/Metadata.jsx"],
+      "model": "ollama/qwen2.5-coder:7b",
+      "instruction": "In Metadata.jsx, add a clear banner at the top of the component indicating that metadata edits are preview-only and not persisted. At the very beginning of the returned JSX (after the opening div), add:\n<div style={{background:'rgba(239,168,68,0.1)',border:'1px solid rgba(239,168,68,0.3)',borderRadius:8,padding:'10px 14px',marginBottom:16,fontSize:13,color:'#efa844'}}>\n  Preview Only — Metadata edits are not saved to disk yet. This page shows what the AI metadata generator would produce.\n</div>\nDo not change any other part of the component."
+    }
+  ]
+}
