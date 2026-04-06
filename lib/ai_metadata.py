@@ -209,3 +209,90 @@ def is_metadata_unique(
         if text_similarity(description, recent) > threshold:
             return False
     return True
+
+
+def generate_ai_metadata(
+    client: Any,
+    model: str,
+    file_path: Path,
+    rel_path: str,
+    channel_name: str,
+    extra_keywords: List[str],
+    language: str,
+    recent_titles: List[str],
+    recent_descriptions: List[str],
+    clip_context: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Generate YouTube Shorts metadata using OpenAI API."""
+    system_prompt = (
+        "You are a YouTube Shorts growth strategist for VALORANT content who specializes in FUNNY, VIRAL, HIGH-CTR metadata. "
+        "Your goal is to make viewers laugh, relate, or feel curious enough to instantly click. "
+        "You ONLY produce funny, entertaining, or ironic content. No serious esports tone.\n\n"
+        "Titles must feel like memes or inside jokes gamers instantly understand.\n"
+        "Descriptions should feel like a human reacting, not describing.\n\n"
+        "Avoid robotic phrasing, templates, or generic wording.\n"
+        "Return ONLY strict JSON."
+    )
+    clip_context_text = json.dumps(clip_context, ensure_ascii=False) if clip_context else "none"
+    user_prompt = (
+        "Create FUNNY, HIGH-CTR metadata for a VALORANT short.\n\n"
+        f"Video file name: {file_path.name}\n"
+        f"Relative path: {rel_path}\n"
+        f"Channel name/style: {channel_name or 'not provided'}\n"
+        f"Language: {language}\n"
+        f"Extra keywords: {', '.join(extra_keywords) if extra_keywords else 'none'}\n\n"
+        f"Sibling sidecar JSON facts: {clip_context_text}\n\n"
+        "Output JSON schema:\n"
+        '{"title": "funny <=100 chars", "description": "2-4 lines", '
+        '"tags": ["10-15 tags"], "hashtags": ["3-5"], "cta": "short CTA"}\n\n'
+        "RULES: No emojis, no serious tone, no generic phrases, use clip context if available.\n\n"
+        f"Recent titles to avoid:\n{json.dumps(recent_titles[-5:], ensure_ascii=False)}\n"
+        f"Recent descriptions to avoid:\n{json.dumps(recent_descriptions[-3:], ensure_ascii=False)}\n"
+    )
+    response = client.chat.completions.create(
+        model=model,
+        response_format={"type": "json_object"},
+        temperature=0.8,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    )
+    raw = response.choices[0].message.content or "{}"
+    return parse_json_response(raw)
+
+
+def build_meta_captions(
+    metadata: Dict[str, Any],
+    youtube_username: str = "",
+    instagram_username: str = "",
+) -> tuple:
+    """Build platform-specific captions for IG and FB crosspost.
+
+    Returns (ig_caption, fb_description, fb_title).
+    """
+    title = str(metadata.get("title", ""))
+    description = str(metadata.get("description", ""))
+    hashtags = metadata.get("hashtags", [])
+    hashtag_line = " ".join(str(h) for h in hashtags) if hashtags else ""
+
+    ig_parts = [title]
+    if description:
+        ig_parts.append(description)
+    if hashtag_line:
+        ig_parts.append(hashtag_line)
+    if youtube_username:
+        yt_handle = normalize_handle(youtube_username)
+        ig_parts.append(f"YT: @{yt_handle}")
+    ig_caption = "\n\n".join(ig_parts)
+
+    fb_parts = [description] if description else [title]
+    if hashtag_line:
+        fb_parts.append(hashtag_line)
+    if instagram_username:
+        ig_handle = normalize_handle(instagram_username)
+        fb_parts.append(f"IG: @{ig_handle}")
+    fb_description = "\n\n".join(fb_parts)
+    fb_title = title
+
+    return ig_caption, fb_description, fb_title
