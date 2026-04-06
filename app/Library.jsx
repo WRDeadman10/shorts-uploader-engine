@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import StatusBadge from "./StatusBadge.jsx";
 import { useAppStore } from "./useAppStore.js";
@@ -34,10 +34,28 @@ function Library()
         return state.selectVideo;
     });
 
+    const [searchText, setSearchText] = useState("");
+    const [sortOrder, setSortOrder] = useState("name-asc");
+
     useEffect(function loadVideoList()
     {
         fetchVideoList();
     }, [fetchVideoList]);
+
+    // Filter by search text on top of platform filter
+    var displayList = filteredVideoList;
+    if (searchText) {
+        var q = searchText.toLowerCase();
+        displayList = displayList.filter(function matchSearch(v) {
+            return (v.title || "").toLowerCase().includes(q) || (v.relativePath || "").toLowerCase().includes(q);
+        });
+    }
+    // Sort
+    displayList = displayList.slice().sort(function sortVideos(a, b) {
+        if (sortOrder === "name-asc") return (a.title || "").localeCompare(b.title || "");
+        if (sortOrder === "name-desc") return (b.title || "").localeCompare(a.title || "");
+        return 0;
+    });
 
     return (
         <section className="library-page page-panel">
@@ -45,7 +63,17 @@ function Library()
                 <div className="page-heading">
                     <span className="page-eyebrow">Asset Library</span>
                     <h1 className="page-title">Video Inventory</h1>
-                    <p className="page-placeholder">{videoList.length} tracked videos loaded from Python state files.</p>
+                    <p className="page-placeholder">{displayList.length} / {videoList.length} videos</p>
+                </div>
+                <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <input type="text" placeholder="Search videos..." value={searchText}
+                        onChange={function handleSearch(e) { setSearchText(e.target.value); }}
+                        style={{padding:"5px 10px",borderRadius:6,border:"1px solid #333",background:"#0d0d1a",color:"#ccc",fontSize:13,width:160}} />
+                    <select value={sortOrder} onChange={function handleSort(e) { setSortOrder(e.target.value); }}
+                        style={{padding:"5px 8px",borderRadius:6,border:"1px solid #333",background:"#0d0d1a",color:"#ccc",fontSize:13}}>
+                        <option value="name-asc">Name A-Z</option>
+                        <option value="name-desc">Name Z-A</option>
+                    </select>
                 </div>
                 <label className="library-filter">
                     <span className="library-filter-label">Platform</span>
@@ -65,7 +93,7 @@ function Library()
                 </label>
             </div>
             <div className="library-grid">
-                {filteredVideoList.map(function mapVideo(item)
+                {displayList.map(function mapVideo(item)
                 {
                     const cardClassName = item.id === selectedVideoId ? "library-card library-card-selected" : "library-card";
 

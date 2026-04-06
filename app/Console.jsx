@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAppStore } from "./useAppStore.js";
 
 function Console()
 {
+    const [searchFilter, setSearchFilter] = useState("");
     const logEntries = useAppStore(function selectLogs(state)
     {
         return state.logEntries;
@@ -61,10 +63,39 @@ function Console()
                     >
                         Clear
                     </motion.button>
+                    <motion.button
+                        type="button"
+                        className="console-button"
+                        onClick={function exportLogs() {
+                            var text = logEntries.map(function(e) { return "[" + formatTime(e.timestamp) + "] [" + e.stream + "] " + e.message; }).join("\n");
+                            var blob = new Blob([text], { type: "text/plain" });
+                            var url = URL.createObjectURL(blob);
+                            var a = document.createElement("a");
+                            a.href = url;
+                            a.download = "console_log_" + new Date().toISOString().slice(0,10) + ".txt";
+                            a.click();
+                            URL.revokeObjectURL(url);
+                        }}
+                        whileHover={{ y: -2 }}
+                        whileTap={{ scale: 0.97 }}
+                    >
+                        Export
+                    </motion.button>
                 </div>
             </div>
+            <div style={{padding: "0 16px 8px"}}>
+                <input
+                    type="text"
+                    placeholder="Search logs..."
+                    value={searchFilter}
+                    onChange={function handleSearch(e) { setSearchFilter(e.target.value); }}
+                    style={{width:"100%",padding:"6px 10px",borderRadius:6,border:"1px solid #333",background:"#0d0d1a",color:"#ccc",fontSize:13}}
+                />
+            </div>
             <div className="console-viewer" role="log" aria-live="polite">
-                {logEntries.map(function mapLog(entry)
+                {logEntries.filter(function filterLog(entry) {
+                    return !searchFilter || entry.message.toLowerCase().includes(searchFilter.toLowerCase());
+                }).map(function mapLog(entry)
                 {
                     const lineClassName = "console-line console-line-" + entry.stream;
 

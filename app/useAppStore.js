@@ -71,9 +71,13 @@ export const useAppStore = create(function createAppStore(set, get)
         featureStatus: "", // Added feature status field
         loadAdvancedUploadSettings: function loadAdvancedUploadSettings(settings)
         {
-            set({
-                advancedUploadSettings: settings
-            });
+            var updates = { advancedUploadSettings: settings };
+            // Restore persisted uploadOptions if present
+            if (settings && settings.uploadOptions)
+            {
+                updates.uploadOptions = Object.assign({}, get().uploadOptions, settings.uploadOptions);
+            }
+            set(updates);
         },
         saveAdvancedUploadSettings: async function saveAdvancedUploadSettings()
         {
@@ -82,7 +86,11 @@ export const useAppStore = create(function createAppStore(set, get)
                 return;
             }
 
-            const response = await window.api.saveWorkflowSettings(get().advancedUploadSettings);
+            // Persist both advancedUploadSettings and uploadOptions
+            var payload = Object.assign({}, get().advancedUploadSettings, {
+                uploadOptions: get().uploadOptions
+            });
+            const response = await window.api.saveWorkflowSettings(payload);
 
             if (response)
             {
@@ -312,6 +320,8 @@ export const useAppStore = create(function createAppStore(set, get)
                     }
                 };
             });
+            // Auto-persist options to disk
+            get().saveAdvancedUploadSettings();
         },
         startConsole: async function startConsole()
         {
