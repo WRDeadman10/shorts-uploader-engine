@@ -27,6 +27,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from lib.file_utils import (
+    load_json_file, save_json_file, delete_file_if_exists, get_default_video_root,
+)
+from lib.ledger import (
+    ensure_platform_upload_ledger_shape, update_platform_upload_ledger,
+)
+from lib.text_utils import clean_one_line, clean_multiline
+
+
 try:
     import requests
 except ImportError:  # pragma: no cover - handled at runtime
@@ -34,25 +43,6 @@ except ImportError:  # pragma: no cover - handled at runtime
 
 # Leave empty to auto-use sibling folder named "VALORANT".
 VIDEO_SOURCE_ROOT = ""
-
-
-def get_default_video_root() -> str:
-    if VIDEO_SOURCE_ROOT.strip():
-        return VIDEO_SOURCE_ROOT.strip()
-    script_dir = Path(__file__).resolve().parent
-    sibling_valorant = script_dir.parent / "VALORANT"
-    if sibling_valorant.exists():
-        return str(sibling_valorant)
-    return "."
-
-
-DEFAULT_VIDEO_ROOT = get_default_video_root()
-DEFAULT_SOURCE_STATE_FILE = ".youtube_upload_state.json"
-DEFAULT_REELS_STATE_FILE = ".meta_reels_upload_state.json"
-DEFAULT_GRAPH_VERSION = "v25.0"
-DEFAULT_INSTAGRAM_UPLOAD_LEDGER_FILE = ".instagram_uploaded_videos.json"
-DEFAULT_FACEBOOK_UPLOAD_LEDGER_FILE = ".facebook_uploaded_videos.json"
-DEFAULT_CONVERTED_DIR = "converted_shorts"
 
 
 def parse_args() -> argparse.Namespace:
@@ -182,63 +172,6 @@ def os_env(name: str) -> str:
     return os.getenv(name, "").strip()
 
 
-def load_json_file(path: Path, default: Any) -> Any:
-    if not path.exists():
-        return default
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return default
-
-
-def save_json_file(path: Path, data: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-
-
-def ensure_platform_upload_ledger_shape(data: Any) -> Dict[str, Any]:
-    if not isinstance(data, dict):
-        data = {}
-    entries = data.get("entries")
-    if not isinstance(entries, dict):
-        data["entries"] = {}
-    return data
-
-
-def update_platform_upload_ledger(
-    ledger_state: Dict[str, Any],
-    *,
-    state_key: str,
-    status: str,
-    relative_path: str,
-    source_file: Path,
-    metadata_file: str,
-    title: str,
-    platform_id_key: str,
-    platform_id_value: str,
-    extra_fields: Optional[Dict[str, Any]] = None,
-    error_message: str = "",
-) -> None:
-    row: Dict[str, Any] = {
-        "status": status,
-        "relative_path": relative_path,
-        "source_file": str(source_file),
-        "metadata_file": metadata_file,
-        "title": title,
-        "updated_at_utc": now_utc_iso(),
-    }
-    if platform_id_key:
-        row[platform_id_key] = platform_id_value
-    if status == "ok":
-        row["uploaded_at_utc"] = now_utc_iso()
-    elif error_message:
-        row["error"] = error_message
-    if extra_fields:
-        for field_name, field_value in extra_fields.items():
-            row[field_name] = field_value
-    ledger_state["entries"][state_key] = row
-
-
 def parse_iso_utc(value: str) -> datetime:
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -251,16 +184,6 @@ def parse_iso_utc(value: str) -> datetime:
 
 def now_utc_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def clean_one_line(text: str) -> str:
-    return re.sub(r"\s+", " ", text or "").strip()
-
-
-def clean_multiline(text: str) -> str:
-    raw = (text or "").replace("\r\n", "\n").replace("\r", "\n")
-    lines = [clean_one_line(line) for line in raw.split("\n")]
-    return "\n".join(line for line in lines if line)
 
 
 def build_caption_from_entry(entry: Dict[str, Any]) -> tuple[str, str, str]:
@@ -569,14 +492,6 @@ def should_skip_platform(
     if not isinstance(platform_row, dict):
         return False
     return clean_one_line(str(platform_row.get("status", ""))).lower() == "ok"
-
-
-def delete_file_if_exists(file_path: Path) -> None:
-    try:
-        if file_path.exists():
-            file_path.unlink()
-    except OSError:
-        pass
 
 
 def main() -> int:

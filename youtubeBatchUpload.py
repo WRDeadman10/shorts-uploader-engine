@@ -34,6 +34,25 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
+from lib.file_utils import (
+    load_json_file, save_json_file, normalize_extensions, normalize_names_csv,
+    discover_videos, file_key, delete_file_if_exists, get_default_video_root,
+)
+from lib.ledger import (
+    ensure_platform_upload_ledger_shape, update_platform_upload_ledger,
+    is_platform_upload_completed, normalize_platform_names_csv, is_uploaded_on_platform,
+)
+from lib.media_tools import (
+    check_tool_available, resolve_media_tool, probe_video_info,
+    video_has_audio_stream, is_shorts_eligible, build_converted_path,
+    build_temp_media_output_path,
+)
+from lib.music import build_music_inventory, build_mixed_music_path
+from lib.text_utils import (
+    clean_text, parse_json_response, normalize_hashtag, normalize_tags,
+    trim_title, get_sidecar_value, normalize_handle, normalize_compare_text,
+    text_similarity,
+)
 from metaBatchReelsUpload import (
     ensure_meta_state_shape,
     fb_finish_reel_publish,
@@ -66,21 +85,6 @@ DEFAULT_FACEBOOK_UPLOAD_LEDGER_FILE = ".facebook_uploaded_videos.json"
 # Leave empty ("") to auto-use sibling folder named "VALORANT"
 # or override with --root / --videos-path argument.
 VIDEO_SOURCE_ROOT = ""
-
-
-def get_default_video_root() -> str:
-    if VIDEO_SOURCE_ROOT.strip():
-        return VIDEO_SOURCE_ROOT.strip()
-
-    script_dir = Path(__file__).resolve().parent
-    sibling_valorant = script_dir.parent / "VALORANT"
-    if sibling_valorant.exists():
-        return str(sibling_valorant)
-
-    return "."
-
-
-DEFAULT_VIDEO_ROOT = get_default_video_root()
 
 
 def parse_args() -> argparse.Namespace:
@@ -424,153 +428,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_json_file(path: Path, default: Any) -> Any:
-    if not path.exists():
-        return default
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return default
-
-
-def save_json_file(path: Path, data: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-
-
-def ensure_platform_upload_ledger_shape(data: Any) -> Dict[str, Any]:
-    if not isinstance(data, dict):
-        data = {}
-    entries = data.get("entries")
-    if not isinstance(entries, dict):
-        data["entries"] = {}
-    return data
-
-
-def update_platform_upload_ledger(
-    ledger_state: Dict[str, Any],
-    *,
-    state_key: str,
-    status: str,
-    relative_path: str,
-    source_file: Path,
-    metadata_file: Path,
-    title: str,
-    platform_id_key: str,
-    platform_id_value: str,
-    extra_fields: Optional[Dict[str, Any]] = None,
-    error_message: str = "",
-) -> None:
-    row: Dict[str, Any] = {
-        "status": status,
-        "relative_path": relative_path,
-        "source_file": str(source_file),
-        "metadata_file": str(metadata_file),
-        "title": title,
-        "updated_at_utc": datetime.now(timezone.utc).isoformat(),
-    }
-    if platform_id_key:
-        row[platform_id_key] = platform_id_value
-    if status == "ok":
-        row["uploaded_at_utc"] = datetime.now(timezone.utc).isoformat()
-    elif error_message:
-        row["error"] = error_message
-    if extra_fields:
-        for field_name, field_value in extra_fields.items():
-            row[field_name] = field_value
-    ledger_state["entries"][state_key] = row
-
-
-def is_platform_upload_completed(ledger_state: Dict[str, Any], state_key: str) -> bool:
-    entries = ledger_state.get("entries", {})
-    if not isinstance(entries, dict):
-        return False
-    row = entries.get(state_key, {})
-    if not isinstance(row, dict):
-        return False
-    return str(row.get("status", "")).strip().lower() == "ok"
-
-
-def normalize_platform_names_csv(raw: str) -> List[str]:
-    values: List[str] = []
-    seen: set[str] = set()
-    for item in raw.split(","):
-        cleaned = item.strip().lower()
-        if not cleaned:
-            continue
-        if cleaned not in {"youtube", "instagram", "facebook"}:
-            raise ValueError(f"Unsupported platform name: {cleaned}")
-        if cleaned in seen:
-            continue
-        seen.add(cleaned)
-        values.append(cleaned)
-    return values
-
-
-def is_uploaded_on_platform(
-    platform_name: str,
-    *,
-    state_key: str,
-    uploaded_state: Dict[str, Any],
-    instagram_upload_ledger: Dict[str, Any],
-    facebook_upload_ledger: Dict[str, Any],
-) -> bool:
-    if platform_name == "youtube":
-        return state_key in uploaded_state
-    if platform_name == "instagram":
-        return is_platform_upload_completed(instagram_upload_ledger, state_key)
-    if platform_name == "facebook":
-        return is_platform_upload_completed(facebook_upload_ledger, state_key)
-    return False
-
-
-def normalize_extensions(raw_extensions: str) -> set[str]:
-    exts: set[str] = set()
-    for item in raw_extensions.split(","):
-        cleaned = item.strip().lower()
-        if not cleaned:
-            continue
-        if not cleaned.startswith("."):
-            cleaned = f".{cleaned}"
-        exts.add(cleaned)
-    return exts
-
-
-def normalize_names_csv(raw: str) -> set[str]:
-    values = set()
-    for item in raw.split(","):
-        cleaned = item.strip().lower()
-        if cleaned:
-            values.add(cleaned)
-    return values
-
-
-def discover_videos(
-    root: Path,
-    extensions: set[str],
-    exclude_dirs: set[str],
-    exclude_files: set[str],
-) -> List[Path]:
-    files: List[Path] = []
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d.lower() not in exclude_dirs]
-        base = Path(dirpath)
-        for filename in filenames:
-            if filename.lower() in exclude_files:
-                continue
-            path = base / filename
-            if path.suffix.lower() in extensions:
-                files.append(path)
-    files.sort()
-    return files
-
-
-def file_key(root: Path, file_path: Path) -> str:
-    stat = file_path.stat()
-    rel = file_path.relative_to(root).as_posix()
-    return f"{rel}|{stat.st_size}|{int(stat.st_mtime)}"
-
-
 def build_youtube_client(client_secrets: Path, token_file: Path, auth_port: int):
     creds: Optional[Credentials] = None
     client_config = load_json_file(client_secrets, default={})
@@ -599,41 +456,6 @@ def build_youtube_client(client_secrets: Path, token_file: Path, auth_port: int)
             creds = flow.run_local_server(port=auth_port)
         token_file.write_text(creds.to_json(), encoding="utf-8")
     return build("youtube", "v3", credentials=creds)
-
-
-def check_tool_available(bin_name: str) -> bool:
-    try:
-        proc = subprocess.run(
-            [bin_name, "-version"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=False,
-        )
-        return proc.returncode == 0
-    except OSError:
-        return False
-
-
-def resolve_media_tool(bin_name: str) -> Optional[str]:
-    # If user provided an absolute path or PATH-resolved binary, use it.
-    if Path(bin_name).exists() or check_tool_available(bin_name):
-        return bin_name
-
-    exe_name = bin_name
-    if not exe_name.lower().endswith(".exe"):
-        exe_name = f"{exe_name}.exe"
-
-    # Fallback for WinGet FFmpeg installation path.
-    local_appdata = os.getenv("LOCALAPPDATA")
-    if local_appdata:
-        candidate_root = Path(local_appdata) / "Microsoft" / "WinGet" / "Packages"
-        if candidate_root.exists():
-            for match in candidate_root.rglob(exe_name):
-                if match.is_file():
-                    return str(match)
-
-    return None
 
 
 def probe_video_info(file_path: Path, ffprobe_bin: str) -> Optional[Dict[str, float]]:
@@ -684,18 +506,6 @@ def probe_video_info(file_path: Path, ffprobe_bin: str) -> Optional[Dict[str, fl
     }
 
 
-def delete_file_if_exists(file_path: Path) -> None:
-    try:
-        if file_path.exists():
-            file_path.unlink()
-    except OSError:
-        pass
-
-
-def build_temp_media_output_path(output: Path) -> Path:
-    return output.with_name(f"{output.stem}.{os.getpid()}.tmp{output.suffix}")
-
-
 def reuse_valid_cached_video(
     *,
     output: Path,
@@ -713,29 +523,6 @@ def reuse_valid_cached_video(
     print(f"[warn] invalid cached {cache_label} file detected; rebuilding: {output.name}")
     delete_file_if_exists(output)
     return False
-
-
-def is_shorts_eligible(
-    video_info: Dict[str, float],
-    shorts_max_seconds: int,
-) -> Tuple[bool, List[str]]:
-    reasons: List[str] = []
-    width = int(video_info["width"])
-    height = int(video_info["height"])
-    duration = float(video_info["duration"])
-    if width > height:
-        reasons.append(f"horizontal aspect ratio ({width}x{height})")
-    if duration > shorts_max_seconds:
-        reasons.append(f"duration {duration:.1f}s > {shorts_max_seconds}s")
-    return (len(reasons) == 0, reasons)
-
-
-def build_converted_path(source: Path, converted_dir: Path) -> Path:
-    profile = "cropv1"
-    digest = hashlib.sha1(f"{source}|{profile}".encode("utf-8")).hexdigest()[:10]
-    safe_stem = re.sub(r"[^a-zA-Z0-9._-]", "_", source.stem)[:80]
-    filename = f"{safe_stem}.{digest}.{profile}.shorts.mp4"
-    return converted_dir / filename
 
 
 def convert_to_shorts(
@@ -826,66 +613,6 @@ def convert_to_shorts(
     temp_output.replace(output)
 
     return output
-
-
-def build_music_inventory(music_dir: Path) -> List[Dict[str, str]]:
-    tracks: List[Dict[str, str]] = []
-    for path in sorted(music_dir.rglob("*.mp3")):
-        tracks.append(
-            {
-                "name": path.name,
-                "path": str(path.resolve()),
-            }
-        )
-    return tracks
-
-
-def video_has_audio_stream(file_path: Path, ffprobe_bin: str) -> bool:
-    try:
-        proc = subprocess.run(
-            [
-                ffprobe_bin,
-                "-v",
-                "error",
-                "-select_streams",
-                "a",
-                "-show_entries",
-                "stream=codec_type",
-                "-of",
-                "json",
-                str(file_path),
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=False,
-        )
-    except OSError:
-        return False
-
-    if proc.returncode != 0:
-        return False
-
-    try:
-        payload = json.loads(proc.stdout or "{}")
-        streams = payload.get("streams", [])
-        return bool(streams)
-    except (TypeError, ValueError, json.JSONDecodeError):
-        return False
-
-
-def build_mixed_music_path(
-    source: Path,
-    music_path: Path,
-    converted_dir: Path,
-    bg_volume: float,
-) -> Path:
-    profile = "bgmixv1"
-    digest = hashlib.sha1(
-        f"{source.resolve()}|{music_path.resolve()}|{bg_volume:.3f}|{profile}".encode("utf-8")
-    ).hexdigest()[:10]
-    safe_stem = re.sub(r"[^a-zA-Z0-9._-]", "_", source.stem)[:80]
-    return converted_dir / f"{safe_stem}.{digest}.{profile}.mp4"
 
 
 def mix_background_music(
@@ -1029,62 +756,6 @@ def try_mix_background_music(
             failures.append(f"{chosen_music_path.name}: {exc}")
 
     return source, None, failures
-
-
-def clean_text(value: str) -> str:
-    return re.sub(r"\s+", " ", value).strip()
-
-
-def parse_json_response(raw: str) -> Dict[str, Any]:
-    raw = raw.strip()
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", raw, re.DOTALL)
-        if match:
-            return json.loads(match.group(0))
-        raise
-
-
-def normalize_hashtag(tag: str) -> str:
-    text = re.sub(r"[^a-zA-Z0-9_]", "", tag.replace("#", "").strip().lower())
-    return f"#{text}" if text else ""
-
-
-def normalize_tags(tags: List[str], max_total_chars: int = 500, max_tags: int = 15) -> List[str]:
-    normalized: List[str] = []
-    seen = set()
-    total = 0
-    for tag in tags:
-        cleaned = clean_text(tag).lower()
-        cleaned = re.sub(r"[^a-z0-9\s\-]", "", cleaned).strip("- ")
-        if not cleaned or cleaned in seen:
-            continue
-        estimated_add = len(cleaned) + (1 if normalized else 0)
-        if len(normalized) >= max_tags or total + estimated_add > max_total_chars:
-            break
-        normalized.append(cleaned)
-        seen.add(cleaned)
-        total += estimated_add
-    return normalized
-
-
-def trim_title(title: str, max_len: int = 100) -> str:
-    title = clean_text(title)
-    if len(title) <= max_len:
-        return title
-    return clean_text(title[: max_len - 3]) + "..."
-
-
-def get_sidecar_value(payload: Dict[str, Any], *keys: str) -> Any:
-    normalized = {
-        re.sub(r"[\s_\-]+", "", str(key).lower()): value for key, value in payload.items()
-    }
-    for key in keys:
-        probe = re.sub(r"[\s_\-]+", "", key.lower())
-        if probe in normalized:
-            return normalized[probe]
-    return None
 
 
 def load_clip_context(file_path: Path) -> Optional[Dict[str, Any]]:
@@ -1352,11 +1023,6 @@ def generate_ai_metadata(
     return parse_json_response(raw)
 
 
-def normalize_handle(value: str) -> str:
-    cleaned = clean_text(value).lstrip("@")
-    return f"@{cleaned}" if cleaned else ""
-
-
 def finalize_metadata(
     raw: Dict[str, Any],
     fallback: Dict[str, Any],
@@ -1408,14 +1074,6 @@ def finalize_metadata(
         "hashtags": hashtags,
         "cta": cta,
     }
-
-
-def normalize_compare_text(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
-
-
-def text_similarity(a: str, b: str) -> float:
-    return SequenceMatcher(None, normalize_compare_text(a), normalize_compare_text(b)).ratio()
 
 
 def is_metadata_unique(
