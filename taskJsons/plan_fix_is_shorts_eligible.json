@@ -1,0 +1,18 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "files": ["lib/media_tools.py"],
+      "instruction": "Update the is_shorts_eligible function signature and return type to match how it is called in youtubeBatchUpload.py. The caller at line 902 passes two arguments: source_info (a dict with keys 'duration', 'width', 'height') and max_duration (a float from args.shorts_max_seconds). The caller also unpacks the result as (eligible, reasons), so the function must return a Tuple[bool, List[str]]. Change the signature from (duration: float, width: int, height: int, max_duration: float) -> bool to (source_info: dict, max_duration: float = 60.0) -> Tuple[bool, List[str]]. Inside the function, extract duration, width, height from source_info using .get(). Build a reasons list that appends a string explaining each failed check (e.g. 'duration exceeds max', 'not portrait or square orientation'). Return (False, reasons) when any check fails, and (True, []) when all checks pass. Add Tuple and List to the typing imports at the top of the file if not already present.",
+      "type": "modify",
+      "must_exist": ["lib/media_tools.py"],
+      "must_not_exist": [],
+      "assertions": [
+        "is_shorts_eligible accepts exactly two positional args: source_info dict and max_duration float",
+        "is_shorts_eligible returns a tuple of (bool, list)",
+        "reasons list is non-empty when eligible is False",
+        "reasons list is empty when eligible is True"
+      ]
+    }
+  ]
+}

@@ -5,7 +5,7 @@ Shared between: metaBatchReelsUpload.py, youtubeBatchUpload.py (crosspost)
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import requests
 
@@ -41,7 +41,17 @@ def request_json(
         params=params, data=data, files=files,
         timeout=timeout,
     )
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as exc:
+        try:
+            error_payload = response.json()
+            error_msg = extract_meta_error_message(error_payload)
+            if error_msg:
+                raise RuntimeError(f"Meta API Error ({response.status_code}): {error_msg}") from exc
+        except (ValueError, KeyError):
+            pass
+        raise exc
     return response.json()
 
 
@@ -49,12 +59,14 @@ def ig_create_reel_container(
     ig_user_id: str,
     access_token: str,
     video_url: str,
-    caption: str,
+    caption: str,   
+    graph_version: str = "v25.0",
+    timeout: float = 120,
 ) -> str:
     """Create an Instagram Reels container. Returns the container ID."""
     result = request_json(
         "POST",
-        f"https://graph.facebook.com/v21.0/{ig_user_id}/media",
+        f"https://graph.facebook.com/{graph_version}/{ig_user_id}/media",
         data={
             "media_type": "REELS",
             "video_url": video_url,
@@ -69,23 +81,22 @@ def ig_create_reel_container(
 
 
 def ig_upload_reel_binary(
-    ig_user_id: str,
+    graph_version: str,
+    container_id: str,
     access_token: str,
-    video_path: str,
-    caption: str,
+    file_path: str,
+    timeout: float = 300,
 ) -> str:
     """Upload a reel binary to Instagram. Returns container ID."""
-    with open(video_path, "rb") as f:
+    with open(file_path, "rb") as f:
         result = request_json(
             "POST",
-            f"https://graph.facebook.com/v21.0/{ig_user_id}/media",
+            f"https://graph.facebook.com/{graph_version}/{container_id}",
             data={
-                "media_type": "REELS",
-                "caption": caption,
                 "access_token": access_token,
             },
             files={"source": f},
-            timeout=300,
+            timeout=timeout,
         )
     container_id = result.get("id")
     if not container_id:
@@ -98,13 +109,14 @@ def ig_wait_until_ready(
     access_token: str,
     max_wait: int = 300,
     poll_interval: int = 10,
+    graph_version: str = "v25.0",
 ) -> str:
     """Poll Instagram until the container is ready for publishing."""
     waited = 0
     while waited < max_wait:
         result = request_json(
             "GET",
-            f"https://graph.facebook.com/v21.0/{container_id}",
+            f"https://graph.facebook.com/{graph_version}/{container_id}",
             params={
                 "fields": "status_code,status",
                 "access_token": access_token,
@@ -124,11 +136,13 @@ def ig_publish_reel(
     ig_user_id: str,
     access_token: str,
     container_id: str,
+    graph_version: str = "v25.0",
+    timeout: float = 120,
 ) -> str:
     """Publish a ready Instagram Reel. Returns the media ID."""
     result = request_json(
         "POST",
-        f"https://graph.facebook.com/v21.0/{ig_user_id}/media_publish",
+        f"https://graph.facebook.com/{graph_version}/{ig_user_id}/media_publish",
         data={
             "creation_id": container_id,
             "access_token": access_token,
@@ -143,39 +157,46 @@ def ig_publish_reel(
 def fb_start_reel_session(
     page_id: str,
     access_token: str,
-    description: str,
-) -> str:
-    """Start a Facebook Reel upload session. Returns the video ID."""
+    graph_version: str = "v25.0",
+    timeout: float = 120,
+) -> Tuple[str, str]:
+    """Start a Facebook Reel upload session. Returns (video_id, upload_url)."""
+    print(f"[fb_start_reel_session]")
     result = request_json(
         "POST",
-        f"https://graph.facebook.com/v21.0/{page_id}/video_reels",
+        f"https://graph.facebook.com/{graph_version}/{page_id}/video_reels",
         data={
             "upload_phase": "start",
             "access_token": access_token,
         },
+        timeout=timeout,
     )
     video_id = result.get("video_id")
-    if not video_id:
+    upload_url = result.get("upload_url")
+    if not video_id or not upload_url:
         raise RuntimeError(f"FB session start failed: {result}")
-    return str(video_id)
+    return str(video_id), str(upload_url)
 
 
 def fb_upload_reel_binary(
     video_id: str,
     access_token: str,
-    video_path: str,
+    file_path: str,
+    timeout: float = 300,
+    graph_version: str = "v25.0",
 ) -> None:
     """Upload the video binary to an existing Facebook Reel session."""
-    with open(video_path, "rb") as f:
+    print(f"[fb_upload_reel_binary]")
+    with open(file_path, "rb") as f:
         result = request_json(
             "POST",
-            f"https://graph.facebook.com/v21.0/{video_id}",
+            f"https://graph.facebook.com/{graph_version}/{video_id}",
             data={
                 "upload_phase": "transfer",
                 "access_token": access_token,
             },
             files={"source": f},
-            timeout=300,
+            timeout=timeout,
         )
     if not result.get("success"):
         raise RuntimeError(f"FB binary upload failed: {result}")
@@ -186,22 +207,45 @@ def fb_finish_reel_publish(
     access_token: str,
     video_id: str,
     description: str,
+    title: str = "",
+    graph_version: str = "v25.0",
+    timeout: float = 120,
 ) -> str:
     """Finish and publish a Facebook Reel. Returns the post ID."""
-    result = request_json(
-        "POST",
-        f"https://graph.facebook.com/v21.0/{page_id}/video_reels",
-        data={
-            "upload_phase": "finish",
-            "video_id": video_id,
-            "description": description,
-            "access_token": access_token,
-        },
-    )
-    post_id = result.get("id") or result.get("post_id")
-    if not post_id:
-        raise RuntimeError(f"FB publish failed: {result}")
-    return str(post_id)
+    print(f"[fb_finish_reel_publish]")
+    data: Dict[str, Any] = {
+        "upload_phase": "finish",
+        "video_id": video_id,
+        "video_state": "PUBLISHED",
+        "access_token": access_token,
+    }
+    if description:
+        data["description"] = description
+    if title:
+        data["title"] = title
+
+    max_attempts = 3
+    for attempt in range(1, max_attempts + 1):
+        try:
+            result = request_json(
+                "POST",
+                f"https://graph.facebook.com/{graph_version}/{page_id}/video_reels",
+                data=data,
+                timeout=timeout,
+            )
+            post_id = result.get("id") or result.get("post_id")
+            if not post_id:
+                raise RuntimeError(f"FB publish failed: {result}")
+            return str(post_id)
+        except RuntimeError as exc:
+            msg = str(exc)
+            if "problem uploading your video file" in msg.lower() and attempt < max_attempts:
+                print(f"[warn][fb] Publish attempt {attempt} failed, waiting 10s to retry...")
+                time.sleep(10)
+                continue
+            raise
+    # Should not be reachable
+    return ""
 
 
 def platform_enabled(platform_choice: str, platform_name: str) -> bool:

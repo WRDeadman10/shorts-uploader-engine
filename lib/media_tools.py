@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 _WIN_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
@@ -102,17 +102,22 @@ def video_has_audio_stream(file_path: Path, ffprobe_bin: str) -> bool:
 
 
 def is_shorts_eligible(
-    duration: float,
-    width: int,
-    height: int,
-    max_duration: float = 60.0,
-) -> bool:
+    source_info: dict, max_duration: float = 60.0
+) -> Tuple[bool, List[str]]:
     """Check if a video is eligible for Shorts (vertical, < 60s)."""
+    reasons: List[str] = []
+    duration = source_info.get("duration", 0)
+    width = int(source_info.get("width", 0))
+    height = int(source_info.get("height", 0))
+
     if duration <= 0 or duration > max_duration:
-        return False
+        reasons.append("duration exceeds max")
     if height <= 0:
-        return False
-    return height >= width  # Portrait/square orientation
+        reasons.append("invalid height")
+    elif not (height >= width):
+        reasons.append("not portrait or square orientation")
+
+    return (len(reasons) == 0, reasons)
 
 
 def build_converted_path(source: Path, converted_dir: Path) -> Path:

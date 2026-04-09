@@ -17,3 +17,5 @@ __pycache__/youtubeBatchUpload.cpython-313.pyc
 .youtube_uploaded_videos.json
 live_upload_audit/
 .metadata_history.json
+bridge_progress/manual_supervisor/*
+client_secret_294354856377-s0e7elinaaj6n7nujnlfv47nsicftnlh.apps.googleusercontent.com.json

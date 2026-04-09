@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from lib.file_utils import load_json_file
 from lib.text_utils import (
@@ -200,15 +200,15 @@ def is_metadata_unique(
     recent_titles: List[str],
     recent_descriptions: List[str],
     threshold: float = 0.7,
-) -> bool:
+) -> Tuple[bool, str]:
     """Check if metadata is sufficiently unique vs recent outputs."""
     for recent in recent_titles:
         if text_similarity(title, recent) > threshold:
-            return False
+            return False, f"Title too similar to recent: {recent}"
     for recent in recent_descriptions:
         if text_similarity(description, recent) > threshold:
-            return False
-    return True
+            return False, f"Description too similar to recent: {recent}"
+    return True, ""
 
 
 def generate_ai_metadata(

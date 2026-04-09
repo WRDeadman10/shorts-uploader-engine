@@ -8,7 +8,7 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from lib.file_utils import delete_file_if_exists
 from lib.media_tools import (
@@ -169,21 +169,37 @@ def try_mix_background_music(
     ffmpeg_bin: str,
     ffprobe_bin: str,
     bg_volume: float,
-) -> Optional[Path]:
-    """Try to mix background music, returning None on failure."""
-    if not music_tracks or track_index < 0:
-        return None
-    idx = track_index % len(music_tracks)
-    music_path = Path(music_tracks[idx]["path"])
-    if not music_path.exists():
-        print(f"[warn] music file missing: {music_path}")
-        return None
-    try:
-        return mix_background_music(
-            source=source, music_path=music_path,
-            converted_dir=converted_dir, ffmpeg_bin=ffmpeg_bin,
-            ffprobe_bin=ffprobe_bin, bg_volume=bg_volume,
-        )
-    except Exception as exc:
-        print(f"[warn] music mix failed: {exc}")
-        return None
+) -> Tuple[Optional[Path], Optional[Path], List[str]]:
+    """Try multiple music tracks, returning (mixed_path, track_path, failures)."""
+    if not music_tracks:
+        return None, None, ["No music tracks provided."]
+
+    num_tracks = len(music_tracks)
+    start_idx = track_index % num_tracks
+    music_failures: List[str] = []
+
+    # Attempt to find a working track by iterating through all available tracks
+    for offset in range(num_tracks):
+        idx = (start_idx + offset) % num_tracks
+        track_info = music_tracks[idx]
+        music_path = Path(track_info["path"])
+
+        if not music_path.exists():
+            music_failures.append(f"Track missing: {music_path}")
+            continue
+
+        try:
+            mixed_path = mix_background_music(
+                source=source,
+                music_path=music_path,
+                converted_dir=converted_dir,
+                ffmpeg_bin=ffmpeg_bin,
+                ffprobe_bin=ffprobe_bin,
+                bg_volume=bg_volume,
+            )
+            # Success!
+            return mixed_path, music_path, music_failures
+        except Exception as exc:
+            music_failures.append(f"{music_path.name}: {exc}")
+
+    return None, None, music_failures

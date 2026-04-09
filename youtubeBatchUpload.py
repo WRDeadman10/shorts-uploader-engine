@@ -50,7 +50,7 @@ from lib.media_tools import (
 from lib.music import build_music_inventory, build_mixed_music_path
 from lib.youtube_auth import build_youtube_client
 from lib.youtube_upload import upload_video, resolve_playlist_id, add_video_to_playlist, extract_http_error_reason, RETRIABLE_STATUS_CODES
-from lib.ai_metadata import load_clip_context, build_clip_focus, build_fallback_metadata, finalize_metadata, is_metadata_unique
+from lib.ai_metadata import load_clip_context, build_clip_focus, build_fallback_metadata, finalize_metadata, is_metadata_unique, generate_ai_metadata, build_meta_captions
 from lib.meta_api import is_facebook_rate_limited_error, request_json, ig_create_reel_container, ig_upload_reel_binary, ig_wait_until_ready, ig_publish_reel, fb_start_reel_session, fb_upload_reel_binary, fb_finish_reel_publish, extract_meta_error_message
 from lib.video_conversion import convert_to_shorts, mix_background_music, try_mix_background_music, reuse_valid_cached_video
 from lib.text_utils import (
@@ -100,7 +100,7 @@ def parse_args() -> argparse.Namespace:
         "--root",
         "--videos-path",
         dest="root",
-        default=DEFAULT_VIDEO_ROOT,
+        default=VIDEO_SOURCE_ROOT,
         help=(
             "Root directory to recursively scan for videos. "
             "Defaults to sibling folder named 'VALORANT'."
@@ -571,7 +571,7 @@ def crosspost_meta_reel(
                 timeout=args.meta_request_timeout_seconds,
             )
             fb_upload_reel_binary(
-                upload_url=upload_url,
+                video_id=fb_video_id,
                 access_token=clean_text(args.meta_access_token),
                 file_path=source_file,
                 timeout=args.meta_request_timeout_seconds,
@@ -936,11 +936,12 @@ def main() -> int:
             original_upload_path = upload_path
             mixed_upload_path, chosen_music_path, music_failures = try_mix_background_music(
                 source=upload_path,
-                music_inventory=music_inventory,
+                music_tracks=music_inventory,
                 converted_dir=converted_dir,
                 ffmpeg_bin=ffmpeg_bin,
                 ffprobe_bin=ffprobe_bin,
                 bg_volume=args.music_bg_volume,
+                track_index = random.randint(0, len(music_inventory) - 1)
             )
             if chosen_music_path:
                 upload_path = mixed_upload_path
