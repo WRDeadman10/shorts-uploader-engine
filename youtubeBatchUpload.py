@@ -571,7 +571,7 @@ def crosspost_meta_reel(
                 timeout=args.meta_request_timeout_seconds,
             )
             fb_upload_reel_binary(
-                video_id=fb_video_id,
+                upload_url=upload_url,
                 access_token=clean_text(args.meta_access_token),
                 file_path=source_file,
                 timeout=args.meta_request_timeout_seconds,

@@ -525,7 +525,7 @@ def main() -> int:
                     timeout=args.request_timeout_seconds,
                 )
                 fb_upload_reel_binary(
-                    video_id=fb_video_id,
+                    upload_url=upload_url,
                     access_token=access_token,
                     file_path=source_file,
                     timeout=args.request_timeout_seconds,

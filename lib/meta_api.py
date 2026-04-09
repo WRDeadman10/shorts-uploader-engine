@@ -179,18 +179,17 @@ def fb_start_reel_session(
 
 
 def fb_upload_reel_binary(
-    video_id: str,
+    upload_url: str,
     access_token: str,
     file_path: str,
     timeout: float = 300,
-    graph_version: str = "v25.0",
 ) -> None:
-    """Upload the video binary to an existing Facebook Reel session."""
+    """Upload the video binary to the Facebook Reel upload URL."""
     print(f"[fb_upload_reel_binary]")
     with open(file_path, "rb") as f:
         result = request_json(
             "POST",
-            f"https://graph.facebook.com/{graph_version}/{video_id}",
+            upload_url,
             data={
                 "upload_phase": "transfer",
                 "access_token": access_token,
