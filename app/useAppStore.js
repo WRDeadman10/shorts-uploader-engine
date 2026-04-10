@@ -6,7 +6,8 @@ export const pageOrder = [
     { id: "upload", label: "Upload" },
     { id: "console", label: "Console" },
     { id: "audit", label: "Audit" },
-    { id: "metadata", label: "Metadata" }
+    { id: "metadata", label: "Metadata" },
+    { id: "setup", label: "Setup" } // Added setup page
 ];
 
 function createInitialUploadStatus()
@@ -69,6 +70,7 @@ export const useAppStore = create(function createAppStore(set, get)
         ],
         advancedUploadSettings: {},
         featureStatus: "", // Added feature status field
+        envCheckResult: null, // Added environment check result
         loadAdvancedUploadSettings: function loadAdvancedUploadSettings(settings)
         {
             var updates = { advancedUploadSettings: settings };
@@ -279,6 +281,11 @@ export const useAppStore = create(function createAppStore(set, get)
                 get().fetchVideoList(),
                 get().streamLogs()
             ]);
+
+            if (window.api && window.api.loadWorkflowSettings) { // Added environment check
+                const saved = await window.api.loadWorkflowSettings();
+                if (saved) get().loadAdvancedUploadSettings(saved);
+            }
         },
         uploadPlatforms: {
             youtube: true,
@@ -381,6 +388,12 @@ export const useAppStore = create(function createAppStore(set, get)
         stopConsole: async function stopConsole()
         {
             return get().stopUpload();
+        },
+        runEnvCheck: async function runEnvCheck() { // Added environment check
+            if (!window.api || !window.api.runEnvCheck) return null;
+            const result = await window.api.runEnvCheck();
+            set({ envCheckResult: result });
+            return result;
         }
     };
 });
