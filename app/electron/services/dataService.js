@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { getRepoRoot, resolveVideoRoot } = require("./pathService");
+const { getRepoRoot, resolveVideoRoot, readSettings, saveSettings } = require("./pathService");
 
 function readJsonFile(filePath, fallbackValue)
 {
@@ -189,6 +189,33 @@ function buildStatusTokens(flags)
     return tokens;
 }
 
+function loadWorkflowSettings()
+{
+    try
+    {
+        return readSettings();
+    }
+    catch (_error)
+    {
+        return {};
+    }
+}
+
+function saveWorkflowSettings(settings)
+{
+    try
+    {
+        saveSettings(settings);
+        return { success: true };
+    }
+    catch (err)
+    {
+        return { success: false, errorMessage: err.message };
+    }
+}
+
 module.exports = {
-    getVideoList: getVideoList
+    getVideoList: getVideoList,
+    loadWorkflowSettings: loadWorkflowSettings,
+    saveWorkflowSettings: saveWorkflowSettings
 };
