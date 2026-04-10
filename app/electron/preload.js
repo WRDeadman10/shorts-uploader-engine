@@ -42,5 +42,6 @@ contextBridge.exposeInMainWorld("api", {
     saveWorkflowSettings: function saveWorkflowSettings(settings)
     {
         return ipcRenderer.invoke("save-workflow-settings", settings);
-    }
+    },
+    runEnvCheck: function runEnvCheck() { return ipcRenderer.invoke('run-env-check'); }
 });
