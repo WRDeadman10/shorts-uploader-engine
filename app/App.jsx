@@ -8,6 +8,7 @@ import Audit from "./Audit.jsx";
 import Metadata from "./Metadata.jsx";
 import Sidebar from "./Sidebar.jsx";
 import Topbar from "./Topbar.jsx";
+import Setup from "./Setup.jsx"; // Added import for Setup page
 import { pageOrder, useAppStore } from "./useAppStore.js";
 import "./global.css";
 
@@ -17,7 +18,8 @@ const pageComponents = {
     upload: Upload,
     console: Console,
     audit: Audit,
-    metadata: Metadata
+    metadata: Metadata,
+    setup: Setup // Added 'setup' to the pageComponents object
 };
 
 function App()
