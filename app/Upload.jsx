@@ -226,6 +226,7 @@ function Upload()
                                     <span style={{fontSize:14}}>Token File</span>
                                     <input type="text" placeholder="path/to/token.json" value={options.tokenFilePath || ""} onChange={function(e){setUploadOption("tokenFilePath",e.target.value);}} style={{width:180,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
                                 </div>
+                            <UploadAdvancedOptions options={options} setUploadOption={setUploadOption} />
                             </div>
                         </div>
                     </div>
