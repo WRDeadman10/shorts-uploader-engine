@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import ToggleSwitch from "./ToggleSwitch.jsx";
+import UploadAdvancedOptions from './UploadAdvancedOptions.jsx';
 import { useAppStore } from "./useAppStore.js";
 
 const platformOptions = [
