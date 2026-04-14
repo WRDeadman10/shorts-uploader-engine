@@ -73,9 +73,15 @@ function Upload()
         const args = [
             "python youtubeBatchUpload.py",
             "--upload-platform youtube",
-            "--max-videos 1",
+            "--max-videos " + String(options.maxVideos || 1),
             "--allow-fallback"
         ];
+        if (options.videosRoot) args.push("--root " + options.videosRoot);
+        if (options.privacy) args.push("--privacy " + options.privacy);
+        if (options.playlistName) args.push("--playlist-name " + options.playlistName);
+        if (options.ffmpegBin) args.push("--ffmpeg-bin " + options.ffmpegBin);
+        if (options.ffprobeBin) args.push("--ffprobe-bin " + options.ffprobeBin);
+        if (options.dryRun) args.push("--dry-run");
 
         args.push(options.includeShorts ? "--shorts-policy convert" : "--shorts-policy off");
 
