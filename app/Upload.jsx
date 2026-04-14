@@ -62,8 +62,12 @@ function Upload()
         if (!platforms.youtube)
         {
             const metaPlatform = platforms.instagram && platforms.facebook ? "both" : platforms.instagram ? "instagram" : "facebook";
-
-            return "python metaBatchReelsUpload.py --platform " + metaPlatform + " --max-videos 1";
+            let cmd = 'python metaBatchReelsUpload.py --platform ' + metaPlatform + ' --max-videos ' + String(options.maxVideos || 1);
+            if (options.videosRoot) cmd += ' --root ' + options.videosRoot;
+            if (options.ffmpegBin) cmd += ' --ffmpeg-bin ' + options.ffmpegBin;
+            if (options.ffprobeBin) cmd += ' --ffprobe-bin ' + options.ffprobeBin;
+            if (options.dryRun) cmd += ' --dry-run';
+            return cmd;
         }
 
         const args = [
