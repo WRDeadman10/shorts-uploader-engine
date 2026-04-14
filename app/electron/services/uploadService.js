@@ -310,6 +310,14 @@ function buildUploadCommand(payload)
         if (options.dryRun) { metaArgs.push("--dry-run"); }
         if (options.ffmpegBin) { metaArgs.push("--ffmpeg-bin", options.ffmpegBin); }
         if (options.ffprobeBin) { metaArgs.push("--ffprobe-bin", options.ffprobeBin); }
+        if (options.metaAccessToken) metaArgs.push("--access-token", options.metaAccessToken);
+        if (options.igUserId) metaArgs.push("--ig-user-id", options.igUserId);
+        if (options.fbPageId) metaArgs.push("--facebook-page-id", options.fbPageId);
+        if (options.metaGraphVersion) metaArgs.push("--graph-version", options.metaGraphVersion);
+        if (options.metaPollAttempts) metaArgs.push("--poll-attempts", String(options.metaPollAttempts));
+        if (options.metaPollInterval) metaArgs.push("--poll-interval-seconds", String(options.metaPollInterval));
+        if (options.metaRequestTimeout) metaArgs.push("--request-timeout-seconds", String(options.metaRequestTimeout));
+        if (options.metaDeleteConverted === false) metaArgs.push("--keep-converted-after-upload");
         return {
             scriptName: "metaBatchReelsUpload.py",
             platformLabel: selectedMetaPlatform,
@@ -348,6 +356,13 @@ function buildUploadCommand(payload)
     {
         args.push("--crosspost-meta");
         args.push("--meta-platform", selectedMetaPlatform);
+        if (options.metaAccessToken) args.push("--meta-access-token", options.metaAccessToken);
+        if (options.igUserId) args.push("--meta-ig-user-id", options.igUserId);
+        if (options.fbPageId) args.push("--meta-facebook-page-id", options.fbPageId);
+        if (options.metaGraphVersion) args.push("--meta-graph-version", options.metaGraphVersion);
+        if (options.metaPollAttempts) args.push("--meta-poll-attempts", String(options.metaPollAttempts));
+        if (options.metaPollInterval) args.push("--meta-poll-interval-seconds", String(options.metaPollInterval));
+        if (options.metaRequestTimeout) args.push("--meta-request-timeout-seconds", String(options.metaRequestTimeout));
     }
 
     if (options.videosRoot) { args.push("--root", options.videosRoot); }
@@ -363,6 +378,14 @@ function buildUploadCommand(payload)
     if (options.requireMissingOn) { args.push("--require-missing-on", options.requireMissingOn); }
     if (options.clientSecretsPath) { args.push("--client-secrets", options.clientSecretsPath); }
     if (options.tokenFilePath) { args.push("--token-file", options.tokenFilePath); }
+    if (options.openaiModel) args.push("--openai-model", options.openaiModel);
+    if (options.channelName) args.push("--channel-name", options.channelName);
+    if (options.extraKeywords) args.push("--extra-keywords", options.extraKeywords);
+    if (options.language) args.push("--language", options.language);
+    if (options.categoryId) args.push("--category-id", String(options.categoryId));
+    if (options.musicDir) args.push("--music-dir", options.musicDir);
+    if (options.musicVolume) args.push("--music-bg-volume", String(options.musicVolume));
+    if (options.musicInventory) args.push("--music-inventory-file", options.musicInventory);
 
     return {
         scriptName: "youtubeBatchUpload.py",
