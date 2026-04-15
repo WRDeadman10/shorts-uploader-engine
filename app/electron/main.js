@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { registerUploadHandlers } = require("./ipc/uploadHandlers");
 const { registerSystemHandlers } = require("./ipc/systemHandlers");
+const { registerToolHandlers } = require("./ipc/toolHandlers");
 const { getRendererEntryFile } = require("./services/pathService");
 
 let mainWindow = null;
@@ -45,6 +46,7 @@ app.whenReady().then(function onAppReady()
         return mainWindow;
     });
     registerSystemHandlers(ipcMain);
+    registerToolHandlers(ipcMain, function getMainWindow() { return mainWindow; });
 
     createMainWindow();
 

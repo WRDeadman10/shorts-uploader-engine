@@ -1,0 +1,105 @@
+{
+  "status": "running",
+  "planned_tasks": 8,
+  "completed_task_ids": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "completed_tasks": 4,
+  "resumed_completed_task_ids": [],
+  "skipped_tasks": 0,
+  "failed_task_id": null,
+  "diffs_recorded": 4,
+  "tasks": [
+    {
+      "id": 1,
+      "type": "create",
+      "files": [
+        "app/electron/services/toolService.js"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": true,
+      "commit_sha": "bfb1708"
+    },
+    {
+      "id": 2,
+      "type": "create",
+      "files": [
+        "app/electron/ipc/toolHandlers.js"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": true,
+      "commit_sha": "8af7a73"
+    },
+    {
+      "id": 3,
+      "type": "modify",
+      "files": [
+        "app/electron/main.js"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": true,
+      "commit_sha": "fe8c630"
+    },
+    {
+      "id": 4,
+      "type": "modify",
+      "files": [
+        "app/electron/preload.js"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": true,
+      "commit_sha": "8bf04b6"
+    },
+    {
+      "id": 5,
+      "type": "create",
+      "files": [
+        "app/Tools.jsx"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": false,
+      "commit_sha": null
+    },
+    {
+      "id": 6,
+      "type": "modify",
+      "files": [
+        "app/useAppStore.js"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": false,
+      "commit_sha": null
+    },
+    {
+      "id": 7,
+      "type": "modify",
+      "files": [
+        "app/App.jsx"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": false,
+      "commit_sha": null
+    },
+    {
+      "id": 8,
+      "type": "modify",
+      "files": [
+        "app/Audit.jsx"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": false,
+      "commit_sha": null
+    }
+  ]
+}

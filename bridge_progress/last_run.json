@@ -1,0 +1,50 @@
+{
+  "status": "success",
+  "tasks": 2,
+  "executed": 2,
+  "skipped": 0,
+  "elapsed_seconds": 1009.2,
+  "tokens": {
+    "plan_in": 0,
+    "plan_out": 0,
+    "review_in": 0,
+    "review_out": 0,
+    "subplan_in": 0,
+    "subplan_out": 0,
+    "total_in": 0,
+    "total_out": 0,
+    "total": 0,
+    "reworks": 0,
+    "subplans_generated": 0,
+    "session_tokens": 33209,
+    "session_tokens_is_estimate": true,
+    "aider_total": 17046,
+    "aider_per_task": [
+      {
+        "task_id": 1,
+        "estimated_tokens": 0,
+        "performer": "deterministic"
+      },
+      {
+        "task_id": 1,
+        "estimated_tokens": 3876,
+        "performer": "ollama"
+      },
+      {
+        "task_id": 1,
+        "estimated_tokens": 4309,
+        "performer": "ollama"
+      },
+      {
+        "task_id": 1,
+        "estimated_tokens": 4296,
+        "performer": "ollama"
+      },
+      {
+        "task_id": 2,
+        "estimated_tokens": 4565,
+        "performer": "ollama"
+      }
+    ]
+  }
+}
