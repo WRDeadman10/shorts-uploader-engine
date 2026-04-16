@@ -7,7 +7,8 @@ export const pageOrder = [
     { id: "console", label: "Console" },
     { id: "audit", label: "Audit" },
     { id: "metadata", label: "Metadata" },
-    { id: "setup", label: "Setup" } // Added setup page
+    { id: "setup", label: "Setup" }, // Added setup page
+    { id: "tools", label: "Tools" }
 ];
 
 function createInitialUploadStatus()

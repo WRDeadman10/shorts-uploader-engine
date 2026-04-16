@@ -9,6 +9,7 @@ import Metadata from "./Metadata.jsx";
 import Sidebar from "./Sidebar.jsx";
 import Topbar from "./Topbar.jsx";
 import Setup from "./Setup.jsx"; // Added import for Setup page
+import Tools from "./Tools.jsx";
 import { pageOrder, useAppStore } from "./useAppStore.js";
 import "./global.css";
 
@@ -19,7 +20,8 @@ const pageComponents = {
     console: Console,
     audit: Audit,
     metadata: Metadata,
-    setup: Setup // Added 'setup' to the pageComponents object
+    setup: Setup, // Added 'setup' to the pageComponents object
+    tools: Tools
 };
 
 function App()
