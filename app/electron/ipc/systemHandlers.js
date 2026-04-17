@@ -2,6 +2,7 @@ const dataService = require("../services/dataService");
 const uploadService = require("../services/uploadService");
 const { spawnSync } = require("child_process");
 const pythonService = require("../services/pythonService");
+const pathService = require("../services/pathService");
 
 function registerSystemHandlers(ipcMain)
 {
@@ -23,6 +24,11 @@ function registerSystemHandlers(ipcMain)
     ipcMain.handle("save-workflow-settings", async function handleSaveWorkflowSettings(_event, settings)
     {
         return dataService.saveWorkflowSettings(settings);
+    });
+
+    ipcMain.handle("get-audit-report", async function handleGetAuditReport()
+    {
+        return pathService.readAuditReport();
     });
 
     ipcMain.handle("run-env-check", async function handleRunEnvCheck(_event)

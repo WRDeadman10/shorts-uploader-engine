@@ -72,10 +72,42 @@ function saveSettings(settings)
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 4));
 }
 
+function readAuditReport()
+{
+    const repoRoot = getRepoRoot();
+    const reportPath = path.join(repoRoot, "live_upload_audit", "upload_comparison.json");
+
+    if (!fs.existsSync(reportPath))
+    {
+        return { success: false, errorMessage: "upload_comparison.json not found in live_upload_audit/" };
+    }
+
+    try
+    {
+        const data = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+
+        return {
+            success: true,
+            generatedAt: data.generated_at_utc,
+            offlineCount: data.offline_count,
+            platforms: {
+                youtube: { uploaded: data.platforms.youtube.uploaded_count, notUploaded: data.platforms.youtube.not_uploaded_count },
+                instagram: { uploaded: data.platforms.instagram.uploaded_count, notUploaded: data.platforms.instagram.not_uploaded_count },
+                facebook: { uploaded: data.platforms.facebook.uploaded_count, notUploaded: data.platforms.facebook.not_uploaded_count }
+            }
+        };
+    }
+    catch (error)
+    {
+        return { success: false, errorMessage: "Failed to parse audit report: " + error.message };
+    }
+}
+
 module.exports = {
     getRepoRoot: getRepoRoot,
     getRendererEntryFile: getRendererEntryFile,
     resolveVideoRoot: resolveVideoRoot,
     readSettings: readSettings,
-    saveSettings: saveSettings
+    saveSettings: saveSettings,
+    readAuditReport: readAuditReport
 };
