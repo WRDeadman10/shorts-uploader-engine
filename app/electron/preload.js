@@ -52,5 +52,8 @@ contextBridge.exposeInMainWorld("api", {
     },
     getToolStatus: function getToolStatus() {
         return ipcRenderer.invoke('get-tool-status');
+    },
+    getAuditReport: function getAuditReport() {
+        return ipcRenderer.invoke('get-audit-report');
     }
 });

@@ -29,10 +29,20 @@ function AuditAction({ label, description, toolName, args })
 
 function Audit()
 {
+    const [auditReport, setAuditReport] = useState(null);
+    const [reportLoading, setReportLoading] = useState(false);
     const auditRows = useAppStore(function selectAuditRows(state)
     {
         return state.getAuditRows();
     });
+
+    async function handleLoadReport()
+    {
+        setReportLoading(true);
+        var r = await window.api.getAuditReport();
+        if (r.success) { setAuditReport(r); }
+        setReportLoading(false);
+    }
 
     return (
         <section className="audit-page page-panel">
@@ -40,6 +50,25 @@ function Audit()
                 <span className="page-eyebrow">Delivery Audit</span>
                 <h1 className="page-title">Platform Coverage</h1>
                 <p className="page-placeholder">Rows are derived from the current JSON state and upload ledgers.</p>
+            </div>
+            <div style={{ marginBottom: 24 }}>
+                <button
+                    onClick={handleLoadReport}
+                    style={{ padding: "6px 16px", borderRadius: 6, border: "none", background: "#4f46e5", color: "#fff", cursor: "pointer", fontSize: 12 }}
+                >
+                    {reportLoading ? "Loading..." : "Load Audit Report from Disk"}
+                </button>
+                {auditReport !== null && (
+                    <div style={{ background: "#111827", borderRadius: 8, padding: 14, marginTop: 12 }}>
+                        <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 4px" }}>{"Generated: " + auditReport.generatedAt}</p>
+                        <p style={{ fontSize: 12, color: "#e2e8f0", margin: "0 0 8px" }}>{"Offline: " + auditReport.offlineCount + " videos"}</p>
+                        <div style={{ display: "flex", gap: 16 }}>
+                            <span style={{ fontSize: 12, color: "#e2e8f0" }}>{"YT: " + auditReport.platforms.youtube.uploaded + " uploaded"}</span>
+                            <span style={{ fontSize: 12, color: "#e2e8f0" }}>{"IG: " + auditReport.platforms.instagram.uploaded + " uploaded"}</span>
+                            <span style={{ fontSize: 12, color: "#e2e8f0" }}>{"FB: " + auditReport.platforms.facebook.uploaded + " uploaded"}</span>
+                        </div>
+                    </div>
+                )}
             </div>
             <div className="audit-table-shell">
                 <table className="audit-table">
