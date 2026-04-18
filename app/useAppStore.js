@@ -55,6 +55,7 @@ export const useAppStore = create(function createAppStore(set, get)
         loadingVideos: false,
         uploadStatus: createInitialUploadStatus(),
         logEntries: [],
+        commandHistory: [],
         errorMessage: "",
         metadataDirty: false,
         metadata: {
@@ -219,6 +220,7 @@ export const useAppStore = create(function createAppStore(set, get)
                 logEntries: []
             });
         },
+        addCommandToHistory: function addCommandToHistory(entry) { set(function updateHistory(state) { return { commandHistory: state.commandHistory.concat(entry).slice(-20) }; }); },
         syncUploadStatus: async function syncUploadStatus()
         {
             if (!window.api || !window.api.getUploadStatus)
@@ -359,6 +361,7 @@ export const useAppStore = create(function createAppStore(set, get)
                     uploadStatus: response,
                     errorMessage: response.errorMessage || ""
                 });
+                get().addCommandToHistory({ id: Date.now(), timestamp: new Date().toISOString(), platforms: Object.keys(get().uploadPlatforms).filter(function(p) { return get().uploadPlatforms[p]; }), commandPreview: response.commandPreview || '' });
             }
 
             return response;
