@@ -3,6 +3,8 @@ const uploadService = require("../services/uploadService");
 const { spawnSync } = require("child_process");
 const pythonService = require("../services/pythonService");
 const pathService = require("../services/pathService");
+const fs = require('fs');
+const path = require('path');
 
 function registerSystemHandlers(ipcMain)
 {
@@ -37,6 +39,13 @@ function registerSystemHandlers(ipcMain)
         const ffmpegResult = spawnSync('ffmpeg', ['-version'], { windowsHide: true });
         const ffprobeResult = spawnSync('ffprobe', ['-version'], { windowsHide: true });
 
+        const repoRoot = pathService.getRepoRoot();
+        const clientSecretFound = fs.existsSync(path.join(repoRoot, 'client_secret.json'));
+        const tokenFound = fs.existsSync(path.join(repoRoot, 'token.json'));
+        const settingsFound = fs.existsSync(path.join(repoRoot, 'settings.json'));
+        const videoRoot = pathService.resolveVideoRoot();
+        const videoRootFound = fs.existsSync(videoRoot);
+
         return {
             python: {
                 found: pythonResult.found,
@@ -49,7 +58,10 @@ function registerSystemHandlers(ipcMain)
             ffprobe: {
                 found: !ffprobeResult.error,
                 version: ffprobeResult.stdout.toString().split('\n')[0].trim()
-            }
+            },
+            credentials: { clientSecret: clientSecretFound, token: tokenFound },
+            settings: { found: settingsFound },
+            videoRoot: { path: videoRoot, found: videoRootFound }
         };
     });
 }
