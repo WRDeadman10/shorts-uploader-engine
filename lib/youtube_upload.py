@@ -28,6 +28,7 @@ def upload_video(
     language: str,
     notify_subscribers: bool,
     max_retries: int = 8,
+    publish_at: Optional[str] = None,
 ) -> str:
     """Upload a video to YouTube with resumable upload and retries.
 
@@ -43,8 +44,9 @@ def upload_video(
             "defaultAudioLanguage": language,
         },
         "status": {
-            "privacyStatus": privacy,
+            "privacyStatus": "private" if publish_at else privacy,
             "selfDeclaredMadeForKids": False,
+            "publishAt": publish_at if publish_at else {},
         },
     }
 
