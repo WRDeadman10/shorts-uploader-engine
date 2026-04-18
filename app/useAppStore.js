@@ -81,6 +81,7 @@ export const useAppStore = create(function createAppStore(set, get)
             {
                 updates.uploadOptions = Object.assign({}, get().uploadOptions, settings.uploadOptions);
             }
+            if (settings && settings.uploadPlatforms) { updates.uploadPlatforms = Object.assign({}, get().uploadPlatforms, settings.uploadPlatforms); }
             set(updates);
         },
         saveAdvancedUploadSettings: async function saveAdvancedUploadSettings()
@@ -92,7 +93,8 @@ export const useAppStore = create(function createAppStore(set, get)
 
             // Persist both advancedUploadSettings and uploadOptions
             var payload = Object.assign({}, get().advancedUploadSettings, {
-                uploadOptions: get().uploadOptions
+                uploadOptions: get().uploadOptions,
+                uploadPlatforms: get().uploadPlatforms
             });
             const response = await window.api.saveWorkflowSettings(payload);
 
