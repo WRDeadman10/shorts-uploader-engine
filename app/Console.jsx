@@ -26,6 +26,9 @@ function Console()
         return state.stopConsole;
     });
     const isRunning = uploadStatus.status === "running";
+    const commandHistory = useAppStore(function selectCommandHistory(state) { return state.commandHistory; });
+    const runUpload = useAppStore(function selectRunUpload(state) { return state.runUpload; });
+    const [historyOpen, setHistoryOpen] = useState(false);
 
     return (
         <section className="console-page page-panel">
@@ -107,6 +110,7 @@ function Console()
                     );
                 })}
             </div>
+            <div style={{ borderTop: '1px solid #1f2937', marginTop: 12, padding: '12px 16px' }}><button type="button" className="console-button" onClick={function() { setHistoryOpen(!historyOpen); }}>{historyOpen ? 'Hide Command History' : ('Show Command History (' + commandHistory.length + ')')}</button>{historyOpen && <div style={{ marginTop: 8 }}>{commandHistory.slice(-10).reverse().map(function(entry) { return (<div key={entry.id} style={{ background: '#111827', borderRadius: 6, padding: '8px 12px', marginTop: 8, fontSize: 12 }}><span style={{ color: '#6b7280' }}>{formatTime(entry.timestamp)}</span>{' '}<span style={{ color: '#e2e8f0' }}>{(entry.platforms || []).join(', ')}</span><p style={{ color: '#9ca3af', margin: '4px 0' }}>{(entry.commandPreview || '').slice(0, 100)}</p><button onClick={runUpload} style={{ padding: '3px 10px', borderRadius: 4, border: 'none', background: '#4f46e5', color: '#fff', cursor: 'pointer' }}>Run Again</button></div>); })}</div>}</div>
         </section>
     );
 }
