@@ -104,18 +104,19 @@ Add UI flows for the 5 standalone Python scripts:
 
 ---
 
-## Phase 5 — Reliability 📋 PLANNED
+## Phase 5 — Reliability ✅ DONE
 
-| Task | Target | Description |
-|---|---|---|
-| P5-01 | `app/Setup.jsx` + system handlers | Add setup diagnostics and environment preflight checks |
-| P5-02 | `app/useAppStore.js` + IPC | Align Electron state persistence with Tkinter expectations |
-| P5-03 | `missingFeatures/FEATURE_STATUS.md` | Review remaining parity gaps and close or document |
+| Task | File | Status | Commit |
+|---|---|---|---|
+| P5-01a | `app/electron/ipc/systemHandlers.js` | ✅ done | `364eb98` |
+| P5-01b | `app/Setup.jsx` | ✅ done | `e8993d9`, `19bb5c7` |
+| P5-02 | `app/useAppStore.js` | ✅ done | `f381598` |
+| P5-03 | `missingFeatures/FEATURE_STATUS.md` | ✅ done | `4cb00a3` |
 
-**Features:**
-- `setup-and-environment-checks`
-- `ui-state-persistence-parity`
-- `script-surface-parity-with-tkinter`
+**Features completed in Phase 5:**
+- `setup-and-environment-checks` ✅ — Runtime, Credentials, Paths panels with color-coded dots
+- `ui-state-persistence-parity` ✅ — `uploadPlatforms` now persisted and restored from settings.json
+- `script-surface-parity-with-tkinter` ✅ — all features documented in FEATURE_STATUS.md; 1 known gap remains (`metadata-page-not-persisted`)
 
 ---
 
@@ -127,3 +128,6 @@ Add UI flows for the 5 standalone Python scripts:
 | 2026-04-14 | 2a | UploadAdvancedOptions wired | de7ee28, 7894703 |
 | 2026-04-14 | 2b | YouTube cliPreview dynamic | 90f846f |
 | 2026-04-14 | 2b | uploadService args extended | e95a641 |
+| 2026-04-17 | 3 | All Phase 3 tasks complete | bfb1708 → 7c167d9 |
+| 2026-04-18 | 4 | All Phase 4 tasks complete | 148bb07 → c37627a |
+| 2026-04-18 | 5 | All Phase 5 tasks complete | 4cb00a3 → f381598 |
