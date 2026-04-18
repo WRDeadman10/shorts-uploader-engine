@@ -33,6 +33,8 @@ function Library()
     {
         return state.selectVideo;
     });
+    const setActivePage = useAppStore(function selectSetActivePage(state) { return state.setActivePage; });
+    const selectedVideo = useAppStore(function selectSelectedVideo(state) { return state.videoList.find(function(v) { return v.id === state.selectedVideoId; }) || null; });
 
     const [searchText, setSearchText] = useState("");
     const [sortOrder, setSortOrder] = useState("name-asc");
@@ -103,31 +105,49 @@ function Library()
                             className={cardClassName}
                             onClick={function handleSelect()
                             {
-                                selectVideo(item.id);
+ 
+                               selectVideo(item.id);
                             }}
                             whileHover={{ y: -6, scale: 1.01 }}
                             whileTap={{ scale: 0.99 }}
                             transition={{ duration: 0.18, ease: "easeOut" }}
                         >
                             <div className="library-card-media">
-                                <span>{item.thumbnail}</span>
-                                <strong>{item.duration}</strong>
+ 
+                               <span>{item.thumbnail}</span>
+                               <strong>{item.duration}</strong>
                             </div>
                             <div className="library-card-body">
-                                <h3 className="library-card-title">{item.title}</h3>
-                                <p className="library-card-subtitle">{item.statusText}</p>
-                                <p className="library-card-path">{item.relativePath || "No relative path available"}</p>
-                                <div className="library-card-statuses">
+ 
+                               <h3 className="library-card-title">{item.title}</h3>
+                               <p className="library-card-subtitle">{item.statusText}</p>
+                               <p className="library-card-path">{item.relativePath || "No relative path available"}</p>
+                               <div className="library-card-statuses">
                                     {item.statuses.map(function mapStatus(status)
                                     {
                                         return <StatusBadge key={status} status={status} />;
                                     })}
-                                </div>
+ 
+                               </div>
                             </div>
                         </motion.article>
                     );
                 })}
             </div>
+            {selectedVideo !== null && (
+                <div style={{ marginTop: 24, background: '#111827', borderRadius: 10, padding: 20 }}>
+                    <h2 style={{ fontSize: 15, color: '#e2e8f0', marginBottom: 12 }}>Selected Video</h2>
+                    <p style={{ fontSize: 13, color: '#e2e8f0', margin: '0 0 4px' }}>{selectedVideo.title}</p>
+                    <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 4px' }}>{selectedVideo.relativePath || 'No path'}</p>
+                    <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px' }}>{'Duration: ' + (selectedVideo.duration || 'Unknown')}</p>
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                        <span style={{ fontSize: 12, color: selectedVideo.yt ? '#4ade80' : '#6b7280' }}>{selectedVideo.yt ? 'YT: Yes' : 'YT: No'}</span>
+                        <span style={{ fontSize: 12, color: selectedVideo.ig ? '#4ade80' : '#6b7280' }}>{selectedVideo.ig ? 'IG: Yes' : 'IG: No'}</span>
+                        <span style={{ fontSize: 12, color: selectedVideo.fb ? '#4ade80' : '#6b7280' }}>{selectedVideo.fb ? 'FB: Yes' : 'FB: No'}</span>
+                    </div>
+                    <button onClick={function() { setActivePage('metadata'); }} style={{ padding: '7px 16px', borderRadius: 6, border: 'none', background: '#4f46e5', color: '#fff', cursor: 'pointer', fontSize: 13 }}>Edit Metadata</button>
+                </div>
+            )}
         </section>
     );
 }
