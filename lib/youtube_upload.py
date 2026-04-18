@@ -46,7 +46,7 @@ def upload_video(
         "status": {
             "privacyStatus": "private" if publish_at else privacy,
             "selfDeclaredMadeForKids": False,
-            "publishAt": publish_at if publish_at else {},
+            **({"publishAt": publish_at} if publish_at else {}),
         },
     }
 
