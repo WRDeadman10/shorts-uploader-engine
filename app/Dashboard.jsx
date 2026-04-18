@@ -126,15 +126,15 @@ function Dashboard()
                     Open Console
                 </button>
                 <button onClick={function() { useAppStore.getState().setActivePage('audit'); }}
-                    style={{padding:'10px 20px',borderRadius:8,border:'1px solid #444',background:'#1a1a2e',color:'#fff',cursor:'pointer',fontSize:14'}}>
+                    style={{padding:'10px 20px',borderRadius:8,border:'1px solid #444',background:'#1a1a2e',color:'#fff',cursor:'pointer',fontSize:14}}>
                     View Audit
                 </button>
                 <button onClick={function() { useAppStore.getState().setActivePage('tools'); }}
-                    style={{padding:'10px 20px',borderRadius:8,border:'1px solid #444',background:'#1a1a2e',color:'#fff',cursor:'pointer',fontSize:14'}}>
+                    style={{padding:'10px 20px',borderRadius:8,border:'1px solid #444',background:'#1a1a2e',color:'#fff',cursor:'pointer',fontSize:14}}>
                     Open Tools
                 </button>
                 <button onClick={function() { useAppStore.getState().setActivePage('setup'); }}
-                    style={{padding:'10px 20px',borderRadius:8,border:'1px solid #444',background:'#1a1a2e',color:'#fff',cursor:'pointer',fontSize:14'}}>
+                    style={{padding:'10px 20px',borderRadius:8,border:'1px solid #444',background:'#1a1a2e',color:'#fff',cursor:'pointer',fontSize:14}}>
                     Run Setup
                 </button>
             </div>
