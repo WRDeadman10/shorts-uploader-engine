@@ -13,30 +13,30 @@ Status values:
 
 | Feature | Status | Notes |
 |---|---|---|
-| videos-root-selection | pending | Add root path control and command wiring |
-| video-discovery-filters | pending | Expose extensions and exclude filters |
-| max-videos-control | pending | Remove hardcoded `--max-videos 1` |
-| youtube-privacy-and-playlist | pending | Add privacy and playlist controls |
-| cross-platform-queue-filters | pending | Add `require-uploaded-on` and `require-missing-on` |
-| ffmpeg-and-ffprobe-settings | pending | Expose binary paths for conversion and inspection |
-| advanced-ai-metadata-settings | pending | Add advanced metadata generation controls |
-| music-workflow-settings | pending | Add music dir, volume, inventory, and related settings |
-| credential-management-fields | pending | Add credential and ID inputs for YouTube and Meta |
-| meta-publishing-advanced-options | pending | Expose Meta retry, timeout, and cleanup settings |
-| dry-run-and-validation-modes | pending | Add dry-run and preflight validation behavior |
-| youtube-fix-repeated-metadata-flow | pending | Add dedicated maintenance flow |
-| music-overlay-sample-flow | pending | Add dedicated sample-generation flow |
-| live-upload-audit-runner | pending | Add UI flow for `generateLiveUploadAudit.py` |
-| rebuild-upload-comparison-flow | pending | Add UI flow for `rebuildUploadComparison.py` |
-| upload-status-report-flow | pending | Add UI flow for `generateUploadStatusReport.py` |
-| audit-page-uses-local-status-not-live-audit | pending | Rebuild Audit page around audit artifacts |
-| metadata-page-not-persisted | pending | Make metadata page persist or clearly scope it |
-| library-missing-search-sort-and-details | pending | Expand inspection and navigation tooling |
-| console-missing-command-history-and-export | pending | Improve run history and console utility |
-| dashboard-missing-operational-actions | pending | Add dashboard action surface |
-| ui-state-persistence-parity | in_progress | Preload, IPC, and path-service groundwork is approved; shared store wiring timed out on task 5 |
-| script-surface-parity-with-tkinter | pending | Close or explicitly document parity gap |
-| setup-and-environment-checks | pending | Add setup diagnostics and preflight checks |
+| videos-root-selection | done | Phase 2 — UploadAdvancedOptions.jsx + uploadService |
+| video-discovery-filters | done | Phase 2 — extensions, exclude dirs/files wired |
+| max-videos-control | done | Phase 2 — dynamic --max-videos arg |
+| youtube-privacy-and-playlist | done | Phase 2 — privacy + playlist wired |
+| cross-platform-queue-filters | done | Phase 2 — require-uploaded-on / require-missing-on |
+| ffmpeg-and-ffprobe-settings | done | Phase 2 — binary path inputs wired |
+| advanced-ai-metadata-settings | done | Phase 2 — AI metadata options wired |
+| music-workflow-settings | done | Phase 2 — music options wired |
+| credential-management-fields | done | Phase 2 — client_secret + token path inputs |
+| meta-publishing-advanced-options | done | Phase 2 — Meta retry/timeout/cleanup wired |
+| dry-run-and-validation-modes | done | Phase 2 — dry-run and preflight flags |
+| youtube-fix-repeated-metadata-flow | done | Phase 3 — Tools page |
+| music-overlay-sample-flow | done | Phase 3 — Tools page |
+| live-upload-audit-runner | done | Phase 3 — Audit page action panel |
+| rebuild-upload-comparison-flow | done | Phase 3 — Audit page action panel |
+| upload-status-report-flow | done | Phase 3 — Audit page action panel |
+| audit-page-uses-local-status-not-live-audit | done | Phase 4 — reads live_upload_audit/upload_comparison.json |
+| library-missing-search-sort-and-details | done | Phase 4 — selected video detail panel + platform badges |
+| console-missing-command-history-and-export | done | Phase 4 — command history panel + Run Again |
+| dashboard-missing-operational-actions | done | Phase 4 — View Audit / Open Tools / Run Setup buttons |
+| ui-state-persistence-parity | done | Phase 5 — uploadPlatforms persisted in settings.json |
+| script-surface-parity-with-tkinter | done | Phase 5 — all 5 standalone tools covered; see FEATURE_STATUS.md |
+| setup-and-environment-checks | done | Phase 5 — credentials, paths, runtime checks with color indicators |
+| metadata-page-not-persisted | pending | Metadata.jsx state not written to disk — known gap |
 
 ## Update Rule
 
@@ -48,7 +48,10 @@ When a feature is completed:
 
 ## Completion Log
 
-- 2026-04-02: `ui-state-persistence-parity` moved to `in_progress` after task 2 (`app/electron/preload.js`), task 3 (`app/electron/ipc/systemHandlers.js`), and task 4 (`app/electron/services/pathService.js`) were approved and auto-committed by the bridge.
-- 2026-04-02: task 5 on `app/useAppStore.js` did not complete; the bridge run stopped because Aider timed out after 900 seconds before producing a review request.
+- 2026-04-02: `ui-state-persistence-parity` moved to `in_progress` after preload/IPC/pathService groundwork approved.
+- 2026-04-14: Phase 2 complete — all upload option features done (commits de7ee28 → e95a641).
+- 2026-04-17: Phase 3 complete — all 5 standalone tool flows done (commits bfb1708 → 7c167d9).
+- 2026-04-18: Phase 4 complete — audit panel, command history, dashboard buttons, library detail (commits 148bb07 → c37627a).
+- 2026-04-18: Phase 5 — setup diagnostics, uploadPlatforms persistence, FEATURE_STATUS.md updated.
 
-**Remaining Features Count:** 17
+**Remaining Features Count:** 1 (`metadata-page-not-persisted`)
