@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAppStore } from "./useAppStore.js";
 
 function AuditAction({ label, description, toolName, args })
@@ -31,10 +31,24 @@ function Audit()
 {
     const [auditReport, setAuditReport] = useState(null);
     const [reportLoading, setReportLoading] = useState(false);
-    const auditRows = useAppStore(function selectAuditRows(state)
+
+    // Selecting getAuditRows() directly returns a new array every render → infinite loop.
+    // Instead select the stable videoList reference and derive rows in useMemo.
+    const videoList = useAppStore(function selectVideoList(state) { return state.videoList; });
+    const auditRows = useMemo(function buildAuditRows()
     {
-        return state.getAuditRows();
-    });
+        return videoList.map(function(video)
+        {
+            return {
+                id: video.id,
+                video: video.title,
+                yt: video.yt,
+                ig: video.ig,
+                fb: video.fb,
+                status: video.status
+            };
+        });
+    }, [videoList]);
 
     async function handleLoadReport()
     {

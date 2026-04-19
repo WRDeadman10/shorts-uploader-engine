@@ -52,7 +52,14 @@ async function runTool(payload) {
     const scriptPath = path.join(repoRoot, toolName);
     status = { ...createInitialStatus(), toolName, status: 'running', startedAt: new Date().toISOString(), pid: 0 };
     sendLog('info', '[tool] Starting ' + toolName + ' ' + args.join(' '), toolName);
-    const proc = spawn(pythonCommand.command, [scriptPath, ...args], { cwd: repoRoot, env: process.env });
+    const proc = spawn(pythonCommand.command, [scriptPath, ...args], {
+        cwd: repoRoot,
+        env: Object.assign({}, process.env, {
+            PYTHONIOENCODING: 'utf-8',
+            PYTHONUTF8: '1',
+            PYTHONUNBUFFERED: '1',
+        }),
+    });
     activeProcess = proc;
     status.pid = proc.pid;
     proc.stdout.on('data', function onStdout(chunk) {
