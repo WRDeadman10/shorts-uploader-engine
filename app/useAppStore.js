@@ -73,6 +73,11 @@ export const useAppStore = create(function createAppStore(set, get)
         advancedUploadSettings: {},
         featureStatus: "", // Added feature status field
         envCheckResult: null, // Added environment check result
+        scheduleEnabled: false,
+        scheduleDate: new Date().toISOString().slice(0, 10),
+        youtubeSlots: [{ time: '10:00', count: 10 }],
+        facebookSlots: [{ time: '10:00', count: 10 }],
+        instagramDraft: false,
         loadAdvancedUploadSettings: function loadAdvancedUploadSettings(settings)
         {
             var updates = { advancedUploadSettings: settings };
@@ -94,7 +99,14 @@ export const useAppStore = create(function createAppStore(set, get)
             // Persist both advancedUploadSettings and uploadOptions
             var payload = Object.assign({}, get().advancedUploadSettings, {
                 uploadOptions: get().uploadOptions,
-                uploadPlatforms: get().uploadPlatforms
+                uploadPlatforms: get().uploadPlatforms,
+                schedule: {
+                    enabled: get().scheduleEnabled,
+                    date: get().scheduleDate,
+                    youtubeSlots: get().youtubeSlots,
+                    facebookSlots: get().facebookSlots,
+                    instagramDraft: get().instagramDraft
+                }
             });
             const response = await window.api.saveWorkflowSettings(payload);
 
@@ -342,6 +354,15 @@ export const useAppStore = create(function createAppStore(set, get)
             // Auto-persist options to disk
             get().saveAdvancedUploadSettings();
         },
+        setScheduleEnabled: function setScheduleEnabled(v) { set({ scheduleEnabled: v }); },
+        setScheduleDate: function setScheduleDate(v) { set({ scheduleDate: v }); },
+        setInstagramDraft: function setInstagramDraft(v) { set({ instagramDraft: v }); },
+        addYoutubeSlot: function addYoutubeSlot() { set(function(s) { return { youtubeSlots: s.youtubeSlots.concat({ time: '10:00', count: 10 }) }; }); },
+        removeYoutubeSlot: function removeYoutubeSlot(i) { set(function(s) { return { youtubeSlots: s.youtubeSlots.filter(function(_, j) { return j !== i; }) }; }); },
+        updateYoutubeSlot: function updateYoutubeSlot(i, field, val) { set(function(s) { var sl = s.youtubeSlots.slice(); sl[i] = Object.assign({}, sl[i], { [field]: val }); return { youtubeSlots: sl }; }); },
+        addFacebookSlot: function addFacebookSlot() { set(function(s) { return { facebookSlots: s.facebookSlots.concat({ time: '10:00', count: 10 }) }; }); },
+        removeFacebookSlot: function removeFacebookSlot(i) { set(function(s) { return { facebookSlots: s.facebookSlots.filter(function(_, j) { return j !== i; }) }; }); },
+        updateFacebookSlot: function updateFacebookSlot(i, field, val) { set(function(s) { var sl = s.facebookSlots.slice(); sl[i] = Object.assign({}, sl[i], { [field]: val }); return { facebookSlots: sl }; }); },
         startConsole: async function startConsole()
         {
             const state = get();
@@ -354,7 +375,8 @@ export const useAppStore = create(function createAppStore(set, get)
             const response = await window.api.runUpload({
                 platforms: state.uploadPlatforms,
                 options: state.uploadOptions,
-                metadata: state.metadata
+                metadata: state.metadata,
+                schedule: { enabled: state.scheduleEnabled, date: state.scheduleDate, youtubeSlots: state.youtubeSlots, facebookSlots: state.facebookSlots, instagramDraft: state.instagramDraft }
             });
 
             if (response)
