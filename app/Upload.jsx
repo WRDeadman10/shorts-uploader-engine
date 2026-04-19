@@ -6,95 +6,80 @@ import UploadQueuePreview, { computeUploadQueue } from './UploadQueuePreview.jsx
 import { useAppStore } from "./useAppStore.js";
 
 const platformOptions = [
-    { id: "youtube", label: "YouTube Shorts" },
+    { id: "youtube",   label: "YouTube Shorts" },
     { id: "instagram", label: "Instagram Reels" },
-    { id: "facebook", label: "Facebook Reels" }
+    { id: "facebook",  label: "Facebook Reels" }
 ];
 
 const uploadOptions = [
-    { id: "includeShorts", label: "Shorts Format" },
-    { id: "includeMusic", label: "Music Overlay" },
+    { id: "includeShorts",   label: "Shorts Format" },
+    { id: "includeMusic",    label: "Music Overlay" },
     { id: "includeMetadata", label: "AI Metadata" }
 ];
 
+const sideRow = {
+    display: 'flex', alignItems: 'center',
+    justifyContent: 'space-between', padding: '5px 0',
+};
+
+const sideInput = {
+    padding: '4px 8px', borderRadius: 4,
+    border: '1px solid #444', background: '#1a1a2e',
+    color: '#fff', fontSize: 13, width: 130,
+};
+
 function Upload()
 {
-    const platforms = useAppStore(function selectPlatforms(state)
-    {
-        return state.uploadPlatforms;
-    });
-    const options = useAppStore(function selectOptions(state)
-    {
-        return state.uploadOptions;
-    });
-    const uploadStatus = useAppStore(function selectUploadStatus(state)
-    {
-        return state.uploadStatus;
-    });
-    const setUploadPlatform = useAppStore(function selectSetUploadPlatform(state)
-    {
-        return state.setUploadPlatform;
-    });
-    const setUploadOption = useAppStore(function selectSetUploadOption(state)
-    {
-        return state.setUploadOption;
-    });
-    const runUpload = useAppStore(function selectRunUpload(state)
-    {
-        return state.runUpload;
-    });
-    const syncUploadStatus = useAppStore(function selectSyncUploadStatus(state)
-    {
-        return state.syncUploadStatus;
-    });
+    const platforms     = useAppStore(s => s.uploadPlatforms);
+    const options       = useAppStore(s => s.uploadOptions);
+    const uploadStatus  = useAppStore(s => s.uploadStatus);
+    const setUploadPlatform = useAppStore(s => s.setUploadPlatform);
+    const setUploadOption   = useAppStore(s => s.setUploadOption);
+    const runUpload         = useAppStore(s => s.runUpload);
+    const stopUpload        = useAppStore(s => s.stopUpload);
+    const syncUploadStatus  = useAppStore(s => s.syncUploadStatus);
+    const videoList    = useAppStore(s => s.videoList);
+    const logEntries   = useAppStore(s => s.logEntries);
 
-    const videoList = useAppStore(function(s) { return s.videoList; });
-    const logEntries = useAppStore(function(s) { return s.logEntries; });
+    const scheduleEnabled   = useAppStore(s => s.scheduleEnabled);
+    const scheduleDate      = useAppStore(s => s.scheduleDate);
+    const youtubeSlots      = useAppStore(s => s.youtubeSlots);
+    const facebookSlots     = useAppStore(s => s.facebookSlots);
+    const instagramDraft    = useAppStore(s => s.instagramDraft);
+    const setScheduleEnabled  = useAppStore(s => s.setScheduleEnabled);
+    const setScheduleDate     = useAppStore(s => s.setScheduleDate);
+    const setInstagramDraft   = useAppStore(s => s.setInstagramDraft);
+    const addYoutubeSlot      = useAppStore(s => s.addYoutubeSlot);
+    const removeYoutubeSlot   = useAppStore(s => s.removeYoutubeSlot);
+    const updateYoutubeSlot   = useAppStore(s => s.updateYoutubeSlot);
+    const addFacebookSlot     = useAppStore(s => s.addFacebookSlot);
+    const removeFacebookSlot  = useAppStore(s => s.removeFacebookSlot);
+    const updateFacebookSlot  = useAppStore(s => s.updateFacebookSlot);
 
-    useEffect(function syncStatus()
-    {
-        syncUploadStatus();
-    }, [syncUploadStatus]);
-
-    const scheduleEnabled = useAppStore(function(s){return s.scheduleEnabled;});
-    const scheduleDate = useAppStore(function(s){return s.scheduleDate;});
-    const youtubeSlots = useAppStore(function(s){return s.youtubeSlots;});
-    const facebookSlots = useAppStore(function(s){return s.facebookSlots;});
-    const instagramDraft = useAppStore(function(s){return s.instagramDraft;});
-    const setScheduleEnabled = useAppStore(function(s){return s.setScheduleEnabled;});
-    const setScheduleDate = useAppStore(function(s){return s.setScheduleDate;});
-    const setInstagramDraft = useAppStore(function(s){return s.setInstagramDraft;});
-    const addYoutubeSlot = useAppStore(function(s){return s.addYoutubeSlot;});
-    const removeYoutubeSlot = useAppStore(function(s){return s.removeYoutubeSlot;});
-    const updateYoutubeSlot = useAppStore(function(s){return s.updateYoutubeSlot;});
-    const addFacebookSlot = useAppStore(function(s){return s.addFacebookSlot;});
-    const removeFacebookSlot = useAppStore(function(s){return s.removeFacebookSlot;});
-    const updateFacebookSlot = useAppStore(function(s){return s.updateFacebookSlot;});
+    useEffect(function syncStatus() { syncUploadStatus(); }, [syncUploadStatus]);
 
     const uploadQueue = useMemo(
-        function buildQueue() { return computeUploadQueue(videoList, options); },
+        () => computeUploadQueue(videoList, options),
         [videoList, options.requireUploadedOn, options.requireMissingOn, options.maxVideos]
     );
 
     const cliPreview = useMemo(function buildCliPreview()
     {
         if (!platforms.youtube && !platforms.instagram && !platforms.facebook)
-        {
             return "Select at least one platform to build a runnable command.";
-        }
 
         if (!platforms.youtube)
         {
-            const metaPlatform = platforms.instagram && platforms.facebook ? "both" : platforms.instagram ? "instagram" : "facebook";
-            let cmd = 'python metaBatchReelsUpload.py --platform ' + metaPlatform + ' --max-videos ' + String(options.maxVideos || 1);
-            if (options.videosRoot) cmd += ' --root ' + options.videosRoot;
-            if (options.ffmpegBin) cmd += ' --ffmpeg-bin ' + options.ffmpegBin;
-            if (options.ffprobeBin) cmd += ' --ffprobe-bin ' + options.ffprobeBin;
-            if (options.metaAccessToken) cmd += ' --access-token ' + options.metaAccessToken;
-            if (options.igUserId) cmd += ' --ig-user-id ' + options.igUserId;
-            if (options.fbPageId) cmd += ' --facebook-page-id ' + options.fbPageId;
-            if (options.metaGraphVersion) cmd += ' --graph-version ' + options.metaGraphVersion;
-            if (options.dryRun) cmd += ' --dry-run';
+            const mp = platforms.instagram && platforms.facebook ? "both" : platforms.instagram ? "instagram" : "facebook";
+            let cmd = 'python metaBatchReelsUpload.py --platform ' + mp + ' --max-videos ' + String(options.maxVideos || 1);
+            if (options.videosRoot)       cmd += ' --root '               + options.videosRoot;
+            if (options.ffmpegBin)        cmd += ' --ffmpeg-bin '         + options.ffmpegBin;
+            if (options.ffprobeBin)       cmd += ' --ffprobe-bin '        + options.ffprobeBin;
+            if (options.metaAccessToken)  cmd += ' --access-token '       + options.metaAccessToken;
+            if (options.igUserId)         cmd += ' --ig-user-id '         + options.igUserId;
+            if (options.fbPageId)         cmd += ' --facebook-page-id '   + options.fbPageId;
+            if (options.metaGraphVersion) cmd += ' --graph-version '      + options.metaGraphVersion;
+            if (options.dryRun)           cmd += ' --dry-run';
             return cmd;
         }
 
@@ -104,239 +89,253 @@ function Upload()
             "--max-videos " + String(options.maxVideos || 1),
             "--allow-fallback"
         ];
-        if (options.videosRoot) args.push("--root " + options.videosRoot);
-        if (options.privacy) args.push("--privacy " + options.privacy);
-        if (options.playlistName) args.push("--playlist-name " + options.playlistName);
-        if (options.ffmpegBin) args.push("--ffmpeg-bin " + options.ffmpegBin);
-        if (options.ffprobeBin) args.push("--ffprobe-bin " + options.ffprobeBin);
-        if (options.dryRun) args.push("--dry-run");
+        if (options.videosRoot)    args.push("--root "       + options.videosRoot);
+        if (options.privacy)       args.push("--privacy "    + options.privacy);
+        if (options.playlistName)  args.push("--playlist-name " + options.playlistName);
+        if (options.ffmpegBin)     args.push("--ffmpeg-bin " + options.ffmpegBin);
+        if (options.ffprobeBin)    args.push("--ffprobe-bin " + options.ffprobeBin);
+        if (options.dryRun)        args.push("--dry-run");
 
         args.push(options.includeShorts ? "--shorts-policy convert" : "--shorts-policy off");
-
-        if (!options.includeMetadata)
-        {
-            args.push("--no-ai");
-        }
-
-        if (!options.includeMusic)
-        {
-            args.push("--music-dir=");
-        }
+        if (!options.includeMetadata) args.push("--no-ai");
+        if (!options.includeMusic)    args.push("--music-dir=");
 
         if (platforms.instagram || platforms.facebook)
         {
-            const metaPlatform = platforms.instagram && platforms.facebook ? "both" : platforms.instagram ? "instagram" : "facebook";
-
+            const mp = platforms.instagram && platforms.facebook ? "both" : platforms.instagram ? "instagram" : "facebook";
             args.push("--crosspost-meta");
-            args.push("--meta-platform " + metaPlatform);
-            if (options.metaAccessToken) args.push("--meta-access-token " + options.metaAccessToken);
-            if (options.igUserId) args.push("--meta-ig-user-id " + options.igUserId);
-            if (options.fbPageId) args.push("--meta-facebook-page-id " + options.fbPageId);
-            if (options.metaGraphVersion) args.push("--meta-graph-version " + options.metaGraphVersion);
+            args.push("--meta-platform " + mp);
+            if (options.metaAccessToken)  args.push("--meta-access-token "       + options.metaAccessToken);
+            if (options.igUserId)         args.push("--meta-ig-user-id "         + options.igUserId);
+            if (options.fbPageId)         args.push("--meta-facebook-page-id "   + options.fbPageId);
+            if (options.metaGraphVersion) args.push("--meta-graph-version "      + options.metaGraphVersion);
         }
 
-        return args.join(" ");
+        return args.join(" \\\n  ");
     }, [options, platforms]);
 
-    async function handleRunPreview()
-    {
-        await runUpload();
-    }
+    const isRunning = uploadStatus.status === 'running';
 
     return (
-        <section className="upload-page page-panel">
-            <div className="upload-section">
-                <div className="page-heading">
+        <section
+            className="page-panel"
+            style={{ padding: 0, display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden', height: 'calc(100vh - 132px)', minHeight: 'unset' }}
+        >
+            {/* ── Top strip: title + action button ── */}
+            <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '16px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0,
+            }}>
+                <div>
                     <span className="page-eyebrow">Upload Control</span>
-                    <h1 className="page-title">Pipeline Builder</h1>
-                    <p className="page-placeholder">Current status: {uploadStatus.status}</p>
+                    <h1 style={{ margin: '4px 0 0', fontSize: '1.5rem', lineHeight: 1 }}>Pipeline Builder</h1>
                 </div>
-                <motion.button
-                    type="button"
-                    className="upload-action-button"
-                    onClick={handleRunPreview}
-                    whileHover={{ y: -2 }}
-                    whileTap={{ scale: 0.97 }}
-                >
-                    Run Upload
-                </motion.button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+                        {uploadQueue.length} video{uploadQueue.length !== 1 ? 's' : ''} queued · status: <strong style={{ color: '#e2e8f0' }}>{uploadStatus.status}</strong>
+                    </span>
+                    {isRunning
+                        ? <motion.button className="upload-action-button" style={{ background: '#7f1d1d' }} onClick={stopUpload} whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>Stop</motion.button>
+                        : <motion.button className="upload-action-button" onClick={runUpload} whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>Run Upload</motion.button>
+                    }
+                </div>
             </div>
 
-            <div className="upload-grid">
-                <div className="upload-panel">
-                    <h2 className="upload-panel-title">Platforms</h2>
-                    <div className="upload-toggle-list">
-                        {platformOptions.map(function mapPlatform(platform)
-                        {
-                            return (
-                                <ToggleSwitch
-                                    key={platform.id}
-                                    label={platform.label}
-                                    checked={platforms[platform.id]}
-                                    onChange={function handleToggle(nextValue)
-                                    {
-                                        setUploadPlatform(platform.id, nextValue);
-                                    }}
-                                />
-                            );
-                        })}
+            {/* ── Body: left sidebar + right queue ── */}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+
+                {/* LEFT SIDEBAR */}
+                <div style={{
+                    width: 300, flexShrink: 0, overflowY: 'auto',
+                    borderRight: '1px solid var(--border)',
+                    padding: '20px 16px',
+                    display: 'flex', flexDirection: 'column', gap: 18,
+                }}>
+
+                    {/* Platforms */}
+                    <div className="upload-panel" style={{ gap: 10, padding: 16 }}>
+                        <span className="upload-panel-title" style={{ fontWeight: 700 }}>Platforms</span>
+                        {platformOptions.map(p => (
+                            <ToggleSwitch key={p.id} label={p.label} checked={platforms[p.id]}
+                                onChange={v => setUploadPlatform(p.id, v)} />
+                        ))}
                     </div>
-                </div>
 
-                <div className="upload-panel">
-                    <h2 className="upload-panel-title">Options</h2>
-                    <div className="upload-toggle-list">
-                        {uploadOptions.map(function mapOption(option)
-                        {
-                            return (
-                                <ToggleSwitch
-                                    key={option.id}
-                                    label={option.label}
-                                    checked={options[option.id]}
-                                    onChange={function handleToggle(nextValue)
-                                    {
-                                        setUploadOption(option.id, nextValue);
-                                    }}
-                                />
-                            );
-                        })}
+                    {/* Core Options */}
+                    <div className="upload-panel" style={{ gap: 10, padding: 16 }}>
+                        <span className="upload-panel-title" style={{ fontWeight: 700 }}>Options</span>
 
-                        <div style={{marginTop: 12, display: "flex", flexDirection: "column", gap: 8}}>
-                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
-                                <span style={{fontSize:14}}>Max Videos</span>
-                                <input type="number" min={1} max={50} value={options.maxVideos || 1}
-                                    onChange={function handleMaxVid(e) { setUploadOption("maxVideos", Math.max(1, parseInt(e.target.value, 10) || 1)); }}
-                                    style={{width:70,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:14}} />
+                        {uploadOptions.map(o => (
+                            <ToggleSwitch key={o.id} label={o.label} checked={options[o.id]}
+                                onChange={v => setUploadOption(o.id, v)} />
+                        ))}
+
+                        <ToggleSwitch label="Dry Run" checked={options.dryRun || false}
+                            onChange={v => setUploadOption('dryRun', v)} />
+
+                        <div style={sideRow}>
+                            <span style={{ fontSize: 14 }}>Max Videos</span>
+                            <input type="number" min={1} max={500} style={{ ...sideInput, width: 70 }}
+                                value={options.maxVideos || 1}
+                                onChange={e => setUploadOption('maxVideos', Math.max(1, parseInt(e.target.value, 10) || 1))} />
+                        </div>
+                        <div style={sideRow}>
+                            <span style={{ fontSize: 14 }}>Videos Root</span>
+                            <input type="text" placeholder="folder path" style={sideInput}
+                                value={options.videosRoot || ''}
+                                onChange={e => setUploadOption('videosRoot', e.target.value)} />
+                        </div>
+                        <div style={sideRow}>
+                            <span style={{ fontSize: 14 }}>Privacy</span>
+                            <select style={sideInput} value={options.privacy || ''}
+                                onChange={e => setUploadOption('privacy', e.target.value)}>
+                                <option value="">Default</option>
+                                <option value="private">Private</option>
+                                <option value="unlisted">Unlisted</option>
+                                <option value="public">Public</option>
+                            </select>
+                        </div>
+                        <div style={sideRow}>
+                            <span style={{ fontSize: 14 }}>Playlist</span>
+                            <input type="text" placeholder="Optional" style={sideInput}
+                                value={options.playlistName || ''}
+                                onChange={e => setUploadOption('playlistName', e.target.value)} />
+                        </div>
+
+                        {/* Discovery Filters */}
+                        <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid #333' }}>
+                            <span style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Discovery Filters</span>
+                            <div style={sideRow}>
+                                <span style={{ fontSize: 14 }}>Extensions</span>
+                                <input type="text" placeholder=".mp4,.mov" style={sideInput}
+                                    value={options.extensions || ''}
+                                    onChange={e => setUploadOption('extensions', e.target.value)} />
                             </div>
-                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
-                                <span style={{fontSize:14}}>Videos Root</span>
-                                <input type="text" placeholder="Path to video folder" value={options.videosRoot || ""}
-                                    onChange={function handleRoot(e) { setUploadOption("videosRoot", e.target.value); }}
-                                    style={{width:180,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
-                            </div>
-                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
-                                <span style={{fontSize:14}}>Privacy</span>
-                                <select value={options.privacy || ""}
-                                    onChange={function handlePrivacy(e) { setUploadOption("privacy", e.target.value); }}
-                                    style={{width:130,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}}>
-                                    <option value="">Default</option>
-                                    <option value="private">Private</option>
-                                    <option value="unlisted">Unlisted</option>
-                                    <option value="public">Public</option>
-                                </select>
-                            </div>
-                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
-                                <span style={{fontSize:14}}>Playlist Name</span>
-                                <input type="text" placeholder="Optional" value={options.playlistName || ""}
-                                    onChange={function handlePlaylist(e) { setUploadOption("playlistName", e.target.value); }}
-                                    style={{width:160,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
-                            </div>
-                            <ToggleSwitch label="Dry Run" checked={options.dryRun || false}
-                                onChange={function handleDryRun(v) { setUploadOption("dryRun", v); }} />
-                            {/* Discovery Filters */}
-                            <div style={{marginTop:16,borderTop:"1px solid #333",paddingTop:12}}>
-                                <span style={{fontSize:12,color:"#888",textTransform:"uppercase",letterSpacing:1}}>Discovery Filters</span>
-                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
-                                    <span style={{fontSize:14}}>Extensions</span>
-                                    <input type="text" placeholder=".mp4,.mov" value={options.extensions || ""} onChange={function(e){setUploadOption("extensions",e.target.value);}} style={{width:140,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
-                                </div>
-                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
-                                    <span style={{fontSize:14}}>Exclude Dirs</span>
-                                    <input type="text" placeholder="drafts,archive" value={options.excludeDirectories || ""} onChange={function(e){setUploadOption("excludeDirectories",e.target.value);}} style={{width:140,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
-                                </div>
-                            </div>
-                            {/* Queue Filters */}
-                            <div style={{marginTop:12,borderTop:"1px solid #333",paddingTop:12}}>
-                                <span style={{fontSize:12,color:"#888",textTransform:"uppercase",letterSpacing:1}}>Queue Filters</span>
-                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
-                                    <span style={{fontSize:14}}>Require Uploaded On</span>
-                                    <input type="text" placeholder="youtube" value={options.requireUploadedOn || ""} onChange={function(e){setUploadOption("requireUploadedOn",e.target.value);}} style={{width:120,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
-                                </div>
-                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
-                                    <span style={{fontSize:14}}>Require Missing On</span>
-                                    <input type="text" placeholder="instagram" value={options.requireMissingOn || ""} onChange={function(e){setUploadOption("requireMissingOn",e.target.value);}} style={{width:120,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
-                                </div>
-                            </div>
-                            {/* Credentials */}
-                            <div style={{marginTop:12,borderTop:"1px solid #333",paddingTop:12}}>
-                                <span style={{fontSize:12,color:"#888",textTransform:"uppercase",letterSpacing:1}}>Credentials</span>
-                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
-                                    <span style={{fontSize:14}}>Client Secrets</span>
-                                    <input type="text" placeholder="path/to/client_secret.json" value={options.clientSecretsPath || ""} onChange={function(e){setUploadOption("clientSecretsPath",e.target.value);}} style={{width:180,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
-                                </div>
-                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0"}}>
-                                    <span style={{fontSize:14}}>Token File</span>
-                                    <input type="text" placeholder="path/to/token.json" value={options.tokenFilePath || ""} onChange={function(e){setUploadOption("tokenFilePath",e.target.value);}} style={{width:180,padding:"4px 8px",borderRadius:4,border:"1px solid #444",background:"#1a1a2e",color:"#fff",fontSize:13}} />
-                                </div>
-                            <UploadAdvancedOptions options={options} setUploadOption={setUploadOption} />
+                            <div style={sideRow}>
+                                <span style={{ fontSize: 14 }}>Exclude Dirs</span>
+                                <input type="text" placeholder="drafts,archive" style={sideInput}
+                                    value={options.excludeDirectories || ''}
+                                    onChange={e => setUploadOption('excludeDirectories', e.target.value)} />
                             </div>
                         </div>
+
+                        {/* Queue Filters */}
+                        <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid #333' }}>
+                            <span style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Queue Filters</span>
+                            <div style={sideRow}>
+                                <span style={{ fontSize: 14 }}>Uploaded On</span>
+                                <input type="text" placeholder="youtube" style={sideInput}
+                                    value={options.requireUploadedOn || ''}
+                                    onChange={e => setUploadOption('requireUploadedOn', e.target.value)} />
+                            </div>
+                            <div style={sideRow}>
+                                <span style={{ fontSize: 14 }}>Missing On</span>
+                                <input type="text" placeholder="instagram" style={sideInput}
+                                    value={options.requireMissingOn || ''}
+                                    onChange={e => setUploadOption('requireMissingOn', e.target.value)} />
+                            </div>
+                        </div>
+
+                        {/* Credentials */}
+                        <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid #333' }}>
+                            <span style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Credentials</span>
+                            <div style={sideRow}>
+                                <span style={{ fontSize: 14 }}>Client Secrets</span>
+                                <input type="text" placeholder="client_secret.json" style={sideInput}
+                                    value={options.clientSecretsPath || ''}
+                                    onChange={e => setUploadOption('clientSecretsPath', e.target.value)} />
+                            </div>
+                            <div style={sideRow}>
+                                <span style={{ fontSize: 14 }}>Token File</span>
+                                <input type="text" placeholder="token.json" style={sideInput}
+                                    value={options.tokenFilePath || ''}
+                                    onChange={e => setUploadOption('tokenFilePath', e.target.value)} />
+                            </div>
+                        </div>
+
+                        {/* Advanced options (binary paths, meta creds, AI, music, etc.) */}
+                        <UploadAdvancedOptions options={options} setUploadOption={setUploadOption} />
                     </div>
+
+                    {/* Scheduled Publishing */}
+                    <div className="upload-panel" style={{ gap: 10, padding: 16 }}>
+                        <span className="upload-panel-title" style={{ fontWeight: 700 }}>Scheduled Publishing</span>
+                        <ToggleSwitch label="Enable Schedule" checked={scheduleEnabled} onChange={setScheduleEnabled} />
+                        {scheduleEnabled && (
+                            <input type="date" value={scheduleDate}
+                                onChange={e => setScheduleDate(e.target.value)}
+                                style={{ ...sideInput, width: '100%' }} />
+                        )}
+                        {scheduleEnabled && (
+                            <>
+                                <div style={{ marginTop: 4 }}>
+                                    <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>YouTube Slots</p>
+                                    {youtubeSlots.map((slot, i) => (
+                                        <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
+                                            <input type="time" value={slot.time}
+                                                onChange={e => updateYoutubeSlot(i, 'time', e.target.value)}
+                                                style={{ flex: 1, ...sideInput, width: 'auto' }} />
+                                            <input type="number" min={1} value={slot.count}
+                                                onChange={e => updateYoutubeSlot(i, 'count', parseInt(e.target.value) || 1)}
+                                                style={{ ...sideInput, width: 50 }} />
+                                            <button onClick={() => removeYoutubeSlot(i)}
+                                                style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 12 }}>✕</button>
+                                        </div>
+                                    ))}
+                                    <button onClick={addYoutubeSlot}
+                                        style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
+                                </div>
+                                <div style={{ marginTop: 4 }}>
+                                    <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>Facebook Slots</p>
+                                    {facebookSlots.map((slot, i) => (
+                                        <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
+                                            <input type="time" value={slot.time}
+                                                onChange={e => updateFacebookSlot(i, 'time', e.target.value)}
+                                                style={{ flex: 1, ...sideInput, width: 'auto' }} />
+                                            <input type="number" min={1} value={slot.count}
+                                                onChange={e => updateFacebookSlot(i, 'count', parseInt(e.target.value) || 1)}
+                                                style={{ ...sideInput, width: 50 }} />
+                                            <button onClick={() => removeFacebookSlot(i)}
+                                                style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 12 }}>✕</button>
+                                        </div>
+                                    ))}
+                                    <button onClick={addFacebookSlot}
+                                        style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
+                                </div>
+                            </>
+                        )}
+                        {!scheduleEnabled && (
+                            <ToggleSwitch label="Instagram: Upload as Draft" checked={instagramDraft} onChange={setInstagramDraft} />
+                        )}
+                    </div>
+
+                </div>
+
+                {/* RIGHT: Upload Queue Grid */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+                    <UploadQueuePreview
+                        queue={uploadQueue}
+                        logEntries={logEntries}
+                        uploadStatus={uploadStatus}
+                    />
                 </div>
             </div>
 
-            <UploadQueuePreview
-                queue={uploadQueue}
-                logEntries={logEntries}
-                uploadStatus={uploadStatus}
-            />
-
-            <div className="upload-panel">
-                <h2 className="upload-panel-title">CLI Preview</h2>
-                <pre className="upload-cli-preview">{uploadStatus.commandPreview || cliPreview}</pre>
+            {/* BOTTOM: CLI Preview pinned */}
+            <div style={{
+                borderTop: '1px solid var(--border)', padding: '10px 24px',
+                background: 'rgba(0,0,0,0.25)', flexShrink: 0,
+            }}>
+                <span style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1 }}>CLI Preview</span>
+                <pre style={{
+                    margin: '4px 0 0', fontSize: 12, color: '#94a3b8',
+                    whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+                    maxHeight: 80, overflowY: 'auto',
+                }}>
+                    {uploadStatus.commandPreview || cliPreview}
+                </pre>
             </div>
 
-            <div className="upload-panel">
-                <h2 className="upload-panel-title">Scheduled Publishing</h2>
-                <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:12}}>
-                    <ToggleSwitch label="Enable Schedule" checked={scheduleEnabled} onChange={setScheduleEnabled} />
-                    {scheduleEnabled && (
-                        <input type="date" value={scheduleDate} onChange={function(e){setScheduleDate(e.target.value);}}
-                            style={{padding:'4px 8px',borderRadius:4,border:'1px solid #444',background:'#1a1a2e',color:'#fff',fontSize:13}} />
-                    )}
-                </div>
-                {scheduleEnabled && (
-                    <div style={{display:'flex',gap:24,flexWrap:'wrap'}}>
-                        <div style={{flex:1,minWidth:180}}>
-                            <p style={{fontSize:12,color:'#888',textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>YouTube Slots</p>
-                            {youtubeSlots.map(function(slot,i){return (
-                                <div key={i} style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}>
-                                    <input type="time" value={slot.time} onChange={function(e){updateYoutubeSlot(i,'time',e.target.value);}}
-                                        style={{padding:'4px 6px',borderRadius:4,border:'1px solid #444',background:'#1a1a2e',color:'#fff',fontSize:13}} />
-                                    <input type="number" min={1} value={slot.count} onChange={function(e){updateYoutubeSlot(i,'count',parseInt(e.target.value)||1);}}
-                                        style={{width:56,padding:'4px 6px',borderRadius:4,border:'1px solid #444',background:'#1a1a2e',color:'#fff',fontSize:13}} />
-                                    <span style={{fontSize:12,color:'#6b7280'}}>videos</span>
-                                    <button type="button" onClick={function(){removeYoutubeSlot(i);}}
-                                        style={{padding:'2px 8px',borderRadius:4,border:'none',background:'#374151',color:'#fff',cursor:'pointer',fontSize:12}}>X</button>
-                                </div>
-                            );})}
-                            <button type="button" onClick={addYoutubeSlot}
-                                style={{padding:'4px 12px',borderRadius:4,border:'1px solid #4f46e5',background:'transparent',color:'#818cf8',cursor:'pointer',fontSize:12,marginTop:4}}>+ Add Slot</button>
-                        </div>
-                        <div style={{flex:1,minWidth:180}}>
-                            <p style={{fontSize:12,color:'#888',textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Facebook Slots</p>
-                            {facebookSlots.map(function(slot,i){return (
-                                <div key={i} style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}>
-                                    <input type="time" value={slot.time} onChange={function(e){updateFacebookSlot(i,'time',e.target.value);}}
-                                        style={{padding:'4px 6px',borderRadius:4,border:'1px solid #444',background:'#1a1a2e',color:'#fff',fontSize:13}} />
-                                    <input type="number" min={1} value={slot.count} onChange={function(e){updateFacebookSlot(i,'count',parseInt(e.target.value)||1);}}
-                                        style={{width:56,padding:'4px 6px',borderRadius:4,border:'1px solid #444',background:'#1a1a2e',color:'#fff',fontSize:13}} />
-                                    <span style={{fontSize:12,color:'#6b7280'}}>videos</span>
-                                    <button type="button" onClick={function(){removeFacebookSlot(i);}}
-                                        style={{padding:'2px 8px',borderRadius:4,border:'none',background:'#374151',color:'#fff',cursor:'pointer',fontSize:12}}>X</button>
-                                </div>
-                            );})}
-                            <button type="button" onClick={addFacebookSlot}
-                                style={{padding:'4px 12px',borderRadius:4,border:'1px solid #4f46e5',background:'transparent',color:'#818cf8',cursor:'pointer',fontSize:12,marginTop:4}}>+ Add Slot</button>
-                        </div>
-                    </div>
-                )}
-                {!scheduleEnabled && (
-                    <div style={{display:'flex',alignItems:'center',gap:12,marginTop:4}}>
-                        <ToggleSwitch label="Instagram: Upload as Draft" checked={instagramDraft} onChange={setInstagramDraft} />
-                    </div>
-                )}
-            </div>
         </section>
     );
 }
