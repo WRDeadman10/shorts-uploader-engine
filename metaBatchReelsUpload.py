@@ -169,6 +169,8 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Show planned actions without calling Meta APIs.",
     )
+    parser.add_argument('--schedule-plan', default=None, help='JSON schedule for Facebook: [{"count": N, "publish_at": "ISO UTC datetime"}]')
+    parser.add_argument('--instagram-draft', action='store_true', default=False, help='Skip publishing Instagram reels — upload container only as draft.')
     return parser.parse_args()
 
 
@@ -354,6 +356,7 @@ def main() -> int:
         f"platform={args.platform} | dry_run={args.dry_run}"
     )
 
+    import json as _json; import datetime as _dt; _fb_slots = _json.loads(args.schedule_plan) if getattr(args, 'schedule_plan', None) else []; _fb_seq = [s['publish_at'] for s in _fb_slots for _ in range(s['count'])]; _fb_idx = 0
     success_instagram = 0
     success_facebook = 0
     failed_instagram = 0
@@ -460,13 +463,17 @@ def main() -> int:
                     interval_seconds=args.poll_interval_seconds,
                     timeout=args.request_timeout_seconds,
                 )
-                ig_media_id = ig_publish_reel(
-                    graph_version=args.graph_version,
-                    ig_user_id=ig_user_id,
-                    container_id=container_id,
-                    access_token=access_token,
-                    timeout=args.request_timeout_seconds,
-                )
+                if not getattr(args, 'instagram_draft', False):
+                    ig_media_id = ig_publish_reel(
+                        graph_version=args.graph_version,
+                        ig_user_id=ig_user_id,
+                        container_id=container_id,
+                        access_token=access_token,
+                        timeout=args.request_timeout_seconds,
+                    )
+                else:
+                    ig_media_id = 'draft'
+                    print('[info][instagram] reel container uploaded as draft — publish manually')
                 success_instagram += 1
                 state_row["instagram"] = {
                     "status": "ok",
@@ -538,7 +545,9 @@ def main() -> int:
                     description=fb_description,
                     title=fb_title,
                     timeout=args.request_timeout_seconds,
+                    scheduled_publish_time=(int(_dt.datetime.fromisoformat(_fb_seq[_fb_idx]).timestamp()) if _fb_idx < len(_fb_seq) else None),
                 )
+                _fb_idx += 1
                 success_facebook += 1
                 state_row["facebook"] = {
                     "status": "ok",
