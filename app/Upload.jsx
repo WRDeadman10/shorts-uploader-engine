@@ -81,6 +81,10 @@ function Upload()
             if (options.videosRoot) cmd += ' --root ' + options.videosRoot;
             if (options.ffmpegBin) cmd += ' --ffmpeg-bin ' + options.ffmpegBin;
             if (options.ffprobeBin) cmd += ' --ffprobe-bin ' + options.ffprobeBin;
+            if (options.metaAccessToken) cmd += ' --access-token ' + options.metaAccessToken;
+            if (options.igUserId) cmd += ' --ig-user-id ' + options.igUserId;
+            if (options.fbPageId) cmd += ' --facebook-page-id ' + options.fbPageId;
+            if (options.metaGraphVersion) cmd += ' --graph-version ' + options.metaGraphVersion;
             if (options.dryRun) cmd += ' --dry-run';
             return cmd;
         }
@@ -116,6 +120,10 @@ function Upload()
 
             args.push("--crosspost-meta");
             args.push("--meta-platform " + metaPlatform);
+            if (options.metaAccessToken) args.push("--meta-access-token " + options.metaAccessToken);
+            if (options.igUserId) args.push("--meta-ig-user-id " + options.igUserId);
+            if (options.fbPageId) args.push("--meta-facebook-page-id " + options.fbPageId);
+            if (options.metaGraphVersion) args.push("--meta-graph-version " + options.metaGraphVersion);
         }
 
         return args.join(" ");
