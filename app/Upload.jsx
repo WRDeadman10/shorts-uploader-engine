@@ -56,7 +56,12 @@ function Upload()
     const removeFacebookSlot  = useAppStore(s => s.removeFacebookSlot);
     const updateFacebookSlot  = useAppStore(s => s.updateFacebookSlot);
 
-    useEffect(function syncStatus() { syncUploadStatus(); }, [syncUploadStatus]);
+    useEffect(function pollStatus()
+    {
+        syncUploadStatus();
+        const interval = setInterval(syncUploadStatus, 2000);
+        return function() { clearInterval(interval); };
+    }, [syncUploadStatus]);
 
     const uploadQueue = useMemo(
         () => computeUploadQueue(videoList, options),
