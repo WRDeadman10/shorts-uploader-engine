@@ -111,7 +111,12 @@ async function runUpload(payload)
         args,
         {
             cwd: getRepoRoot(),
-            windowsHide: true
+            windowsHide: true,
+            env: Object.assign({}, process.env, {
+                PYTHONIOENCODING: "utf-8",
+                PYTHONUTF8: "1",
+                PYTHONUNBUFFERED: "1"
+            })
         }
     );
 
