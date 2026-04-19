@@ -4,6 +4,7 @@ Shared between: metaBatchReelsUpload.py, youtubeBatchUpload.py (crosspost)
 """
 from __future__ import annotations
 
+import os
 import time
 from typing import Any, Dict, Optional, Tuple
 
@@ -184,19 +185,36 @@ def fb_upload_reel_binary(
     file_path: str,
     timeout: float = 300,
 ) -> None:
-    """Upload the video binary to the Facebook Reel upload URL."""
+    """Upload the video binary to the Facebook Resumable Upload endpoint.
+
+    rupload.facebook.com requires raw binary with Authorization/offset/file_size
+    headers — NOT multipart form data.
+    """
     print(f"[fb_upload_reel_binary]")
+    file_size = os.path.getsize(file_path)
     with open(file_path, "rb") as f:
-        result = request_json(
-            "POST",
+        response = requests.post(
             upload_url,
-            data={
-                "upload_phase": "transfer",
-                "access_token": access_token,
+            headers={
+                "Authorization": f"OAuth {access_token}",
+                "offset": "0",
+                "file_size": str(file_size),
             },
-            files={"source": f},
+            data=f,
             timeout=timeout,
         )
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as exc:
+        try:
+            error_payload = response.json()
+            error_msg = extract_meta_error_message(error_payload)
+            if error_msg:
+                raise RuntimeError(f"Meta API Error ({response.status_code}): {error_msg}") from exc
+        except (ValueError, KeyError):
+            pass
+        raise exc
+    result = response.json()
     if not result.get("success"):
         raise RuntimeError(f"FB binary upload failed: {result}")
 
