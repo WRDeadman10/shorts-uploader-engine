@@ -209,19 +209,22 @@ def fb_finish_reel_publish(
     title: str = "",
     graph_version: str = "v25.0",
     timeout: float = 120,
+    scheduled_publish_time: Optional[int] = None,
 ) -> str:
     """Finish and publish a Facebook Reel. Returns the post ID."""
     print(f"[fb_finish_reel_publish]")
     data: Dict[str, Any] = {
         "upload_phase": "finish",
         "video_id": video_id,
-        "video_state": "PUBLISHED",
+        "video_state": "SCHEDULED" if scheduled_publish_time else "PUBLISHED",
         "access_token": access_token,
     }
     if description:
         data["description"] = description
     if title:
         data["title"] = title
+    if scheduled_publish_time is not None:
+        data["scheduled_publish_time"] = scheduled_publish_time
 
     max_attempts = 3
     for attempt in range(1, max_attempts + 1):
