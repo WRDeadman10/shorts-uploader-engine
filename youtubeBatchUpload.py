@@ -430,6 +430,7 @@ def parse_args() -> argparse.Namespace:
         default=20.0,
         help="Seconds to wait between Instagram processing-failure retries.",
     )
+    parser.add_argument('--schedule-plan', default=None, help='JSON schedule: [{"count": N, "publish_at": "ISO UTC datetime"}]')
     return parser.parse_args()
 
 
@@ -873,6 +874,7 @@ def main() -> int:
             f"| state={meta_reels_state_file}"
         )
 
+    import json as _json; _sch_slots = _json.loads(args.schedule_plan) if getattr(args, 'schedule_plan', None) else []; _pub_seq = [s['publish_at'] for s in _sch_slots for _ in range(s['count'])]; _pub_idx = 0
     uploaded_count = 0
     skipped_not_shorts = 0
     hit_upload_limit = False
@@ -1068,7 +1070,9 @@ def main() -> int:
                     category_id=args.category_id,
                     language=args.language,
                     notify_subscribers=args.notify_subscribers,
+                    publish_at=(_pub_seq[_pub_idx] if _pub_idx < len(_pub_seq) else None),
                 )
+                _pub_idx += 1
                 playlist_item_id = ""
                 if playlist_id:
                     try:
