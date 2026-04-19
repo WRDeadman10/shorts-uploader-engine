@@ -282,6 +282,13 @@ function updateStatus(partialStatus)
     };
 }
 
+function buildSchedulePlan(slots, date) {
+    return JSON.stringify(slots.map(function(slot) {
+        var utc = new Date(date + 'T' + slot.time + ':00').toISOString();
+        return { count: Number(slot.count), publish_at: utc };
+    }));
+}
+
 function buildUploadCommand(payload)
 {
     const platforms = payload.platforms || {};
@@ -318,6 +325,13 @@ function buildUploadCommand(payload)
         if (options.metaPollInterval) metaArgs.push("--poll-interval-seconds", String(options.metaPollInterval));
         if (options.metaRequestTimeout) metaArgs.push("--request-timeout-seconds", String(options.metaRequestTimeout));
         if (options.metaDeleteConverted === false) metaArgs.push("--keep-converted-after-upload");
+        var sch = payload.schedule || {};
+        if (sch.enabled && sch.date && facebookEnabled && sch.facebookSlots && sch.facebookSlots.length) {
+            metaArgs.push('--schedule-plan', buildSchedulePlan(sch.facebookSlots, sch.date));
+        }
+        if (!sch.enabled && sch.instagramDraft && instagramEnabled) {
+            metaArgs.push('--instagram-draft');
+        }
         return {
             scriptName: "metaBatchReelsUpload.py",
             platformLabel: selectedMetaPlatform,
@@ -386,6 +400,10 @@ function buildUploadCommand(payload)
     if (options.musicDir) args.push("--music-dir", options.musicDir);
     if (options.musicVolume) args.push("--music-bg-volume", String(options.musicVolume));
     if (options.musicInventory) args.push("--music-inventory-file", options.musicInventory);
+    var sch2 = payload.schedule || {};
+    if (sch2.enabled && sch2.date && sch2.youtubeSlots && sch2.youtubeSlots.length) {
+        args.push('--schedule-plan', buildSchedulePlan(sch2.youtubeSlots, sch2.date));
+    }
 
     return {
         scriptName: "youtubeBatchUpload.py",
