@@ -52,6 +52,21 @@ function Upload()
         syncUploadStatus();
     }, [syncUploadStatus]);
 
+    const scheduleEnabled = useAppStore(function(s){return s.scheduleEnabled;});
+    const scheduleDate = useAppStore(function(s){return s.scheduleDate;});
+    const youtubeSlots = useAppStore(function(s){return s.youtubeSlots;});
+    const facebookSlots = useAppStore(function(s){return s.facebookSlots;});
+    const instagramDraft = useAppStore(function(s){return s.instagramDraft;});
+    const setScheduleEnabled = useAppStore(function(s){return s.setScheduleEnabled;});
+    const setScheduleDate = useAppStore(function(s){return s.setScheduleDate;});
+    const setInstagramDraft = useAppStore(function(s){return s.setInstagramDraft;});
+    const addYoutubeSlot = useAppStore(function(s){return s.addYoutubeSlot;});
+    const removeYoutubeSlot = useAppStore(function(s){return s.removeYoutubeSlot;});
+    const updateYoutubeSlot = useAppStore(function(s){return s.updateYoutubeSlot;});
+    const addFacebookSlot = useAppStore(function(s){return s.addFacebookSlot;});
+    const removeFacebookSlot = useAppStore(function(s){return s.removeFacebookSlot;});
+    const updateFacebookSlot = useAppStore(function(s){return s.updateFacebookSlot;});
+
     const cliPreview = useMemo(function buildCliPreview()
     {
         if (!platforms.youtube && !platforms.instagram && !platforms.facebook)
@@ -246,6 +261,58 @@ function Upload()
             <div className="upload-panel">
                 <h2 className="upload-panel-title">CLI Preview</h2>
                 <pre className="upload-cli-preview">{uploadStatus.commandPreview || cliPreview}</pre>
+            </div>
+
+            <div className="upload-panel">
+                <h2 className="upload-panel-title">Scheduled Publishing</h2>
+                <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:12}}>
+                    <ToggleSwitch label="Enable Schedule" checked={scheduleEnabled} onChange={setScheduleEnabled} />
+                    {scheduleEnabled && (
+                        <input type="date" value={scheduleDate} onChange={function(e){setScheduleDate(e.target.value);}}
+                            style={{padding:'4px 8px',borderRadius:4,border:'1px solid #444',background:'#1a1a2e',color:'#fff',fontSize:13}} />
+                    )}
+                </div>
+                {scheduleEnabled && (
+                    <div style={{display:'flex',gap:24,flexWrap:'wrap'}}>
+                        <div style={{flex:1,minWidth:180}}>
+                            <p style={{fontSize:12,color:'#888',textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>YouTube Slots</p>
+                            {youtubeSlots.map(function(slot,i){return (
+                                <div key={i} style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}>
+                                    <input type="time" value={slot.time} onChange={function(e){updateYoutubeSlot(i,'time',e.target.value);}}
+                                        style={{padding:'4px 6px',borderRadius:4,border:'1px solid #444',background:'#1a1a2e',color:'#fff',fontSize:13}} />
+                                    <input type="number" min={1} value={slot.count} onChange={function(e){updateYoutubeSlot(i,'count',parseInt(e.target.value)||1);}}
+                                        style={{width:56,padding:'4px 6px',borderRadius:4,border:'1px solid #444',background:'#1a1a2e',color:'#fff',fontSize:13}} />
+                                    <span style={{fontSize:12,color:'#6b7280'}}>videos</span>
+                                    <button type="button" onClick={function(){removeYoutubeSlot(i);}}
+                                        style={{padding:'2px 8px',borderRadius:4,border:'none',background:'#374151',color:'#fff',cursor:'pointer',fontSize:12}}>X</button>
+                                </div>
+                            );})}
+                            <button type="button" onClick={addYoutubeSlot}
+                                style={{padding:'4px 12px',borderRadius:4,border:'1px solid #4f46e5',background:'transparent',color:'#818cf8',cursor:'pointer',fontSize:12,marginTop:4}}>+ Add Slot</button>
+                        </div>
+                        <div style={{flex:1,minWidth:180}}>
+                            <p style={{fontSize:12,color:'#888',textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Facebook Slots</p>
+                            {facebookSlots.map(function(slot,i){return (
+                                <div key={i} style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}>
+                                    <input type="time" value={slot.time} onChange={function(e){updateFacebookSlot(i,'time',e.target.value);}}
+                                        style={{padding:'4px 6px',borderRadius:4,border:'1px solid #444',background:'#1a1a2e',color:'#fff',fontSize:13}} />
+                                    <input type="number" min={1} value={slot.count} onChange={function(e){updateFacebookSlot(i,'count',parseInt(e.target.value)||1);}}
+                                        style={{width:56,padding:'4px 6px',borderRadius:4,border:'1px solid #444',background:'#1a1a2e',color:'#fff',fontSize:13}} />
+                                    <span style={{fontSize:12,color:'#6b7280'}}>videos</span>
+                                    <button type="button" onClick={function(){removeFacebookSlot(i);}}
+                                        style={{padding:'2px 8px',borderRadius:4,border:'none',background:'#374151',color:'#fff',cursor:'pointer',fontSize:12}}>X</button>
+                                </div>
+                            );})}
+                            <button type="button" onClick={addFacebookSlot}
+                                style={{padding:'4px 12px',borderRadius:4,border:'1px solid #4f46e5',background:'transparent',color:'#818cf8',cursor:'pointer',fontSize:12,marginTop:4}}>+ Add Slot</button>
+                        </div>
+                    </div>
+                )}
+                {!scheduleEnabled && (
+                    <div style={{display:'flex',alignItems:'center',gap:12,marginTop:4}}>
+                        <ToggleSwitch label="Instagram: Upload as Draft" checked={instagramDraft} onChange={setInstagramDraft} />
+                    </div>
+                )}
             </div>
         </section>
     );
