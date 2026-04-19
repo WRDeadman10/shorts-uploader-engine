@@ -87,6 +87,15 @@ export const useAppStore = create(function createAppStore(set, get)
                 updates.uploadOptions = Object.assign({}, get().uploadOptions, settings.uploadOptions);
             }
             if (settings && settings.uploadPlatforms) { updates.uploadPlatforms = Object.assign({}, get().uploadPlatforms, settings.uploadPlatforms); }
+            if (settings && settings.schedule)
+            {
+                var sch = settings.schedule;
+                if (sch.enabled !== undefined) updates.scheduleEnabled = sch.enabled;
+                if (sch.date) updates.scheduleDate = sch.date;
+                if (Array.isArray(sch.youtubeSlots) && sch.youtubeSlots.length) updates.youtubeSlots = sch.youtubeSlots;
+                if (Array.isArray(sch.facebookSlots) && sch.facebookSlots.length) updates.facebookSlots = sch.facebookSlots;
+                if (sch.instagramDraft !== undefined) updates.instagramDraft = sch.instagramDraft;
+            }
             set(updates);
         },
         saveAdvancedUploadSettings: async function saveAdvancedUploadSettings()
@@ -354,15 +363,15 @@ export const useAppStore = create(function createAppStore(set, get)
             // Auto-persist options to disk
             get().saveAdvancedUploadSettings();
         },
-        setScheduleEnabled: function setScheduleEnabled(v) { set({ scheduleEnabled: v }); },
-        setScheduleDate: function setScheduleDate(v) { set({ scheduleDate: v }); },
-        setInstagramDraft: function setInstagramDraft(v) { set({ instagramDraft: v }); },
-        addYoutubeSlot: function addYoutubeSlot() { set(function(s) { return { youtubeSlots: s.youtubeSlots.concat({ time: '10:00', count: 10 }) }; }); },
-        removeYoutubeSlot: function removeYoutubeSlot(i) { set(function(s) { return { youtubeSlots: s.youtubeSlots.filter(function(_, j) { return j !== i; }) }; }); },
-        updateYoutubeSlot: function updateYoutubeSlot(i, field, val) { set(function(s) { var sl = s.youtubeSlots.slice(); sl[i] = Object.assign({}, sl[i], { [field]: val }); return { youtubeSlots: sl }; }); },
-        addFacebookSlot: function addFacebookSlot() { set(function(s) { return { facebookSlots: s.facebookSlots.concat({ time: '10:00', count: 10 }) }; }); },
-        removeFacebookSlot: function removeFacebookSlot(i) { set(function(s) { return { facebookSlots: s.facebookSlots.filter(function(_, j) { return j !== i; }) }; }); },
-        updateFacebookSlot: function updateFacebookSlot(i, field, val) { set(function(s) { var sl = s.facebookSlots.slice(); sl[i] = Object.assign({}, sl[i], { [field]: val }); return { facebookSlots: sl }; }); },
+        setScheduleEnabled: function setScheduleEnabled(v) { set({ scheduleEnabled: v }); get().saveAdvancedUploadSettings(); },
+        setScheduleDate: function setScheduleDate(v) { set({ scheduleDate: v }); get().saveAdvancedUploadSettings(); },
+        setInstagramDraft: function setInstagramDraft(v) { set({ instagramDraft: v }); get().saveAdvancedUploadSettings(); },
+        addYoutubeSlot: function addYoutubeSlot() { set(function(s) { return { youtubeSlots: s.youtubeSlots.concat({ time: '10:00', count: 10 }) }; }); get().saveAdvancedUploadSettings(); },
+        removeYoutubeSlot: function removeYoutubeSlot(i) { set(function(s) { return { youtubeSlots: s.youtubeSlots.filter(function(_, j) { return j !== i; }) }; }); get().saveAdvancedUploadSettings(); },
+        updateYoutubeSlot: function updateYoutubeSlot(i, field, val) { set(function(s) { var sl = s.youtubeSlots.slice(); sl[i] = Object.assign({}, sl[i], { [field]: val }); return { youtubeSlots: sl }; }); get().saveAdvancedUploadSettings(); },
+        addFacebookSlot: function addFacebookSlot() { set(function(s) { return { facebookSlots: s.facebookSlots.concat({ time: '10:00', count: 10 }) }; }); get().saveAdvancedUploadSettings(); },
+        removeFacebookSlot: function removeFacebookSlot(i) { set(function(s) { return { facebookSlots: s.facebookSlots.filter(function(_, j) { return j !== i; }) }; }); get().saveAdvancedUploadSettings(); },
+        updateFacebookSlot: function updateFacebookSlot(i, field, val) { set(function(s) { var sl = s.facebookSlots.slice(); sl[i] = Object.assign({}, sl[i], { [field]: val }); return { facebookSlots: sl }; }); get().saveAdvancedUploadSettings(); },
         startConsole: async function startConsole()
         {
             const state = get();
