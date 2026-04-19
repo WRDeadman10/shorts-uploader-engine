@@ -305,7 +305,8 @@ function buildUploadCommand(payload)
 
     const maxVid = String((options.maxVideos && Number(options.maxVideos) >= 1) ? Math.round(Number(options.maxVideos)) : 1);
 
-    if (!youtubeEnabled && (instagramEnabled || facebookEnabled))
+    // ── Instagram (±Facebook) with no YouTube → Reels API script ──────────────
+    if (!youtubeEnabled && instagramEnabled)
     {
         const metaArgs = [
             "--platform",
@@ -339,9 +340,13 @@ function buildUploadCommand(payload)
         };
     }
 
+    // ── YouTube OR Facebook-only → youtubeBatchUpload.py ──────────────────────
+    // Facebook-only uses --upload-platform facebook; YouTube uses --upload-platform youtube
+    const uploadPlatform = youtubeEnabled ? "youtube" : "facebook";
+
     const args = [
         "--upload-platform",
-        "youtube",
+        uploadPlatform,
         "--max-videos",
         maxVid,
         "--allow-fallback"
@@ -366,10 +371,22 @@ function buildUploadCommand(payload)
         args.push("--music-dir=");
     }
 
-    if (instagramEnabled || facebookEnabled)
+    if (youtubeEnabled && (instagramEnabled || facebookEnabled))
     {
+        // YouTube primary + crosspost to Meta
         args.push("--crosspost-meta");
         args.push("--meta-platform", selectedMetaPlatform);
+        if (options.metaAccessToken) args.push("--meta-access-token", options.metaAccessToken);
+        if (options.igUserId) args.push("--meta-ig-user-id", options.igUserId);
+        if (options.fbPageId) args.push("--meta-facebook-page-id", options.fbPageId);
+        if (options.metaGraphVersion) args.push("--meta-graph-version", options.metaGraphVersion);
+        if (options.metaPollAttempts) args.push("--meta-poll-attempts", String(options.metaPollAttempts));
+        if (options.metaPollInterval) args.push("--meta-poll-interval-seconds", String(options.metaPollInterval));
+        if (options.metaRequestTimeout) args.push("--meta-request-timeout-seconds", String(options.metaRequestTimeout));
+    }
+    else if (!youtubeEnabled && facebookEnabled)
+    {
+        // Facebook primary — direct Meta credentials (no --crosspost-meta)
         if (options.metaAccessToken) args.push("--meta-access-token", options.metaAccessToken);
         if (options.igUserId) args.push("--meta-ig-user-id", options.igUserId);
         if (options.fbPageId) args.push("--meta-facebook-page-id", options.fbPageId);
@@ -407,7 +424,9 @@ function buildUploadCommand(payload)
 
     return {
         scriptName: "youtubeBatchUpload.py",
-        platformLabel: instagramEnabled || facebookEnabled ? "youtube+" + selectedMetaPlatform : "youtube",
+        platformLabel: youtubeEnabled
+            ? (instagramEnabled || facebookEnabled ? "youtube+" + selectedMetaPlatform : "youtube")
+            : "facebook",
         scriptArgs: args
     };
 }

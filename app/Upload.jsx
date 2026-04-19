@@ -68,47 +68,65 @@ function Upload()
         if (!platforms.youtube && !platforms.instagram && !platforms.facebook)
             return "Select at least one platform to build a runnable command.";
 
-        if (!platforms.youtube)
+        // ── Instagram (±Facebook), no YouTube → Reels script ──────────────────
+        if (!platforms.youtube && platforms.instagram)
         {
-            const mp = platforms.instagram && platforms.facebook ? "both" : platforms.instagram ? "instagram" : "facebook";
+            const mp = platforms.instagram && platforms.facebook ? "both" : "instagram";
             let cmd = 'python metaBatchReelsUpload.py --platform ' + mp + ' --max-videos ' + String(options.maxVideos || 1);
-            if (options.videosRoot)       cmd += ' --root '               + options.videosRoot;
-            if (options.ffmpegBin)        cmd += ' --ffmpeg-bin '         + options.ffmpegBin;
-            if (options.ffprobeBin)       cmd += ' --ffprobe-bin '        + options.ffprobeBin;
-            if (options.metaAccessToken)  cmd += ' --access-token '       + options.metaAccessToken;
-            if (options.igUserId)         cmd += ' --ig-user-id '         + options.igUserId;
-            if (options.fbPageId)         cmd += ' --facebook-page-id '   + options.fbPageId;
-            if (options.metaGraphVersion) cmd += ' --graph-version '      + options.metaGraphVersion;
-            if (options.dryRun)           cmd += ' --dry-run';
+            if (options.videosRoot)       cmd += ' \\\n  --root '               + options.videosRoot;
+            if (options.ffmpegBin)        cmd += ' \\\n  --ffmpeg-bin '         + options.ffmpegBin;
+            if (options.ffprobeBin)       cmd += ' \\\n  --ffprobe-bin '        + options.ffprobeBin;
+            if (options.metaAccessToken)  cmd += ' \\\n  --access-token '       + options.metaAccessToken;
+            if (options.igUserId)         cmd += ' \\\n  --ig-user-id '         + options.igUserId;
+            if (options.fbPageId)         cmd += ' \\\n  --facebook-page-id '   + options.fbPageId;
+            if (options.metaGraphVersion) cmd += ' \\\n  --graph-version '      + options.metaGraphVersion;
+            if (options.dryRun)           cmd += ' \\\n  --dry-run';
             return cmd;
         }
 
+        // ── YouTube or Facebook-only → youtubeBatchUpload.py ───────────────────
+        const uploadPlatform = platforms.youtube ? "youtube" : "facebook";
+        const mp = platforms.instagram && platforms.facebook ? "both" : platforms.instagram ? "instagram" : "facebook";
+
         const args = [
             "python youtubeBatchUpload.py",
-            "--upload-platform youtube",
+            "--upload-platform " + uploadPlatform,
             "--max-videos " + String(options.maxVideos || 1),
             "--allow-fallback"
         ];
-        if (options.videosRoot)    args.push("--root "       + options.videosRoot);
-        if (options.privacy)       args.push("--privacy "    + options.privacy);
+        if (options.videosRoot)    args.push("--root "          + options.videosRoot);
+        if (options.privacy)       args.push("--privacy "       + options.privacy);
         if (options.playlistName)  args.push("--playlist-name " + options.playlistName);
-        if (options.ffmpegBin)     args.push("--ffmpeg-bin " + options.ffmpegBin);
-        if (options.ffprobeBin)    args.push("--ffprobe-bin " + options.ffprobeBin);
+        if (options.ffmpegBin)     args.push("--ffmpeg-bin "    + options.ffmpegBin);
+        if (options.ffprobeBin)    args.push("--ffprobe-bin "   + options.ffprobeBin);
         if (options.dryRun)        args.push("--dry-run");
+        if (options.requireUploadedOn) args.push("--require-uploaded-on " + options.requireUploadedOn);
+        if (options.requireMissingOn)  args.push("--require-missing-on "  + options.requireMissingOn);
+        if (options.channelName)   args.push("--channel-name "  + options.channelName);
+        if (options.musicDir)      args.push("--music-dir "     + options.musicDir);
+        if (options.musicVolume !== undefined) args.push("--music-bg-volume " + options.musicVolume);
 
         args.push(options.includeShorts ? "--shorts-policy convert" : "--shorts-policy off");
         if (!options.includeMetadata) args.push("--no-ai");
         if (!options.includeMusic)    args.push("--music-dir=");
 
-        if (platforms.instagram || platforms.facebook)
+        if (platforms.youtube && (platforms.instagram || platforms.facebook))
         {
-            const mp = platforms.instagram && platforms.facebook ? "both" : platforms.instagram ? "instagram" : "facebook";
+            // YouTube primary + crosspost
             args.push("--crosspost-meta");
             args.push("--meta-platform " + mp);
-            if (options.metaAccessToken)  args.push("--meta-access-token "       + options.metaAccessToken);
-            if (options.igUserId)         args.push("--meta-ig-user-id "         + options.igUserId);
-            if (options.fbPageId)         args.push("--meta-facebook-page-id "   + options.fbPageId);
-            if (options.metaGraphVersion) args.push("--meta-graph-version "      + options.metaGraphVersion);
+            if (options.metaAccessToken)  args.push("--meta-access-token "     + options.metaAccessToken);
+            if (options.igUserId)         args.push("--meta-ig-user-id "       + options.igUserId);
+            if (options.fbPageId)         args.push("--meta-facebook-page-id " + options.fbPageId);
+            if (options.metaGraphVersion) args.push("--meta-graph-version "    + options.metaGraphVersion);
+        }
+        else if (!platforms.youtube && platforms.facebook)
+        {
+            // Facebook primary — direct credentials
+            if (options.metaAccessToken)  args.push("--meta-access-token "     + options.metaAccessToken);
+            if (options.igUserId)         args.push("--meta-ig-user-id "       + options.igUserId);
+            if (options.fbPageId)         args.push("--meta-facebook-page-id " + options.fbPageId);
+            if (options.metaGraphVersion) args.push("--meta-graph-version "    + options.metaGraphVersion);
         }
 
         return args.join(" \\\n  ");
