@@ -64,6 +64,22 @@ function registerSystemHandlers(ipcMain)
             videoRoot: { path: videoRoot, found: videoRootFound }
         };
     });
+
+    ipcMain.handle("get-thumbnail", async function handleGetThumbnail(_event, thumbPath)
+    {
+        if (!thumbPath || !fs.existsSync(thumbPath)) return null;
+
+        try
+        {
+            const data = fs.readFileSync(thumbPath);
+            const ext = path.extname(thumbPath).slice(1).toLowerCase().replace("jpg", "jpeg");
+            return "data:image/" + ext + ";base64," + data.toString("base64");
+        }
+        catch (_err)
+        {
+            return null;
+        }
+    });
 }
 
 module.exports = {

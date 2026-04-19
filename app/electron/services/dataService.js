@@ -37,6 +37,22 @@ function resolveRelativeSourcePath(relativePath)
     return "";
 }
 
+function resolveThumbnailPath(sourcePath, relativePath)
+{
+    if (!sourcePath) return "";
+    const dir = path.dirname(sourcePath);
+    const base = path.basename(relativePath || sourcePath, path.extname(relativePath || sourcePath));
+    const exts = [".jpg", ".jpeg", ".png", ".webp"];
+
+    for (const ext of exts)
+    {
+        const thumbPath = path.join(dir, "thumbnails", base + ext);
+        if (fs.existsSync(thumbPath)) return thumbPath;
+    }
+
+    return "";
+}
+
 function computePlatformFlags(stateKey, sources)
 {
     const youtubeEntry = sources.youtubeUploaded[stateKey] || sources.youtubeLedger[stateKey];
@@ -145,6 +161,8 @@ function getVideoList()
             description: description,
             duration: "--:--",
             thumbnail: path.basename(path.dirname(relativePath || "Tracked Clip")) || "Tracked Clip",
+            thumbnailPath: resolveThumbnailPath(sourcePath, relativePath),
+            fileName: path.basename(relativePath || stateKey),
             relativePath: relativePath,
             sourcePath: sourcePath,
             metadataPath: metadataPath,
