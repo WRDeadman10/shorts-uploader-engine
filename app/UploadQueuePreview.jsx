@@ -6,21 +6,34 @@ const PLATFORM_KEY = { youtube: 'yt', instagram: 'ig', facebook: 'fb' };
 
 const QUEUE_BORDER = {
     'TO BE UPLOADED': '1px solid var(--border)',
-    'UPLOADING':      '1px solid #b45309',
+    'UPLOADING':      '2px solid #f59e0b',
     'UPLOADED':       '1px solid #059669',
 };
 
 const QUEUE_GLOW = {
     'TO BE UPLOADED': 'none',
-    'UPLOADING':      '0 0 0 2px rgba(180,83,9,0.3)',
-    'UPLOADED':       '0 0 0 2px rgba(5,150,105,0.3)',
+    'UPLOADING':      '0 0 16px rgba(245,158,11,0.35)',
+    'UPLOADED':       '0 0 8px rgba(5,150,105,0.25)',
+};
+
+const CARD_BG = {
+    'TO BE UPLOADED': 'linear-gradient(180deg, rgba(26,29,36,0.98), rgba(20,24,33,0.98))',
+    'UPLOADING':      'linear-gradient(180deg, rgba(120,53,15,0.45) 0%, rgba(20,24,33,0.98) 60%)',
+    'UPLOADED':       'linear-gradient(180deg, rgba(6,78,59,0.35) 0%, rgba(20,24,33,0.98) 60%)',
 };
 
 const STATUS_PILL = {
     'TO BE UPLOADED': { background: '#1e293b', color: '#94a3b8' },
-    'UPLOADING':      { background: '#78350f', color: '#fbbf24' },
+    'UPLOADING':      { background: '#92400e', color: '#fbbf24' },
     'UPLOADED':       { background: '#064e3b', color: '#34d399' },
 };
+
+// Return the best string to match against log output.
+// The script logs: "[N/M] processing: folder/file.mp4" — relativePath matches this.
+function logKey(video)
+{
+    return video.relativePath || video.fileName || video.title || '';
+}
 
 function deriveStatuses(queue, logEntries, uploadStatus)
 {
@@ -28,17 +41,18 @@ function deriveStatuses(queue, logEntries, uploadStatus)
     if (s === 'idle')      return queue.map(() => 'TO BE UPLOADED');
     if (s === 'completed') return queue.map(() => 'UPLOADED');
 
-    const logText = logEntries.map(e => e.message || '').join('\n');
+    const logText = logEntries.map(function(e) { return e.message || ''; }).join('\n');
 
     return queue.map(function(video, index)
     {
-        const name = video.fileName || video.title || '';
-        if (!name || !logText.includes(name)) return 'TO BE UPLOADED';
+        const key = logKey(video);
+        if (!key || !logText.includes(key)) return 'TO BE UPLOADED';
 
-        const laterSeen = queue.slice(index + 1).some(v =>
+        // If any later video already appears in logs, this one is done
+        const laterSeen = queue.slice(index + 1).some(function(v)
         {
-            const n = v.fileName || v.title;
-            return n && logText.includes(n);
+            const k = logKey(v);
+            return k && logText.includes(k);
         });
 
         if (laterSeen) return 'UPLOADED';
@@ -82,12 +96,19 @@ function QueueCard({ video, index, queueStatus })
     const hasMusic    = video.musicTrack && video.musicTrack !== 'No Track';
     const pill        = STATUS_PILL[queueStatus] || STATUS_PILL['TO BE UPLOADED'];
 
+    const isUploading = queueStatus === 'UPLOADING';
+
     return (
         <motion.article
             className="library-card"
-            style={{ border: QUEUE_BORDER[queueStatus], boxShadow: QUEUE_GLOW[queueStatus] }}
-            whileHover={{ y: -4, scale: 1.01 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            style={{
+                border: QUEUE_BORDER[queueStatus],
+                boxShadow: QUEUE_GLOW[queueStatus],
+                background: CARD_BG[queueStatus],
+            }}
+            animate={isUploading ? { boxShadow: ['0 0 8px rgba(245,158,11,0.2)', '0 0 24px rgba(245,158,11,0.55)', '0 0 8px rgba(245,158,11,0.2)'] } : {}}
+            transition={isUploading ? { duration: 1.6, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.18, ease: 'easeOut' }}
+            whileHover={!isUploading ? { y: -4, scale: 1.01 } : {}}
         >
             {/* Media area — thumbnail */}
             <div className="library-card-media" style={{ position: 'relative', minHeight: 130, padding: 12 }}>
