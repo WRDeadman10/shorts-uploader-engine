@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import ToggleSwitch from "./ToggleSwitch.jsx";
 import UploadAdvancedOptions from './UploadAdvancedOptions.jsx';
+import UploadQueuePreview, { computeUploadQueue } from './UploadQueuePreview.jsx';
 import { useAppStore } from "./useAppStore.js";
 
 const platformOptions = [
@@ -47,6 +48,9 @@ function Upload()
         return state.syncUploadStatus;
     });
 
+    const videoList = useAppStore(function(s) { return s.videoList; });
+    const logEntries = useAppStore(function(s) { return s.logEntries; });
+
     useEffect(function syncStatus()
     {
         syncUploadStatus();
@@ -66,6 +70,11 @@ function Upload()
     const addFacebookSlot = useAppStore(function(s){return s.addFacebookSlot;});
     const removeFacebookSlot = useAppStore(function(s){return s.removeFacebookSlot;});
     const updateFacebookSlot = useAppStore(function(s){return s.updateFacebookSlot;});
+
+    const uploadQueue = useMemo(
+        function buildQueue() { return computeUploadQueue(videoList, options); },
+        [videoList, options.requireUploadedOn, options.requireMissingOn, options.maxVideos]
+    );
 
     const cliPreview = useMemo(function buildCliPreview()
     {
@@ -265,6 +274,12 @@ function Upload()
                     </div>
                 </div>
             </div>
+
+            <UploadQueuePreview
+                queue={uploadQueue}
+                logEntries={logEntries}
+                uploadStatus={uploadStatus}
+            />
 
             <div className="upload-panel">
                 <h2 className="upload-panel-title">CLI Preview</h2>
