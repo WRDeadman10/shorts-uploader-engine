@@ -1517,6 +1517,7 @@ def crosspost_meta_reel(
     metadata_path: Path,
     youtube_video_id: str,
     facebook_blocked_for_run: Dict[str, bool],
+    publish_at: Optional[str] = None,
 ) -> None:
     reels_entries = reels_state["entries"]
     state_row = reels_entries.get(state_key, {})
@@ -1647,6 +1648,16 @@ def crosspost_meta_reel(
                 file_path=source_file,
                 timeout=args.meta_request_timeout_seconds,
             )
+            _fb_scheduled_ts: Optional[int] = None
+            if publish_at:
+                try:
+                    _fb_scheduled_ts = int(
+                        datetime.fromisoformat(publish_at.replace("Z", "+00:00"))
+                        .astimezone(timezone.utc)
+                        .timestamp()
+                    )
+                except Exception:
+                    _fb_scheduled_ts = None
             finish_response = fb_finish_reel_publish(
                 graph_version=args.meta_graph_version,
                 page_id=clean_text(args.meta_facebook_page_id),
@@ -1655,6 +1666,7 @@ def crosspost_meta_reel(
                 description=fb_description,
                 title=fb_title,
                 timeout=args.meta_request_timeout_seconds,
+                scheduled_publish_time=_fb_scheduled_ts,
             )
             state_row["facebook"] = {
                 "status": "ok",
@@ -2257,6 +2269,8 @@ def main() -> int:
                     )
                     break
         else:
+            _meta_publish_at = _pub_seq[_pub_idx] if _pub_idx < len(_pub_seq) else None
+            _pub_idx += 1
             crosspost_meta_reel(
                 args=args,
                 reels_state=meta_reels_state,
@@ -2269,6 +2283,7 @@ def main() -> int:
                 metadata_path=metadata_path,
                 youtube_video_id="",
                 facebook_blocked_for_run=facebook_blocked_for_run,
+                publish_at=_meta_publish_at,
             )
             save_json_file(meta_reels_state_file, meta_reels_state)
             save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
