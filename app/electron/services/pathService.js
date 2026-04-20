@@ -14,15 +14,28 @@ function getRendererEntryFile()
 function resolveVideoRoot()
 {
     const repoRoot = getRepoRoot();
-    const reportPath = path.join(repoRoot, "upload_status_report.json");
-    const siblingRoot = path.resolve(repoRoot, "..", "VALORANT");
 
+    // 1. Highest priority: videosRoot saved in workflow settings (set by the user in the UI)
+    try
+    {
+        const settings = readSettings();
+        const configured = settings && settings.uploadOptions && settings.uploadOptions.videosRoot;
+        if (configured && typeof configured === "string" && configured.trim() && fs.existsSync(configured.trim()))
+        {
+            return configured.trim();
+        }
+    }
+    catch (_error)
+    {
+    }
+
+    // 2. upload_status_report.json root_directory
+    const reportPath = path.join(repoRoot, "upload_status_report.json");
     if (fs.existsSync(reportPath))
     {
         try
         {
             const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
-
             if (report && typeof report.root_directory === "string" && fs.existsSync(report.root_directory))
             {
                 return report.root_directory;
@@ -33,6 +46,8 @@ function resolveVideoRoot()
         }
     }
 
+    // 3. Sibling VALORANT folder
+    const siblingRoot = path.resolve(repoRoot, "..", "VALORANT");
     if (fs.existsSync(siblingRoot))
     {
         return siblingRoot;

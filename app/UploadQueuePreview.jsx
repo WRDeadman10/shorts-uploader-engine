@@ -28,35 +28,53 @@ const STATUS_PILL = {
     'UPLOADED':       { background: '#064e3b', color: '#34d399' },
 };
 
-// Return the best string to match against log output.
-// The script logs: "[N/M] processing: folder/file.mp4" — relativePath matches this.
-function logKey(video)
+// Normalize path separators to forward-slash for comparison.
+function normPath(p) { return (p || '').replace(/\\/g, '/').trim(); }
+
+// Parse log entries to build the ordered list of paths seen in "[N/M] processing:" lines.
+// Returns { processedPaths: Set<string>, lastPath: string|null }
+function parseProcessingLog(logEntries)
 {
-    return video.relativePath || video.fileName || video.title || '';
+    const RE = /\[\d+\/\d+\] processing:\s*(.+)/;
+    const ordered = [];
+    const processedPaths = new Set();
+
+    for (const entry of logEntries)
+    {
+        const msg = entry.message || '';
+        const m = msg.match(RE);
+        if (m)
+        {
+            const p = normPath(m[1]);
+            if (!processedPaths.has(p))
+            {
+                ordered.push(p);
+                processedPaths.add(p);
+            }
+        }
+    }
+
+    return { processedPaths, lastPath: ordered.length > 0 ? ordered[ordered.length - 1] : null };
 }
 
 function deriveStatuses(queue, logEntries, uploadStatus)
 {
     const s = uploadStatus.status;
-    if (s === 'idle')      return queue.map(() => 'TO BE UPLOADED');
-    if (s === 'completed') return queue.map(() => 'UPLOADED');
+    if (s === 'idle') return queue.map(() => 'TO BE UPLOADED');
 
-    const logText = logEntries.map(function(e) { return e.message || ''; }).join('\n');
+    const { processedPaths, lastPath } = parseProcessingLog(logEntries);
 
-    return queue.map(function(video, index)
+    // If run is done and we have log data, use it; otherwise mark all uploaded when completed
+    if (s === 'completed' && processedPaths.size === 0)
+        return queue.map(() => 'UPLOADED');
+
+    return queue.map(function(video)
     {
-        const key = logKey(video);
-        if (!key || !logText.includes(key)) return 'TO BE UPLOADED';
-
-        // If any later video already appears in logs, this one is done
-        const laterSeen = queue.slice(index + 1).some(function(v)
-        {
-            const k = logKey(v);
-            return k && logText.includes(k);
-        });
-
-        if (laterSeen) return 'UPLOADED';
-        return s === 'running' ? 'UPLOADING' : 'UPLOADED';
+        const key = normPath(video.relativePath || video.fileName || video.title || '');
+        if (!key || !processedPaths.has(key)) return 'TO BE UPLOADED';
+        // The last path seen in logs is still uploading if the run is active
+        if (key === lastPath && s === 'running') return 'UPLOADING';
+        return 'UPLOADED';
     });
 }
 
