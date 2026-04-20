@@ -50,6 +50,15 @@ except ImportError:  # pragma: no cover - handled at runtime
 # Leave empty to auto-use sibling folder named "VALORANT".
 VIDEO_SOURCE_ROOT = ""
 
+# Default file paths used as argparse defaults
+DEFAULT_SOURCE_STATE_FILE          = ".youtube_upload_state.json"
+DEFAULT_REELS_STATE_FILE           = ".meta_reels_upload_state.json"
+DEFAULT_INSTAGRAM_UPLOAD_LEDGER_FILE = ".instagram_uploaded_videos.json"
+DEFAULT_FACEBOOK_UPLOAD_LEDGER_FILE  = ".facebook_uploaded_videos.json"
+DEFAULT_VIDEO_ROOT                 = get_default_video_root()
+DEFAULT_CONVERTED_DIR              = "converted_shorts"
+DEFAULT_GRAPH_VERSION              = "v25.0"
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
