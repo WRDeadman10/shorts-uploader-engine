@@ -310,44 +310,8 @@ function buildUploadCommand(payload)
 
     const maxVid = String((options.maxVideos && Number(options.maxVideos) >= 1) ? Math.round(Number(options.maxVideos)) : 1);
 
-    // ── Instagram (±Facebook) with no YouTube → Reels API script ──────────────
-    if (!youtubeEnabled && instagramEnabled)
-    {
-        const metaArgs = [
-            "--platform",
-            selectedMetaPlatform,
-            "--max-videos",
-            maxVid
-        ];
-        if (options.videosRoot) { metaArgs.push("--root", options.videosRoot); }
-        if (options.dryRun) { metaArgs.push("--dry-run"); }
-        if (options.ffmpegBin) { metaArgs.push("--ffmpeg-bin", options.ffmpegBin); }
-        if (options.ffprobeBin) { metaArgs.push("--ffprobe-bin", options.ffprobeBin); }
-        if (options.metaAccessToken) metaArgs.push("--access-token", options.metaAccessToken);
-        if (options.igUserId) metaArgs.push("--ig-user-id", options.igUserId);
-        if (options.fbPageId) metaArgs.push("--facebook-page-id", options.fbPageId);
-        if (options.metaGraphVersion) metaArgs.push("--graph-version", options.metaGraphVersion);
-        if (options.metaPollAttempts) metaArgs.push("--poll-attempts", String(options.metaPollAttempts));
-        if (options.metaPollInterval) metaArgs.push("--poll-interval-seconds", String(options.metaPollInterval));
-        if (options.metaRequestTimeout) metaArgs.push("--request-timeout-seconds", String(options.metaRequestTimeout));
-        if (options.metaDeleteConverted === false) metaArgs.push("--keep-converted-after-upload");
-        var sch = payload.schedule || {};
-        if (sch.enabled && sch.date && facebookEnabled && sch.facebookSlots && sch.facebookSlots.length) {
-            metaArgs.push('--schedule-plan', buildSchedulePlan(sch.facebookSlots, sch.date));
-        }
-        if (!sch.enabled && sch.instagramDraft && instagramEnabled) {
-            metaArgs.push('--instagram-draft');
-        }
-        return {
-            scriptName: "metaBatchReelsUpload.py",
-            platformLabel: selectedMetaPlatform,
-            scriptArgs: metaArgs
-        };
-    }
-
-    // ── YouTube OR Facebook-only → youtubeBatchUpload.py ──────────────────────
-    // Facebook-only uses --upload-platform facebook; YouTube uses --upload-platform youtube
-    const uploadPlatform = youtubeEnabled ? "youtube" : "facebook";
+    // ── All platforms route through youtubeBatchUpload.py ─────────────────────
+    const uploadPlatform = youtubeEnabled ? "youtube" : instagramEnabled ? "instagram" : "facebook";
 
     const args = [
         "--upload-platform",
@@ -389,9 +353,12 @@ function buildUploadCommand(payload)
         if (options.metaPollInterval) args.push("--meta-poll-interval-seconds", String(options.metaPollInterval));
         if (options.metaRequestTimeout) args.push("--meta-request-timeout-seconds", String(options.metaRequestTimeout));
     }
-    else if (!youtubeEnabled && facebookEnabled)
+    else if (!youtubeEnabled && (instagramEnabled || facebookEnabled))
     {
-        // Facebook primary — direct Meta credentials (no --crosspost-meta)
+        // Instagram-only, Facebook-only, or Instagram+Facebook — direct Meta credentials
+        if (instagramEnabled && facebookEnabled) args.push("--meta-platform", "both");
+        else if (instagramEnabled) args.push("--meta-platform", "instagram");
+        // facebook-only: no --meta-platform needed (default behaviour)
         if (options.metaAccessToken) args.push("--meta-access-token", options.metaAccessToken);
         if (options.igUserId) args.push("--meta-ig-user-id", options.igUserId);
         if (options.fbPageId) args.push("--meta-facebook-page-id", options.fbPageId);
@@ -423,15 +390,24 @@ function buildUploadCommand(payload)
     if (options.musicVolume) args.push("--music-bg-volume", String(options.musicVolume));
     if (options.musicInventory) args.push("--music-inventory-file", options.musicInventory);
     var sch2 = payload.schedule || {};
-    if (sch2.enabled && sch2.date && sch2.youtubeSlots && sch2.youtubeSlots.length) {
-        args.push('--schedule-plan', buildSchedulePlan(sch2.youtubeSlots, sch2.date));
+    if (sch2.enabled && sch2.date) {
+        if (youtubeEnabled && sch2.youtubeSlots && sch2.youtubeSlots.length) {
+            args.push('--schedule-plan', buildSchedulePlan(sch2.youtubeSlots, sch2.date));
+        } else if (!youtubeEnabled && sch2.facebookSlots && sch2.facebookSlots.length) {
+            args.push('--schedule-plan', buildSchedulePlan(sch2.facebookSlots, sch2.date));
+        }
     }
+    if (!sch2.enabled && sch2.instagramDraft && instagramEnabled && !facebookEnabled) {
+        args.push('--instagram-draft');
+    }
+
+    const platformLabel = youtubeEnabled
+        ? (instagramEnabled || facebookEnabled ? "youtube+" + selectedMetaPlatform : "youtube")
+        : selectedMetaPlatform;
 
     return {
         scriptName: "youtubeBatchUpload.py",
-        platformLabel: youtubeEnabled
-            ? (instagramEnabled || facebookEnabled ? "youtube+" + selectedMetaPlatform : "youtube")
-            : "facebook",
+        platformLabel: platformLabel,
         scriptArgs: args
     };
 }

@@ -73,24 +73,8 @@ function Upload()
         if (!platforms.youtube && !platforms.instagram && !platforms.facebook)
             return "Select at least one platform to build a runnable command.";
 
-        // ── Instagram (±Facebook), no YouTube → Reels script ──────────────────
-        if (!platforms.youtube && platforms.instagram)
-        {
-            const mp = platforms.instagram && platforms.facebook ? "both" : "instagram";
-            let cmd = 'python metaBatchReelsUpload.py --platform ' + mp + ' --max-videos ' + String(options.maxVideos || 1);
-            if (options.videosRoot)       cmd += ' \\\n  --root '               + options.videosRoot;
-            if (options.ffmpegBin)        cmd += ' \\\n  --ffmpeg-bin '         + options.ffmpegBin;
-            if (options.ffprobeBin)       cmd += ' \\\n  --ffprobe-bin '        + options.ffprobeBin;
-            if (options.metaAccessToken)  cmd += ' \\\n  --access-token '       + options.metaAccessToken;
-            if (options.igUserId)         cmd += ' \\\n  --ig-user-id '         + options.igUserId;
-            if (options.fbPageId)         cmd += ' \\\n  --facebook-page-id '   + options.fbPageId;
-            if (options.metaGraphVersion) cmd += ' \\\n  --graph-version '      + options.metaGraphVersion;
-            if (options.dryRun)           cmd += ' \\\n  --dry-run';
-            return cmd;
-        }
-
-        // ── YouTube or Facebook-only → youtubeBatchUpload.py ───────────────────
-        const uploadPlatform = platforms.youtube ? "youtube" : "facebook";
+        // ── All platforms → youtubeBatchUpload.py ─────────────────────────────
+        const uploadPlatform = platforms.youtube ? "youtube" : platforms.instagram ? "instagram" : "facebook";
         const mp = platforms.instagram && platforms.facebook ? "both" : platforms.instagram ? "instagram" : "facebook";
 
         const args = [
@@ -125,9 +109,11 @@ function Upload()
             if (options.fbPageId)         args.push("--meta-facebook-page-id " + options.fbPageId);
             if (options.metaGraphVersion) args.push("--meta-graph-version "    + options.metaGraphVersion);
         }
-        else if (!platforms.youtube && platforms.facebook)
+        else if (!platforms.youtube && (platforms.instagram || platforms.facebook))
         {
-            // Facebook primary — direct credentials
+            // Instagram-only, Facebook-only, or Instagram+Facebook — direct Meta credentials
+            if (platforms.instagram && platforms.facebook) args.push("--meta-platform both");
+            else if (platforms.instagram)                 args.push("--meta-platform instagram");
             if (options.metaAccessToken)  args.push("--meta-access-token "     + options.metaAccessToken);
             if (options.igUserId)         args.push("--meta-ig-user-id "       + options.igUserId);
             if (options.fbPageId)         args.push("--meta-facebook-page-id " + options.fbPageId);
