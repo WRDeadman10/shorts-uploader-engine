@@ -1518,7 +1518,9 @@ def crosspost_meta_reel(
     youtube_video_id: str,
     facebook_blocked_for_run: Dict[str, bool],
     publish_at: Optional[str] = None,
-) -> None:
+) -> bool:
+    """Upload reel to Meta platforms. Returns True if a fatal error occurred (caller should stop)."""
+    had_error = False
     reels_entries = reels_state["entries"]
     state_row = reels_entries.get(state_key, {})
     if not isinstance(state_row, dict):
@@ -1632,9 +1634,10 @@ def crosspost_meta_reel(
                     error_message=str(exc),
                 )
                 print(f"[error][instagram] {exc}")
+                had_error = True
                 break
 
-    if do_facebook:
+    if do_facebook and not had_error:
         try:
             fb_video_id, upload_url = fb_start_reel_session(
                 graph_version=args.meta_graph_version,
@@ -1714,16 +1717,17 @@ def crosspost_meta_reel(
                 error_message=str(exc),
             )
             print(f"[error][facebook] {exc}")
+            had_error = True
             if is_facebook_rate_limited_error(exc):
                 facebook_blocked_for_run["blocked"] = True
                 print(
-                    "[warn][facebook] Facebook returned code 368/subcode 1390008. "
-                    "Skipping Facebook uploads for the rest of this run."
+                    "[warn][facebook] Facebook rate-limited (code 368/subcode 1390008). Stopping run."
                 )
 
     state_row["relative_path"] = rel_path
     state_row["youtube_video_id"] = youtube_video_id
     state_row["metadata_file"] = str(metadata_path)
+    return had_error
 
 
 def main() -> int:
@@ -2203,7 +2207,7 @@ def main() -> int:
                 uploaded_count += 1
                 print(f"[ok] uploaded: https://www.youtube.com/watch?v={video_id}")
                 if meta_crosspost_enabled:
-                    crosspost_meta_reel(
+                    _meta_error = crosspost_meta_reel(
                         args=args,
                         reels_state=meta_reels_state,
                         instagram_upload_ledger=instagram_upload_ledger,
@@ -2219,6 +2223,9 @@ def main() -> int:
                     save_json_file(meta_reels_state_file, meta_reels_state)
                     save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
                     save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
+                    if _meta_error:
+                        print("[fatal] Meta platform error — stopping run.")
+                        break
                 if args.delete_converted_after_upload:
                     seen_cleanup = set()
                     for temp_path in cleanup_candidates:
@@ -2267,11 +2274,12 @@ def main() -> int:
                         "[limit] YouTube quota limit reached. "
                         "Stop now and retry after the quota window resets."
                     )
-                    break
+                print("[fatal] YouTube upload error — stopping run.")
+                break
         else:
             _meta_publish_at = _pub_seq[_pub_idx] if _pub_idx < len(_pub_seq) else None
             _pub_idx += 1
-            crosspost_meta_reel(
+            _meta_error = crosspost_meta_reel(
                 args=args,
                 reels_state=meta_reels_state,
                 instagram_upload_ledger=instagram_upload_ledger,
@@ -2288,6 +2296,9 @@ def main() -> int:
             save_json_file(meta_reels_state_file, meta_reels_state)
             save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
             save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
+            if _meta_error:
+                print("[fatal] Upload error — stopping run.")
+                break
             history_titles.append(metadata["title"])
             history_descriptions.append(metadata["description"])
             metadata_history["titles"] = history_titles[-5000:]
