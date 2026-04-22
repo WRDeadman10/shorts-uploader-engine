@@ -51,7 +51,7 @@ from lib.music import build_music_inventory, build_mixed_music_path
 from lib.youtube_auth import build_youtube_client
 from lib.youtube_upload import upload_video, resolve_playlist_id, add_video_to_playlist, extract_http_error_reason, RETRIABLE_STATUS_CODES
 from lib.ai_metadata import load_clip_context, build_clip_focus, build_fallback_metadata, finalize_metadata, is_metadata_unique, generate_ai_metadata, build_meta_captions
-from lib.meta_api import is_facebook_rate_limited_error, request_json, ig_create_reel_container, ig_upload_reel_binary, ig_wait_until_ready, ig_publish_reel, fb_start_reel_session, fb_upload_reel_binary, fb_finish_reel_publish, extract_meta_error_message
+from lib.meta_api import is_facebook_rate_limited_error, is_retryable_instagram_processing_error, request_json, ig_create_reel_container, ig_upload_reel_binary, ig_wait_until_ready, ig_publish_reel, fb_start_reel_session, fb_upload_reel_binary, fb_finish_reel_publish, extract_meta_error_message
 from lib.video_conversion import convert_to_shorts, mix_background_music, try_mix_background_music, reuse_valid_cached_video
 from lib.text_utils import (
     clean_text, parse_json_response, normalize_hashtag, normalize_tags,

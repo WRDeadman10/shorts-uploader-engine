@@ -17,6 +17,15 @@ def is_facebook_rate_limited_error(exc: Exception) -> bool:
     return "rate limit" in msg or "too many calls" in msg or "#32" in msg
 
 
+def is_retryable_instagram_processing_error(exc: Exception) -> bool:
+    """Return True for transient Instagram processing errors worth retrying."""
+    msg = str(exc).lower()
+    return any(phrase in msg for phrase in [
+        "in_progress", "in progress", "processing", "media not found",
+        "try again", "temporarily", "transient",
+    ])
+
+
 def extract_meta_error_message(payload: Any) -> str:
     """Extract a human-readable error from a Meta API response."""
     if isinstance(payload, dict):
@@ -59,21 +68,28 @@ def request_json(
 def ig_create_reel_container(
     ig_user_id: str,
     access_token: str,
-    video_url: str,
-    caption: str,   
+    caption: str,
     graph_version: str = "v25.0",
     timeout: float = 120,
+    video_url: str = "",
 ) -> str:
-    """Create an Instagram Reels container. Returns the container ID."""
+    """Create an Instagram Reels container. Returns the container ID.
+
+    For binary uploads leave video_url empty — the binary is POSTed
+    separately via ig_upload_reel_binary().
+    """
+    data: Dict[str, Any] = {
+        "media_type": "REELS",
+        "caption": caption,
+        "access_token": access_token,
+    }
+    if video_url:
+        data["video_url"] = video_url
     result = request_json(
         "POST",
         f"https://graph.facebook.com/{graph_version}/{ig_user_id}/media",
-        data={
-            "media_type": "REELS",
-            "video_url": video_url,
-            "caption": caption,
-            "access_token": access_token,
-        },
+        data=data,
+        timeout=timeout,
     )
     container_id = result.get("id")
     if not container_id:
@@ -108,13 +124,13 @@ def ig_upload_reel_binary(
 def ig_wait_until_ready(
     container_id: str,
     access_token: str,
-    max_wait: int = 300,
-    poll_interval: int = 10,
     graph_version: str = "v25.0",
+    attempts: int = 30,
+    interval_seconds: float = 10,
+    timeout: float = 120,
 ) -> str:
     """Poll Instagram until the container is ready for publishing."""
-    waited = 0
-    while waited < max_wait:
+    for attempt in range(1, max(attempts, 1) + 1):
         result = request_json(
             "GET",
             f"https://graph.facebook.com/{graph_version}/{container_id}",
@@ -122,15 +138,19 @@ def ig_wait_until_ready(
                 "fields": "status_code,status",
                 "access_token": access_token,
             },
+            timeout=timeout,
         )
         status = str(result.get("status_code", "")).upper()
         if status == "FINISHED":
             return "FINISHED"
         if status in ("ERROR", "EXPIRED"):
             raise RuntimeError(f"IG container {container_id} failed: {result}")
-        time.sleep(poll_interval)
-        waited += poll_interval
-    raise RuntimeError(f"IG container {container_id} not ready after {max_wait}s")
+        if attempt < attempts:
+            time.sleep(interval_seconds)
+    raise RuntimeError(
+        f"IG container {container_id} not ready after {attempts} attempts "
+        f"({attempts * interval_seconds:.0f}s)"
+    )
 
 
 def ig_publish_reel(
