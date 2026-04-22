@@ -450,7 +450,7 @@ def main() -> int:
 
         if do_instagram:
             try:
-                container_id = ig_create_reel_container(
+                container_id, ig_upload_uri = ig_create_reel_container(
                     graph_version=args.graph_version,
                     ig_user_id=ig_user_id,
                     access_token=access_token,
@@ -458,8 +458,7 @@ def main() -> int:
                     timeout=args.request_timeout_seconds,
                 )
                 ig_upload_reel_binary(
-                    graph_version=args.graph_version,
-                    container_id=container_id,
+                    upload_uri=ig_upload_uri,
                     access_token=access_token,
                     file_path=source_file,
                     timeout=args.request_timeout_seconds,

@@ -71,54 +71,69 @@ def ig_create_reel_container(
     caption: str,
     graph_version: str = "v25.0",
     timeout: float = 120,
-    video_url: str = "",
-) -> str:
-    """Create an Instagram Reels container. Returns the container ID.
+) -> Tuple[str, str]:
+    """Create an Instagram Reels resumable-upload container.
 
-    For binary uploads leave video_url empty — the binary is POSTed
-    separately via ig_upload_reel_binary().
+    Returns (container_id, upload_uri).
+    The caller must POST the video binary to upload_uri via ig_upload_reel_binary().
     """
-    data: Dict[str, Any] = {
-        "media_type": "REELS",
-        "caption": caption,
-        "access_token": access_token,
-    }
-    if video_url:
-        data["video_url"] = video_url
     result = request_json(
         "POST",
         f"https://graph.facebook.com/{graph_version}/{ig_user_id}/media",
-        data=data,
+        data={
+            "media_type": "REELS",
+            "upload_type": "resumable",
+            "caption": caption,
+            "access_token": access_token,
+        },
         timeout=timeout,
     )
     container_id = result.get("id")
+    upload_uri = result.get("uri", "")
     if not container_id:
         raise RuntimeError(f"IG container creation failed: {result}")
-    return str(container_id)
+    if not upload_uri:
+        raise RuntimeError(f"IG container creation returned no upload URI: {result}")
+    return str(container_id), str(upload_uri)
 
 
 def ig_upload_reel_binary(
-    graph_version: str,
-    container_id: str,
+    upload_uri: str,
     access_token: str,
     file_path: str,
     timeout: float = 300,
-) -> str:
-    """Upload a reel binary to Instagram. Returns container ID."""
+) -> None:
+    """Upload the video binary to the Instagram resumable upload URI.
+
+    Uses the same raw-binary approach as Facebook's rupload endpoint:
+    Authorization header + offset/file_size headers + raw binary body.
+    """
+    file_size = os.path.getsize(file_path)
     with open(file_path, "rb") as f:
-        result = request_json(
-            "POST",
-            f"https://graph.facebook.com/{graph_version}/{container_id}",
-            data={
-                "access_token": access_token,
+        response = requests.post(
+            upload_uri,
+            headers={
+                "Authorization": f"OAuth {access_token}",
+                "offset": "0",
+                "file_size": str(file_size),
             },
-            files={"source": f},
+            data=f,
             timeout=timeout,
         )
-    container_id = result.get("id")
-    if not container_id:
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as exc:
+        try:
+            error_payload = response.json()
+            error_msg = extract_meta_error_message(error_payload)
+            if error_msg:
+                raise RuntimeError(f"Meta API Error ({response.status_code}): {error_msg}") from exc
+        except (ValueError, KeyError):
+            pass
+        raise exc
+    result = response.json()
+    if not result.get("success"):
         raise RuntimeError(f"IG binary upload failed: {result}")
-    return str(container_id)
 
 
 def ig_wait_until_ready(

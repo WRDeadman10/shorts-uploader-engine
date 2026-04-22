@@ -1549,7 +1549,7 @@ def crosspost_meta_reel(
     if do_instagram:
         for attempt in range(1, max(args.meta_instagram_retries, 1) + 1):
             try:
-                container_id = ig_create_reel_container(
+                container_id, ig_upload_uri = ig_create_reel_container(
                     graph_version=args.meta_graph_version,
                     ig_user_id=clean_text(args.meta_ig_user_id),
                     access_token=clean_text(args.meta_access_token),
@@ -1557,8 +1557,7 @@ def crosspost_meta_reel(
                     timeout=args.meta_request_timeout_seconds,
                 )
                 ig_upload_reel_binary(
-                    graph_version=args.meta_graph_version,
-                    container_id=container_id,
+                    upload_uri=ig_upload_uri,
                     access_token=clean_text(args.meta_access_token),
                     file_path=source_file,
                     timeout=args.meta_request_timeout_seconds,
