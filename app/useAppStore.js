@@ -87,6 +87,7 @@ export const useAppStore = create(function createAppStore(set, get)
                 updates.uploadOptions = Object.assign({}, get().uploadOptions, settings.uploadOptions);
             }
             if (settings && settings.uploadPlatforms) { updates.uploadPlatforms = Object.assign({}, get().uploadPlatforms, settings.uploadPlatforms); }
+            if (settings && settings.toolsForm) { updates.toolsForm = Object.assign({}, get().toolsForm, settings.toolsForm); }
             if (settings && settings.schedule)
             {
                 var sch = settings.schedule;
@@ -109,6 +110,7 @@ export const useAppStore = create(function createAppStore(set, get)
             var payload = Object.assign({}, get().advancedUploadSettings, {
                 uploadOptions: get().uploadOptions,
                 uploadPlatforms: get().uploadPlatforms,
+                toolsForm: get().toolsForm,
                 schedule: {
                     enabled: get().scheduleEnabled,
                     date: get().scheduleDate,
@@ -318,6 +320,37 @@ export const useAppStore = create(function createAppStore(set, get)
             instagram: false,
             facebook: false
         },
+        toolsForm: {
+            // Live Upload Audit
+            auditRoot: '',
+            auditMetaAccessToken: '',
+            auditIgUserId: '',
+            auditFacebookPageId: '',
+            auditGraphVersion: 'v25.0',
+            auditClientSecrets: 'client_secret.json',
+            auditTokenFile: 'token.json',
+            auditOutputDir: 'live_upload_audit',
+            // Delete Uploaded Videos
+            deleteRoot: '',
+            deleteYoutube: true,
+            deleteInstagram: true,
+            deleteFacebook: true,
+            deleteDryRun: true,
+            // Fix Repeated YT Metadata
+            metaMode: 'all',
+            metaMaxUpdates: 25,
+            metaDryRun: false,
+            metaClientSecrets: '',
+            metaTokenFile: '',
+            // Music Overlay Sample
+            musicDir: '',
+            musicSampleVideo: '',
+            musicSampleMusic: '',
+            musicSampleOutput: '',
+            musicBgVolume: 0.3,
+            musicFfmpegBin: '',
+            musicFfprobeBin: '',
+        },
         uploadOptions: {
             includeShorts: true,
             includeMusic: true,
@@ -361,6 +394,10 @@ export const useAppStore = create(function createAppStore(set, get)
                 };
             });
             // Auto-persist options to disk
+            get().saveAdvancedUploadSettings();
+        },
+        setToolsField: function setToolsField(field, value) {
+            set(function(s) { return { toolsForm: Object.assign({}, s.toolsForm, { [field]: value }) }; });
             get().saveAdvancedUploadSettings();
         },
         setScheduleEnabled: function setScheduleEnabled(v) { set({ scheduleEnabled: v }); get().saveAdvancedUploadSettings(); },
