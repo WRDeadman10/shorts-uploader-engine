@@ -123,7 +123,9 @@ function Upload()
         return args.join(" \\\n  ");
     }, [options, platforms]);
 
-    const isRunning = uploadStatus.status === 'running';
+    const uploadSessions = useAppStore(s => s.uploadSessions);
+    const runningCount = Object.values(uploadSessions).filter(function(s) { return s.status === 'running'; }).length;
+    const isRunning = runningCount > 0 || uploadStatus.status === 'running';
 
     return (
         <section
@@ -141,12 +143,16 @@ function Upload()
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-                        {uploadQueue.length} video{uploadQueue.length !== 1 ? 's' : ''} queued · status: <strong style={{ color: '#e2e8f0' }}>{uploadStatus.status}</strong>
+                        {uploadQueue.length} video{uploadQueue.length !== 1 ? 's' : ''} queued
+                        {runningCount > 0
+                            ? <span style={{ color: '#fbbf24', marginLeft: 6 }}>· {runningCount} running</span>
+                            : <span> · <strong style={{ color: '#e2e8f0' }}>{uploadStatus.status}</strong></span>
+                        }
                     </span>
-                    {isRunning
-                        ? <motion.button className="upload-action-button" style={{ background: '#7f1d1d' }} onClick={stopUpload} whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>Stop</motion.button>
-                        : <motion.button className="upload-action-button" onClick={runUpload} whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>Run Upload</motion.button>
-                    }
+                    {isRunning && (
+                        <motion.button className="upload-action-button" style={{ background: '#7f1d1d' }} onClick={stopUpload} whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>Stop All</motion.button>
+                    )}
+                    <motion.button className="upload-action-button" onClick={runUpload} whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>Run Upload</motion.button>
                 </div>
             </div>
 

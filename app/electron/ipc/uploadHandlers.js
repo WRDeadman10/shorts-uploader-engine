@@ -9,14 +9,19 @@ function registerUploadHandlers(ipcMain, getMainWindow)
         return uploadService.runUpload(payload);
     });
 
-    ipcMain.handle("stop-upload", async function handleStopUpload()
+    ipcMain.handle("stop-upload", async function handleStopUpload(_event, payload)
     {
-        return uploadService.stopUpload();
+        return uploadService.stopUpload(payload && payload.sessionId);
     });
 
     ipcMain.handle("get-upload-status", async function handleGetUploadStatus()
     {
         return uploadService.getUploadStatus();
+    });
+
+    ipcMain.handle("get-all-upload-statuses", async function handleGetAllUploadStatuses()
+    {
+        return uploadService.getAllStatuses();
     });
 }
 

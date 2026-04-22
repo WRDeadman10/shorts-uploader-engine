@@ -4,16 +4,15 @@ const { getRepoRoot } = require("./pathService");
 const { resolvePythonCommand } = require("./pythonService");
 
 let getMainWindow = null;
-let activeProcess = null;
-let activeCommand = "";
-let logBuffer = [];
-let status = createInitialStatus();
-let stopRequested = false;
 
-function createInitialStatus()
+// sessionId → { process, logBuffer, status, stopRequested }
+const sessions = new Map();
+
+function createIdleStatus()
 {
     return {
         success: true,
+        sessionId: "",
         uploadId: "",
         status: "idle",
         platform: "",
@@ -31,53 +30,56 @@ function attachWindowGetter(windowGetter)
     getMainWindow = windowGetter;
 }
 
+function getAllStatuses()
+{
+    return Array.from(sessions.values()).map(function(s) { return s.status; });
+}
+
 function getUploadStatus()
 {
-    return {
-        ...status,
-        hasActiveProcess: Boolean(activeProcess)
-    };
+    // Backward compat: return the most recent running session, or the last session, or idle
+    const all = getAllStatuses();
+    if (all.length === 0) return createIdleStatus();
+    const running = all.filter(function(s) { return s.status === "running"; });
+    if (running.length > 0) return running[running.length - 1];
+    return all[all.length - 1];
 }
 
 function streamLog()
 {
-    for (const entry of logBuffer)
+    // Replay all session logs sorted by timestamp
+    const allEntries = [];
+    sessions.forEach(function(session)
     {
-        sendLog(entry);
-    }
-
-    return {
-        success: true,
-        streaming: true
-    };
+        session.logBuffer.forEach(function(entry) { allEntries.push(entry); });
+    });
+    allEntries.sort(function(a, b) { return a.timestamp < b.timestamp ? -1 : 1; });
+    allEntries.forEach(function(entry) { sendLog(entry); });
+    broadcastStatuses();
+    return { success: true, streaming: true };
 }
 
 async function runUpload(payload)
 {
-    if (activeProcess)
-    {
-        return {
-            ...getUploadStatus(),
-            success: false,
-            errorMessage: "An upload process is already running."
-        };
-    }
+    // No "already running" guard — allow multiple concurrent upload sessions
 
     const pythonCommand = resolvePythonCommand();
 
     if (!pythonCommand.found)
     {
-        const errorMessage = "Python was not found. Install Python or create a local venv before running uploads.";
-
-        updateStatus({
+        const sessionId = String(Date.now());
+        const errStatus = Object.assign(createIdleStatus(), {
+            sessionId: sessionId,
+            uploadId: sessionId,
             success: false,
             status: "error",
-            errorMessage: errorMessage,
-            progress: 0
+            errorMessage: "Python was not found. Install Python or create a local venv before running uploads.",
+            startedAt: new Date().toISOString()
         });
-        pushLog("system", errorMessage);
-
-        return getUploadStatus();
+        sessions.set(sessionId, { process: null, logBuffer: [], stopRequested: false, status: errStatus });
+        pushLog(sessionId, "system", errStatus.errorMessage);
+        broadcastStatuses();
+        return errStatus;
     }
 
     let commandSpec = null;
@@ -88,25 +90,44 @@ async function runUpload(payload)
     }
     catch (error)
     {
-        updateStatus({
+        const sessionId = String(Date.now());
+        const errStatus = Object.assign(createIdleStatus(), {
+            sessionId: sessionId,
+            uploadId: sessionId,
             success: false,
             status: "error",
             errorMessage: error.message,
-            progress: 0
+            startedAt: new Date().toISOString()
         });
-        pushLog("system", error.message);
-
-        return getUploadStatus();
+        sessions.set(sessionId, { process: null, logBuffer: [], stopRequested: false, status: errStatus });
+        pushLog(sessionId, "system", error.message);
+        broadcastStatuses();
+        return errStatus;
     }
 
+    const sessionId = String(Date.now());
     const scriptPath = path.join(getRepoRoot(), commandSpec.scriptName);
     const args = pythonCommand.prefixArgs.concat([scriptPath]).concat(commandSpec.scriptArgs);
+    const commandStr = [pythonCommand.command].concat(args).join(" ");
 
-    stopRequested = false;
-    activeCommand = [pythonCommand.command].concat(args).join(" ");
-    logBuffer = [];
+    const sessionStatus = {
+        success: true,
+        sessionId: sessionId,
+        uploadId: sessionId,
+        status: "running",
+        platform: commandSpec.platformLabel,
+        progress: 15,
+        pid: 0,
+        errorMessage: "",
+        commandPreview: commandStr,
+        startedAt: new Date().toISOString(),
+        completedAt: ""
+    };
 
-    activeProcess = spawn(
+    const session = { process: null, logBuffer: [], stopRequested: false, status: sessionStatus };
+    sessions.set(sessionId, session);
+
+    const proc = spawn(
         pythonCommand.command,
         args,
         {
@@ -120,52 +141,44 @@ async function runUpload(payload)
         }
     );
 
-    updateStatus({
-        success: true,
-        uploadId: String(Date.now()),
-        status: "running",
-        platform: commandSpec.platformLabel,
-        progress: 15,
-        pid: activeProcess.pid || 0,
-        errorMessage: "",
-        commandPreview: activeCommand,
-        startedAt: new Date().toISOString(),
-        completedAt: ""
+    session.process = proc;
+    session.status.pid = proc.pid || 0;
+    pushLog(sessionId, "system", "Starting process: " + commandStr);
+    broadcastStatuses();
+
+    proc.stdout.on("data", function handleStdout(chunk)
+    {
+        emitChunk(sessionId, "stdout", chunk);
     });
 
-    pushLog("system", "Starting process: " + activeCommand);
-
-    activeProcess.stdout.on("data", function handleStdout(chunk)
+    proc.stderr.on("data", function handleStderr(chunk)
     {
-        emitChunk("stdout", chunk);
+        emitChunk(sessionId, "stderr", chunk);
     });
 
-    activeProcess.stderr.on("data", function handleStderr(chunk)
+    proc.on("error", function handleError(error)
     {
-        emitChunk("stderr", chunk);
-    });
-
-    activeProcess.on("error", function handleError(error)
-    {
-        updateStatus({
+        session.status = Object.assign({}, session.status, {
             success: false,
             status: "error",
             errorMessage: error.message,
             progress: 0,
+            pid: 0,
             completedAt: new Date().toISOString()
         });
-        pushLog("stderr", error.message);
-        activeProcess = null;
+        session.process = null;
+        pushLog(sessionId, "stderr", error.message);
+        broadcastStatuses();
     });
 
-    activeProcess.on("exit", function handleExit(exitCode, signal)
+    proc.on("exit", function handleExit(exitCode, signal)
     {
-        const wasStopped = stopRequested;
+        const wasStopped = session.stopRequested;
         const nextStatus = wasStopped ? "stopped" : exitCode === 0 ? "completed" : "error";
         const nextProgress = nextStatus === "completed" ? 100 : 0;
         const errorMessage = nextStatus === "error" ? "Upload process exited with code " + String(exitCode) : "";
 
-        updateStatus({
+        session.status = Object.assign({}, session.status, {
             success: nextStatus !== "error",
             status: nextStatus,
             progress: nextProgress,
@@ -173,90 +186,88 @@ async function runUpload(payload)
             errorMessage: errorMessage,
             completedAt: new Date().toISOString()
         });
+        session.process = null;
+        session.stopRequested = false;
 
-        if (signal)
-        {
-            pushLog("system", "Process exited with signal " + signal);
-        }
-        else
-        {
-            pushLog("system", "Process exited with code " + String(exitCode));
-        }
-
-        activeProcess = null;
-        stopRequested = false;
+        pushLog(sessionId, "system", signal
+            ? "Process exited with signal " + signal
+            : "Process exited with code " + String(exitCode));
+        broadcastStatuses();
     });
 
-    return getUploadStatus();
+    return session.status;
 }
 
-async function stopUpload()
+async function stopUpload(sessionId)
 {
-    if (!activeProcess)
+    if (sessionId)
     {
-        return getUploadStatus();
-    }
-
-    stopRequested = true;
-    pushLog("system", "Stopping active process.");
-
-    if (process.platform === "win32")
-    {
-        const killer = spawn(
-            "taskkill",
-            ["/pid", String(activeProcess.pid), "/t", "/f"],
-            {
-                windowsHide: true
-            }
-        );
-
-        await new Promise(function waitForKill(resolve)
-        {
-            killer.on("exit", function handleKillExit()
-            {
-                resolve();
-            });
-        });
+        const session = sessions.get(sessionId);
+        if (session && session.process) await killSession(session);
     }
     else
     {
-        activeProcess.kill("SIGTERM");
+        // No sessionId → stop all running sessions
+        const killPromises = [];
+        sessions.forEach(function(session)
+        {
+            if (session.process) killPromises.push(killSession(session));
+        });
+        await Promise.all(killPromises);
     }
 
-    return getUploadStatus();
+    broadcastStatuses();
+    return getAllStatuses();
 }
 
-function emitChunk(streamName, chunk)
+async function killSession(session)
+{
+    if (!session.process) return;
+    session.stopRequested = true;
+    pushLog(session.status.sessionId, "system", "Stopping process...");
+
+    if (process.platform === "win32")
+    {
+        const killer = spawn("taskkill", ["/pid", String(session.process.pid), "/t", "/f"], { windowsHide: true });
+        await new Promise(function waitForKill(resolve) { killer.on("exit", resolve); });
+    }
+    else
+    {
+        session.process.kill("SIGTERM");
+    }
+}
+
+function emitChunk(sessionId, streamName, chunk)
 {
     const lines = String(chunk).split(/\r?\n/);
-
     for (const line of lines)
     {
         const trimmedLine = line.trimEnd();
-
-        if (!trimmedLine)
-        {
-            continue;
-        }
-
-        pushLog(streamName, trimmedLine);
+        if (!trimmedLine) continue;
+        pushLog(sessionId, streamName, trimmedLine);
     }
 }
 
-function pushLog(streamName, message)
+function pushLog(sessionId, streamName, message)
 {
+    const session = sessions.get(sessionId);
+    const bufLen = session ? session.logBuffer.length : 0;
     const entry = {
-        id: String(Date.now()) + "-" + String(logBuffer.length + 1),
+        id: String(Date.now()) + "-" + String(bufLen + 1),
+        sessionId: sessionId,
+        sessionType: "upload",
         timestamp: new Date().toISOString(),
         stream: streamName,
         message: message
     };
 
-    logBuffer.push(entry);
-
-    if (logBuffer.length > 500)
+    if (session)
     {
-        logBuffer = logBuffer.slice(logBuffer.length - 500);
+        session.logBuffer.push(entry);
+        if (session.logBuffer.length > 500)
+        {
+            session.logBuffer = session.logBuffer.slice(session.logBuffer.length - 500);
+        }
     }
 
     sendLog(entry);
@@ -264,27 +275,18 @@ function pushLog(streamName, message)
 
 function sendLog(entry)
 {
-    if (!getMainWindow)
-    {
-        return;
-    }
-
+    if (!getMainWindow) return;
     const mainWindow = getMainWindow();
-
-    if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.webContents)
-    {
-        return;
-    }
-
+    if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.webContents) return;
     mainWindow.webContents.send("app:log", entry);
 }
 
-function updateStatus(partialStatus)
+function broadcastStatuses()
 {
-    status = {
-        ...status,
-        ...partialStatus
-    };
+    if (!getMainWindow) return;
+    const mainWindow = getMainWindow();
+    if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.webContents) return;
+    mainWindow.webContents.send("app:sessions", { upload: getAllStatuses() });
 }
 
 function buildSchedulePlan(slots, date) {
@@ -415,6 +417,7 @@ function buildUploadCommand(payload)
 module.exports = {
     attachWindowGetter: attachWindowGetter,
     getUploadStatus: getUploadStatus,
+    getAllStatuses: getAllStatuses,
     runUpload: runUpload,
     stopUpload: stopUpload,
     streamLog: streamLog

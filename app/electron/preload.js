@@ -5,9 +5,13 @@ contextBridge.exposeInMainWorld("api", {
     {
         return ipcRenderer.invoke("run-upload", payload);
     },
-    stopUpload: function stopUpload()
+    stopUpload: function stopUpload(sessionId)
     {
-        return ipcRenderer.invoke("stop-upload");
+        return ipcRenderer.invoke("stop-upload", sessionId ? { sessionId: sessionId } : undefined);
+    },
+    getAllUploadStatuses: function getAllUploadStatuses()
+    {
+        return ipcRenderer.invoke("get-all-upload-statuses");
     },
     getVideoList: function getVideoList()
     {
@@ -47,11 +51,19 @@ contextBridge.exposeInMainWorld("api", {
     runTool: function runTool(payload) {
         return ipcRenderer.invoke('run-tool', payload);
     },
-    stopTool: function stopTool() {
-        return ipcRenderer.invoke('stop-tool');
+    stopTool: function stopTool(sessionId) {
+        return ipcRenderer.invoke('stop-tool', sessionId ? { sessionId: sessionId } : undefined);
     },
     getToolStatus: function getToolStatus() {
         return ipcRenderer.invoke('get-tool-status');
+    },
+    getAllToolStatuses: function getAllToolStatuses() {
+        return ipcRenderer.invoke('get-all-tool-statuses');
+    },
+    onSessions: function onSessions(callback) {
+        var listener = function(_event, data) { callback(data); };
+        ipcRenderer.on('app:sessions', listener);
+        return function unsubscribe() { ipcRenderer.removeListener('app:sessions', listener); };
     },
     getAuditReport: function getAuditReport() {
         return ipcRenderer.invoke('get-audit-report');
