@@ -31,30 +31,45 @@ const STATUS_PILL = {
 // Normalize path separators to forward-slash for comparison.
 function normPath(p) { return (p || '').replace(/\\/g, '/').trim(); }
 
-// Parse log entries to build the ordered list of paths seen in "[N/M] processing:" lines.
-// Returns { processedPaths: Set<string>, lastPath: string|null }
+// Matches "[ok][instagram]", "[ok][facebook]", "[ok] uploaded:", "[error][platform]", "[fatal]"
+// These are the immediate completion signals the script emits after each video.
+const RE_PROCESSING = /\[\d+\/\d+\] processing:\s*(.+)/;
+const RE_COMPLETE    = /\[ok\]\[|\[ok\] uploaded:|\[error\]\[|\[fatal\]/;
+
+// Parse log entries into:
+//   completedPaths – videos that emitted [ok]/[error]/[fatal] after their processing line
+//   uploadingPath  – the current video being processed (started but not yet complete)
 function parseProcessingLog(logEntries)
 {
-    const RE = /\[\d+\/\d+\] processing:\s*(.+)/;
-    const ordered = [];
-    const processedPaths = new Set();
+    const completedPaths = new Set();
+    let currentPath = null;
+    let currentDone  = false;
 
     for (const entry of logEntries)
     {
         const msg = entry.message || '';
-        const m = msg.match(RE);
-        if (m)
+
+        const mStart = msg.match(RE_PROCESSING);
+        if (mStart)
         {
-            const p = normPath(m[1]);
-            if (!processedPaths.has(p))
-            {
-                ordered.push(p);
-                processedPaths.add(p);
-            }
+            // Starting a new video — previous one is implicitly done if not already marked
+            currentPath = normPath(mStart[1]);
+            currentDone  = false;
+            continue;
+        }
+
+        // Completion signal for the current video
+        if (currentPath && !currentDone && RE_COMPLETE.test(msg))
+        {
+            completedPaths.add(currentPath);
+            currentDone = true;
         }
     }
 
-    return { processedPaths, lastPath: ordered.length > 0 ? ordered[ordered.length - 1] : null };
+    // If the current video hasn't received a completion line yet it is still uploading
+    const uploadingPath = (currentPath && !currentDone) ? currentPath : null;
+
+    return { completedPaths, uploadingPath };
 }
 
 function deriveStatuses(queue, logEntries, uploadStatus)
@@ -62,19 +77,19 @@ function deriveStatuses(queue, logEntries, uploadStatus)
     const s = uploadStatus.status;
     if (s === 'idle') return queue.map(() => 'TO BE UPLOADED');
 
-    const { processedPaths, lastPath } = parseProcessingLog(logEntries);
+    const { completedPaths, uploadingPath } = parseProcessingLog(logEntries);
 
-    // If run is done and we have log data, use it; otherwise mark all uploaded when completed
-    if (s === 'completed' && processedPaths.size === 0)
+    // Run finished with no log data — mark everything uploaded
+    if (s === 'completed' && completedPaths.size === 0 && !uploadingPath)
         return queue.map(() => 'UPLOADED');
 
     return queue.map(function(video)
     {
         const key = normPath(video.relativePath || video.fileName || video.title || '');
-        if (!key || !processedPaths.has(key)) return 'TO BE UPLOADED';
-        // The last path seen in logs is still uploading if the run is active
-        if (key === lastPath && s === 'running') return 'UPLOADING';
-        return 'UPLOADED';
+        if (!key) return 'TO BE UPLOADED';
+        if (completedPaths.has(key)) return 'UPLOADED';
+        if (key === uploadingPath && s === 'running') return 'UPLOADING';
+        return 'TO BE UPLOADED';
     });
 }
 
