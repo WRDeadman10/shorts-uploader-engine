@@ -277,7 +277,7 @@ def load_source_entries(source_state_file: Path) -> List[Dict[str, Any]]:
                 "sort_time": parse_iso_utc(str(row.get("uploaded_at_utc", "")).strip()),
             }
         )
-    entries.sort(key=lambda item: item["sort_time"])
+    entries.sort(key=lambda item: item["relative_path"])  # alphabetical — matches UI queue order
     return entries
 
 

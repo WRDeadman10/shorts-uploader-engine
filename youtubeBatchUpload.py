@@ -1876,7 +1876,7 @@ def main() -> int:
 
         pending.append((video, rel, key, video.stat().st_mtime))
 
-    pending.sort(key=lambda item: item[3])
+    pending.sort(key=lambda item: item[1])  # sort by relative path (alphabetical) — matches UI queue order
 
     if args.max_videos > 0:
         pending = pending[: args.max_videos]
