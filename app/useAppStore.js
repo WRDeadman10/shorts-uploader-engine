@@ -6,7 +6,9 @@ export const pageOrder = [
     { id: "upload", label: "Upload" },
     { id: "console", label: "Console" },
     { id: "audit", label: "Audit" },
-    { id: "metadata", label: "Metadata" }
+    { id: "metadata", label: "Metadata" },
+    { id: "setup", label: "Setup" }, // Added setup page
+    { id: "tools", label: "Tools" }
 ];
 
 function createInitialUploadStatus()
@@ -53,6 +55,7 @@ export const useAppStore = create(function createAppStore(set, get)
         loadingVideos: false,
         uploadStatus: createInitialUploadStatus(),
         logEntries: [],
+        commandHistory: [],
         errorMessage: "",
         metadataDirty: false,
         metadata: {
@@ -67,6 +70,62 @@ export const useAppStore = create(function createAppStore(set, get)
             "Arcade Surge",
             "Victory Loop"
         ],
+        advancedUploadSettings: {},
+        featureStatus: "", // Added feature status field
+        envCheckResult: null, // Added environment check result
+        scheduleEnabled: false,
+        scheduleDate: new Date().toISOString().slice(0, 10),
+        youtubeSlots: [{ time: '10:00', count: 10 }],
+        facebookSlots: [{ time: '10:00', count: 10 }],
+        instagramDraft: false,
+        loadAdvancedUploadSettings: function loadAdvancedUploadSettings(settings)
+        {
+            var updates = { advancedUploadSettings: settings };
+            // Restore persisted uploadOptions if present
+            if (settings && settings.uploadOptions)
+            {
+                updates.uploadOptions = Object.assign({}, get().uploadOptions, settings.uploadOptions);
+            }
+            if (settings && settings.uploadPlatforms) { updates.uploadPlatforms = Object.assign({}, get().uploadPlatforms, settings.uploadPlatforms); }
+            if (settings && settings.schedule)
+            {
+                var sch = settings.schedule;
+                if (sch.enabled !== undefined) updates.scheduleEnabled = sch.enabled;
+                if (sch.date) updates.scheduleDate = sch.date;
+                if (Array.isArray(sch.youtubeSlots) && sch.youtubeSlots.length) updates.youtubeSlots = sch.youtubeSlots;
+                if (Array.isArray(sch.facebookSlots) && sch.facebookSlots.length) updates.facebookSlots = sch.facebookSlots;
+                if (sch.instagramDraft !== undefined) updates.instagramDraft = sch.instagramDraft;
+            }
+            set(updates);
+        },
+        saveAdvancedUploadSettings: async function saveAdvancedUploadSettings()
+        {
+            if (!window.api || !window.api.saveWorkflowSettings)
+            {
+                return;
+            }
+
+            // Persist both advancedUploadSettings and uploadOptions
+            var payload = Object.assign({}, get().advancedUploadSettings, {
+                uploadOptions: get().uploadOptions,
+                uploadPlatforms: get().uploadPlatforms,
+                schedule: {
+                    enabled: get().scheduleEnabled,
+                    date: get().scheduleDate,
+                    youtubeSlots: get().youtubeSlots,
+                    facebookSlots: get().facebookSlots,
+                    instagramDraft: get().instagramDraft
+                }
+            });
+            const response = await window.api.saveWorkflowSettings(payload);
+
+            if (response)
+            {
+                set({
+                    errorMessage: response.errorMessage || ""
+                });
+            }
+        },
         setActivePage: function setActivePage(pageId)
         {
             set({
@@ -184,6 +243,7 @@ export const useAppStore = create(function createAppStore(set, get)
                 logEntries: []
             });
         },
+        addCommandToHistory: function addCommandToHistory(entry) { set(function updateHistory(state) { return { commandHistory: state.commandHistory.concat(entry).slice(-20) }; }); },
         syncUploadStatus: async function syncUploadStatus()
         {
             if (!window.api || !window.api.getUploadStatus)
@@ -247,6 +307,11 @@ export const useAppStore = create(function createAppStore(set, get)
                 get().fetchVideoList(),
                 get().streamLogs()
             ]);
+
+            if (window.api && window.api.loadWorkflowSettings) { // Added environment check
+                const saved = await window.api.loadWorkflowSettings();
+                if (saved) get().loadAdvancedUploadSettings(saved);
+            }
         },
         uploadPlatforms: {
             youtube: true,
@@ -256,7 +321,21 @@ export const useAppStore = create(function createAppStore(set, get)
         uploadOptions: {
             includeShorts: true,
             includeMusic: true,
-            includeMetadata: true
+            includeMetadata: true,
+            maxVideos: 1,
+            videosRoot: "",
+            privacy: "",
+            playlistName: "",
+            dryRun: false,
+            ffmpegBin: "",
+            ffprobeBin: "",
+            extensions: "",
+            excludeDirectories: "",
+            excludeFiles: "",
+            requireUploadedOn: "",
+            requireMissingOn: "",
+            clientSecretsPath: "",
+            tokenFilePath: ""
         },
         setUploadPlatform: function setUploadPlatform(platformId, value)
         {
@@ -281,7 +360,18 @@ export const useAppStore = create(function createAppStore(set, get)
                     }
                 };
             });
+            // Auto-persist options to disk
+            get().saveAdvancedUploadSettings();
         },
+        setScheduleEnabled: function setScheduleEnabled(v) { set({ scheduleEnabled: v }); get().saveAdvancedUploadSettings(); },
+        setScheduleDate: function setScheduleDate(v) { set({ scheduleDate: v }); get().saveAdvancedUploadSettings(); },
+        setInstagramDraft: function setInstagramDraft(v) { set({ instagramDraft: v }); get().saveAdvancedUploadSettings(); },
+        addYoutubeSlot: function addYoutubeSlot() { set(function(s) { return { youtubeSlots: s.youtubeSlots.concat({ time: '10:00', count: 10 }) }; }); get().saveAdvancedUploadSettings(); },
+        removeYoutubeSlot: function removeYoutubeSlot(i) { set(function(s) { return { youtubeSlots: s.youtubeSlots.filter(function(_, j) { return j !== i; }) }; }); get().saveAdvancedUploadSettings(); },
+        updateYoutubeSlot: function updateYoutubeSlot(i, field, val) { set(function(s) { var sl = s.youtubeSlots.slice(); sl[i] = Object.assign({}, sl[i], { [field]: val }); return { youtubeSlots: sl }; }); get().saveAdvancedUploadSettings(); },
+        addFacebookSlot: function addFacebookSlot() { set(function(s) { return { facebookSlots: s.facebookSlots.concat({ time: '10:00', count: 10 }) }; }); get().saveAdvancedUploadSettings(); },
+        removeFacebookSlot: function removeFacebookSlot(i) { set(function(s) { return { facebookSlots: s.facebookSlots.filter(function(_, j) { return j !== i; }) }; }); get().saveAdvancedUploadSettings(); },
+        updateFacebookSlot: function updateFacebookSlot(i, field, val) { set(function(s) { var sl = s.facebookSlots.slice(); sl[i] = Object.assign({}, sl[i], { [field]: val }); return { facebookSlots: sl }; }); get().saveAdvancedUploadSettings(); },
         startConsole: async function startConsole()
         {
             const state = get();
@@ -294,7 +384,8 @@ export const useAppStore = create(function createAppStore(set, get)
             const response = await window.api.runUpload({
                 platforms: state.uploadPlatforms,
                 options: state.uploadOptions,
-                metadata: state.metadata
+                metadata: state.metadata,
+                schedule: { enabled: state.scheduleEnabled, date: state.scheduleDate, youtubeSlots: state.youtubeSlots, facebookSlots: state.facebookSlots, instagramDraft: state.instagramDraft }
             });
 
             if (response)
@@ -303,6 +394,7 @@ export const useAppStore = create(function createAppStore(set, get)
                     uploadStatus: response,
                     errorMessage: response.errorMessage || ""
                 });
+                get().addCommandToHistory({ id: Date.now(), timestamp: new Date().toISOString(), platforms: Object.keys(get().uploadPlatforms).filter(function(p) { return get().uploadPlatforms[p]; }), commandPreview: response.commandPreview || '' });
             }
 
             return response;
@@ -333,6 +425,12 @@ export const useAppStore = create(function createAppStore(set, get)
         stopConsole: async function stopConsole()
         {
             return get().stopUpload();
+        },
+        runEnvCheck: async function runEnvCheck() { // Added environment check
+            if (!window.api || !window.api.runEnvCheck) return null;
+            const result = await window.api.runEnvCheck();
+            set({ envCheckResult: result });
+            return result;
         }
     };
 });

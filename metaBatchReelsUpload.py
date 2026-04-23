@@ -27,6 +27,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from lib.file_utils import (
+    load_json_file, save_json_file, delete_file_if_exists, get_default_video_root,
+)
+from lib.ledger import (
+    ensure_platform_upload_ledger_shape, update_platform_upload_ledger,
+)
+from lib.text_utils import clean_one_line, clean_multiline
+from lib.meta_api import (
+    is_facebook_rate_limited_error, extract_meta_error_message,
+    request_json, ig_create_reel_container, ig_upload_reel_binary,
+    ig_wait_until_ready, ig_publish_reel, fb_start_reel_session,
+    fb_upload_reel_binary, fb_finish_reel_publish, platform_enabled,
+)
+
+
 try:
     import requests
 except ImportError:  # pragma: no cover - handled at runtime
@@ -34,25 +49,6 @@ except ImportError:  # pragma: no cover - handled at runtime
 
 # Leave empty to auto-use sibling folder named "VALORANT".
 VIDEO_SOURCE_ROOT = ""
-
-
-def get_default_video_root() -> str:
-    if VIDEO_SOURCE_ROOT.strip():
-        return VIDEO_SOURCE_ROOT.strip()
-    script_dir = Path(__file__).resolve().parent
-    sibling_valorant = script_dir.parent / "VALORANT"
-    if sibling_valorant.exists():
-        return str(sibling_valorant)
-    return "."
-
-
-DEFAULT_VIDEO_ROOT = get_default_video_root()
-DEFAULT_SOURCE_STATE_FILE = ".youtube_upload_state.json"
-DEFAULT_REELS_STATE_FILE = ".meta_reels_upload_state.json"
-DEFAULT_GRAPH_VERSION = "v25.0"
-DEFAULT_INSTAGRAM_UPLOAD_LEDGER_FILE = ".instagram_uploaded_videos.json"
-DEFAULT_FACEBOOK_UPLOAD_LEDGER_FILE = ".facebook_uploaded_videos.json"
-DEFAULT_CONVERTED_DIR = "converted_shorts"
 
 
 def parse_args() -> argparse.Namespace:
@@ -173,6 +169,8 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Show planned actions without calling Meta APIs.",
     )
+    parser.add_argument('--schedule-plan', default=None, help='JSON schedule for Facebook: [{"count": N, "publish_at": "ISO UTC datetime"}]')
+    parser.add_argument('--instagram-draft', action='store_true', default=False, help='Skip publishing Instagram reels — upload container only as draft.')
     return parser.parse_args()
 
 
@@ -180,63 +178,6 @@ def os_env(name: str) -> str:
     import os
 
     return os.getenv(name, "").strip()
-
-
-def load_json_file(path: Path, default: Any) -> Any:
-    if not path.exists():
-        return default
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return default
-
-
-def save_json_file(path: Path, data: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-
-
-def ensure_platform_upload_ledger_shape(data: Any) -> Dict[str, Any]:
-    if not isinstance(data, dict):
-        data = {}
-    entries = data.get("entries")
-    if not isinstance(entries, dict):
-        data["entries"] = {}
-    return data
-
-
-def update_platform_upload_ledger(
-    ledger_state: Dict[str, Any],
-    *,
-    state_key: str,
-    status: str,
-    relative_path: str,
-    source_file: Path,
-    metadata_file: str,
-    title: str,
-    platform_id_key: str,
-    platform_id_value: str,
-    extra_fields: Optional[Dict[str, Any]] = None,
-    error_message: str = "",
-) -> None:
-    row: Dict[str, Any] = {
-        "status": status,
-        "relative_path": relative_path,
-        "source_file": str(source_file),
-        "metadata_file": metadata_file,
-        "title": title,
-        "updated_at_utc": now_utc_iso(),
-    }
-    if platform_id_key:
-        row[platform_id_key] = platform_id_value
-    if status == "ok":
-        row["uploaded_at_utc"] = now_utc_iso()
-    elif error_message:
-        row["error"] = error_message
-    if extra_fields:
-        for field_name, field_value in extra_fields.items():
-            row[field_name] = field_value
-    ledger_state["entries"][state_key] = row
 
 
 def parse_iso_utc(value: str) -> datetime:
@@ -251,16 +192,6 @@ def parse_iso_utc(value: str) -> datetime:
 
 def now_utc_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def clean_one_line(text: str) -> str:
-    return re.sub(r"\s+", " ", text or "").strip()
-
-
-def clean_multiline(text: str) -> str:
-    raw = (text or "").replace("\r\n", "\n").replace("\r", "\n")
-    lines = [clean_one_line(line) for line in raw.split("\n")]
-    return "\n".join(line for line in lines if line)
 
 
 def build_caption_from_entry(entry: Dict[str, Any]) -> tuple[str, str, str]:
@@ -341,210 +272,6 @@ def load_source_entries(source_state_file: Path) -> List[Dict[str, Any]]:
     return entries
 
 
-def extract_meta_error_message(payload: Any) -> str:
-    if not isinstance(payload, dict):
-        return ""
-    error = payload.get("error", {})
-    if not isinstance(error, dict):
-        return ""
-    message = str(error.get("message", "")).strip()
-    error_type = str(error.get("type", "")).strip()
-    code = str(error.get("code", "")).strip()
-    subcode = str(error.get("error_subcode", "")).strip()
-    parts = [p for p in [message, f"type={error_type}" if error_type else "", f"code={code}" if code else "", f"subcode={subcode}" if subcode else ""] if p]
-    return " | ".join(parts)
-
-
-def is_facebook_rate_limited_error(exc: Exception) -> bool:
-    message = str(exc).lower()
-    return "code=368" in message and "subcode=1390008" in message
-
-
-def request_json(
-    method: str,
-    url: str,
-    *,
-    params: Optional[Dict[str, Any]] = None,
-    data: Optional[Any] = None,
-    headers: Optional[Dict[str, str]] = None,
-    timeout: float,
-) -> Dict[str, Any]:
-    assert requests is not None
-    try:
-        response = requests.request(
-            method=method.upper(),
-            url=url,
-            params=params,
-            data=data,
-            headers=headers,
-            timeout=timeout,
-        )
-    except requests.RequestException as exc:
-        raise RuntimeError(f"HTTP request failed: {exc}") from exc
-
-    text = response.text or ""
-    parsed: Any = {}
-    if text.strip():
-        try:
-            parsed = response.json()
-        except ValueError:
-            parsed = {"raw": text.strip()}
-
-    if response.status_code >= 400:
-        err = extract_meta_error_message(parsed)
-        if not err:
-            err = text[:400].strip() or f"status={response.status_code}"
-        raise RuntimeError(f"Meta API error ({response.status_code}): {err}")
-
-    if isinstance(parsed, dict):
-        return parsed
-    return {"value": parsed}
-
-
-def ig_create_reel_container(
-    graph_version: str,
-    ig_user_id: str,
-    access_token: str,
-    caption: str,
-    timeout: float,
-) -> str:
-    url = f"https://graph.facebook.com/{graph_version}/{ig_user_id}/media"
-    payload = {
-        "media_type": "REELS",
-        "upload_type": "resumable",
-        "caption": caption,
-        "access_token": access_token,
-    }
-    response = request_json("POST", url, data=payload, timeout=timeout)
-    container_id = str(response.get("id", "")).strip()
-    if not container_id:
-        raise RuntimeError(f"Instagram container creation missing id: {response}")
-    return container_id
-
-
-def ig_upload_reel_binary(
-    graph_version: str,
-    container_id: str,
-    access_token: str,
-    file_path: Path,
-    timeout: float,
-) -> None:
-    url = f"https://rupload.facebook.com/ig-api-upload/{graph_version}/{container_id}"
-    file_size = file_path.stat().st_size
-    headers = {
-        "Authorization": f"OAuth {access_token}",
-        "offset": "0",
-        "file_size": str(file_size),
-        "Content-Type": "application/octet-stream",
-    }
-    with file_path.open("rb") as fh:
-        request_json("POST", url, headers=headers, data=fh, timeout=timeout)
-
-
-def ig_wait_until_ready(
-    graph_version: str,
-    container_id: str,
-    access_token: str,
-    attempts: int,
-    interval_seconds: float,
-    timeout: float,
-) -> None:
-    url = f"https://graph.facebook.com/{graph_version}/{container_id}"
-    params = {"fields": "status_code,status", "access_token": access_token}
-
-    for attempt in range(1, max(attempts, 1) + 1):
-        response = request_json("GET", url, params=params, timeout=timeout)
-        status_code = clean_one_line(str(response.get("status_code", ""))).upper()
-        status = clean_one_line(str(response.get("status", ""))).upper()
-
-        if status_code in {"FINISHED", "PUBLISHED"} or status in {"FINISHED", "PUBLISHED"}:
-            return
-        if status_code in {"ERROR", "EXPIRED"} or status in {"ERROR", "EXPIRED"}:
-            raise RuntimeError(
-                f"Instagram container failed. status_code={status_code or '?'} status={status or '?'}"
-            )
-
-        if attempt < attempts:
-            time.sleep(max(interval_seconds, 0.0))
-
-    raise RuntimeError("Instagram container did not become ready before timeout.")
-
-
-def ig_publish_reel(
-    graph_version: str,
-    ig_user_id: str,
-    container_id: str,
-    access_token: str,
-    timeout: float,
-) -> str:
-    url = f"https://graph.facebook.com/{graph_version}/{ig_user_id}/media_publish"
-    payload = {"creation_id": container_id, "access_token": access_token}
-    response = request_json("POST", url, data=payload, timeout=timeout)
-    media_id = clean_one_line(str(response.get("id", "")))
-    if not media_id:
-        raise RuntimeError(f"Instagram publish response missing id: {response}")
-    return media_id
-
-
-def fb_start_reel_session(
-    graph_version: str,
-    page_id: str,
-    access_token: str,
-    timeout: float,
-) -> tuple[str, str]:
-    url = f"https://graph.facebook.com/{graph_version}/{page_id}/video_reels"
-    payload = {"upload_phase": "start", "access_token": access_token}
-    response = request_json("POST", url, data=payload, timeout=timeout)
-    video_id = clean_one_line(str(response.get("video_id", "")))
-    upload_url = clean_one_line(str(response.get("upload_url", "")))
-    if not video_id or not upload_url:
-        raise RuntimeError(f"Facebook start session missing fields: {response}")
-    return video_id, upload_url
-
-
-def fb_upload_reel_binary(
-    upload_url: str,
-    access_token: str,
-    file_path: Path,
-    timeout: float,
-) -> None:
-    file_size = file_path.stat().st_size
-    headers = {
-        "Authorization": f"OAuth {access_token}",
-        "offset": "0",
-        "file_size": str(file_size),
-        "Content-Type": "application/octet-stream",
-    }
-    with file_path.open("rb") as fh:
-        request_json("POST", upload_url, headers=headers, data=fh, timeout=timeout)
-
-
-def fb_finish_reel_publish(
-    graph_version: str,
-    page_id: str,
-    access_token: str,
-    video_id: str,
-    description: str,
-    title: str,
-    timeout: float,
-) -> Dict[str, Any]:
-    url = f"https://graph.facebook.com/{graph_version}/{page_id}/video_reels"
-    payload = {
-        "access_token": access_token,
-        "video_id": video_id,
-        "upload_phase": "finish",
-        "video_state": "PUBLISHED",
-        "description": description,
-    }
-    if title:
-        payload["title"] = title
-    return request_json("POST", url, data=payload, timeout=timeout)
-
-
-def platform_enabled(platform_choice: str, platform_name: str) -> bool:
-    return platform_choice == "both" or platform_choice == platform_name
-
-
 def ensure_meta_state_shape(data: Any) -> Dict[str, Any]:
     if not isinstance(data, dict):
         data = {}
@@ -569,14 +296,6 @@ def should_skip_platform(
     if not isinstance(platform_row, dict):
         return False
     return clean_one_line(str(platform_row.get("status", ""))).lower() == "ok"
-
-
-def delete_file_if_exists(file_path: Path) -> None:
-    try:
-        if file_path.exists():
-            file_path.unlink()
-    except OSError:
-        pass
 
 
 def main() -> int:
@@ -637,6 +356,7 @@ def main() -> int:
         f"platform={args.platform} | dry_run={args.dry_run}"
     )
 
+    import json as _json; import datetime as _dt; _fb_slots = _json.loads(args.schedule_plan) if getattr(args, 'schedule_plan', None) else []; _fb_seq = [s['publish_at'] for s in _fb_slots for _ in range(s['count'])]; _fb_idx = 0
     success_instagram = 0
     success_facebook = 0
     failed_instagram = 0
@@ -743,13 +463,17 @@ def main() -> int:
                     interval_seconds=args.poll_interval_seconds,
                     timeout=args.request_timeout_seconds,
                 )
-                ig_media_id = ig_publish_reel(
-                    graph_version=args.graph_version,
-                    ig_user_id=ig_user_id,
-                    container_id=container_id,
-                    access_token=access_token,
-                    timeout=args.request_timeout_seconds,
-                )
+                if not getattr(args, 'instagram_draft', False):
+                    ig_media_id = ig_publish_reel(
+                        graph_version=args.graph_version,
+                        ig_user_id=ig_user_id,
+                        container_id=container_id,
+                        access_token=access_token,
+                        timeout=args.request_timeout_seconds,
+                    )
+                else:
+                    ig_media_id = 'draft'
+                    print('[info][instagram] reel container uploaded as draft — publish manually')
                 success_instagram += 1
                 state_row["instagram"] = {
                     "status": "ok",
@@ -821,7 +545,9 @@ def main() -> int:
                     description=fb_description,
                     title=fb_title,
                     timeout=args.request_timeout_seconds,
+                    scheduled_publish_time=(int(_dt.datetime.fromisoformat(_fb_seq[_fb_idx]).timestamp()) if _fb_idx < len(_fb_seq) else None),
                 )
+                _fb_idx += 1
                 success_facebook += 1
                 state_row["facebook"] = {
                     "status": "ok",

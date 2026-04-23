@@ -42,5 +42,22 @@ contextBridge.exposeInMainWorld("api", {
     saveWorkflowSettings: function saveWorkflowSettings(settings)
     {
         return ipcRenderer.invoke("save-workflow-settings", settings);
+    },
+    runEnvCheck: function runEnvCheck() { return ipcRenderer.invoke('run-env-check'); },
+    runTool: function runTool(payload) {
+        return ipcRenderer.invoke('run-tool', payload);
+    },
+    stopTool: function stopTool() {
+        return ipcRenderer.invoke('stop-tool');
+    },
+    getToolStatus: function getToolStatus() {
+        return ipcRenderer.invoke('get-tool-status');
+    },
+    getAuditReport: function getAuditReport() {
+        return ipcRenderer.invoke('get-audit-report');
+    },
+    getThumbnail: function getThumbnail(thumbPath)
+    {
+        return ipcRenderer.invoke("get-thumbnail", thumbPath);
     }
 });

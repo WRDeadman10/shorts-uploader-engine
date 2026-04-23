@@ -34,6 +34,30 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
+from lib.file_utils import (
+    load_json_file, save_json_file, normalize_extensions, normalize_names_csv,
+    discover_videos, file_key, delete_file_if_exists, get_default_video_root,
+)
+from lib.ledger import (
+    ensure_platform_upload_ledger_shape, update_platform_upload_ledger,
+    is_platform_upload_completed, normalize_platform_names_csv, is_uploaded_on_platform,
+)
+from lib.media_tools import (
+    check_tool_available, resolve_media_tool, probe_video_info,
+    video_has_audio_stream, is_shorts_eligible, build_converted_path,
+    build_temp_media_output_path,
+)
+from lib.music import build_music_inventory, build_mixed_music_path
+from lib.youtube_auth import build_youtube_client
+from lib.youtube_upload import upload_video, resolve_playlist_id, add_video_to_playlist, extract_http_error_reason, RETRIABLE_STATUS_CODES
+from lib.ai_metadata import load_clip_context, build_clip_focus, build_fallback_metadata, finalize_metadata, is_metadata_unique, generate_ai_metadata, build_meta_captions
+from lib.meta_api import is_facebook_rate_limited_error, request_json, ig_create_reel_container, ig_upload_reel_binary, ig_wait_until_ready, ig_publish_reel, fb_start_reel_session, fb_upload_reel_binary, fb_finish_reel_publish, extract_meta_error_message
+from lib.video_conversion import convert_to_shorts, mix_background_music, try_mix_background_music, reuse_valid_cached_video
+from lib.text_utils import (
+    clean_text, parse_json_response, normalize_hashtag, normalize_tags,
+    trim_title, get_sidecar_value, normalize_handle, normalize_compare_text,
+    text_similarity,
+)
 from metaBatchReelsUpload import (
     ensure_meta_state_shape,
     fb_finish_reel_publish,
@@ -68,21 +92,6 @@ DEFAULT_FACEBOOK_UPLOAD_LEDGER_FILE = ".facebook_uploaded_videos.json"
 VIDEO_SOURCE_ROOT = ""
 
 
-def get_default_video_root() -> str:
-    if VIDEO_SOURCE_ROOT.strip():
-        return VIDEO_SOURCE_ROOT.strip()
-
-    script_dir = Path(__file__).resolve().parent
-    sibling_valorant = script_dir.parent / "VALORANT"
-    if sibling_valorant.exists():
-        return str(sibling_valorant)
-
-    return "."
-
-
-DEFAULT_VIDEO_ROOT = get_default_video_root()
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Upload local clips to YouTube Shorts with AI metadata."
@@ -91,7 +100,7 @@ def parse_args() -> argparse.Namespace:
         "--root",
         "--videos-path",
         dest="root",
-        default=DEFAULT_VIDEO_ROOT,
+        default=VIDEO_SOURCE_ROOT,
         help=(
             "Root directory to recursively scan for videos. "
             "Defaults to sibling folder named 'VALORANT'."
@@ -421,6 +430,7 @@ def parse_args() -> argparse.Namespace:
         default=20.0,
         help="Seconds to wait between Instagram processing-failure retries.",
     )
+    parser.add_argument('--schedule-plan', default=None, help='JSON schedule: [{"count": N, "publish_at": "ISO UTC datetime"}]')
     return parser.parse_args()
 
 
@@ -1704,127 +1714,6 @@ def crosspost_meta_reel(
     state_row["metadata_file"] = str(metadata_path)
 
 
-def resolve_playlist_id(youtube, playlist_name: str) -> Optional[str]:
-    if not playlist_name.strip():
-        return None
-
-    wanted = clean_text(playlist_name).lower()
-    next_page_token: Optional[str] = None
-    fallback_id: Optional[str] = None
-
-    while True:
-        response = youtube.playlists().list(
-            part="snippet",
-            mine=True,
-            maxResults=50,
-            pageToken=next_page_token,
-        ).execute()
-
-        for item in response.get("items", []):
-            title = clean_text(item.get("snippet", {}).get("title", ""))
-            if not title:
-                continue
-            playlist_id = item.get("id")
-            if not playlist_id:
-                continue
-            if title.lower() == wanted:
-                return playlist_id
-            if fallback_id is None and wanted in title.lower():
-                fallback_id = playlist_id
-
-        next_page_token = response.get("nextPageToken")
-        if not next_page_token:
-            break
-
-    return fallback_id
-
-
-def add_video_to_playlist(youtube, playlist_id: str, video_id: str) -> str:
-    response = youtube.playlistItems().insert(
-        part="snippet",
-        body={
-            "snippet": {
-                "playlistId": playlist_id,
-                "resourceId": {
-                    "kind": "youtube#video",
-                    "videoId": video_id,
-                },
-            }
-        },
-    ).execute()
-    return str(response.get("id", ""))
-
-
-def upload_video(
-    youtube,
-    file_path: Path,
-    metadata: Dict[str, Any],
-    privacy: str,
-    category_id: str,
-    language: str,
-    notify_subscribers: bool,
-    max_retries: int = 8,
-) -> str:
-    body = {
-        "snippet": {
-            "title": metadata["title"],
-            "description": metadata["description"],
-            "tags": metadata["tags"],
-            "categoryId": category_id,
-            "defaultLanguage": language,
-            "defaultAudioLanguage": language,
-        },
-        "status": {
-            "privacyStatus": privacy,
-            "selfDeclaredMadeForKids": False,
-        },
-    }
-
-    request = youtube.videos().insert(
-        part="snippet,status",
-        body=body,
-        media_body=MediaFileUpload(str(file_path), resumable=True),
-        notifySubscribers=notify_subscribers,
-    )
-
-    response = None
-    retries = 0
-    while response is None:
-        try:
-            _, response = request.next_chunk()
-            if response and "id" in response:
-                return response["id"]
-        except HttpError as exc:
-            if exc.resp.status not in RETRIABLE_STATUS_CODES:
-                raise
-            retries += 1
-        except OSError:
-            retries += 1
-
-        if retries > max_retries:
-            raise RuntimeError(f"Upload failed after {max_retries} retries: {file_path}")
-        sleep_for = min((2 ** retries) + random.random(), 60)
-        time.sleep(sleep_for)
-
-    raise RuntimeError(f"Upload response missing video id for file: {file_path}")
-
-
-def extract_http_error_reason(exc: Exception) -> Tuple[str, str]:
-    if not isinstance(exc, HttpError):
-        return "", ""
-    try:
-        payload = json.loads(exc.content.decode("utf-8"))
-    except Exception:  # noqa: BLE001
-        return "", ""
-
-    error_obj = payload.get("error", {})
-    details = error_obj.get("errors", [])
-    if isinstance(details, list) and details:
-        first = details[0]
-        return str(first.get("reason", "")), str(first.get("message", ""))
-    return "", str(error_obj.get("message", ""))
-
-
 def main() -> int:
     args = parse_args()
     target_platform = args.upload_platform
@@ -2055,6 +1944,7 @@ def main() -> int:
             f"| state={meta_reels_state_file}"
         )
 
+    import json as _json; _sch_slots = _json.loads(args.schedule_plan) if getattr(args, 'schedule_plan', None) else []; _pub_seq = [s['publish_at'] for s in _sch_slots for _ in range(s['count'])]; _pub_idx = 0
     uploaded_count = 0
     skipped_not_shorts = 0
     hit_upload_limit = False
@@ -2118,11 +2008,12 @@ def main() -> int:
             original_upload_path = upload_path
             mixed_upload_path, chosen_music_path, music_failures = try_mix_background_music(
                 source=upload_path,
-                music_inventory=music_inventory,
+                music_tracks=music_inventory,
                 converted_dir=converted_dir,
                 ffmpeg_bin=ffmpeg_bin,
                 ffprobe_bin=ffprobe_bin,
                 bg_volume=args.music_bg_volume,
+                track_index = random.randint(0, len(music_inventory) - 1)
             )
             if chosen_music_path:
                 upload_path = mixed_upload_path
@@ -2249,7 +2140,9 @@ def main() -> int:
                     category_id=args.category_id,
                     language=args.language,
                     notify_subscribers=args.notify_subscribers,
+                    publish_at=(_pub_seq[_pub_idx] if _pub_idx < len(_pub_seq) else None),
                 )
+                _pub_idx += 1
                 playlist_item_id = ""
                 if playlist_id:
                     try:

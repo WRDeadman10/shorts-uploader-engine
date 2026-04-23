@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { getRepoRoot, resolveVideoRoot } = require("./pathService");
+const { getRepoRoot, resolveVideoRoot, readSettings, saveSettings } = require("./pathService");
 
 function readJsonFile(filePath, fallbackValue)
 {
@@ -32,6 +32,22 @@ function resolveRelativeSourcePath(relativePath)
     if (fs.existsSync(resolvedPath))
     {
         return resolvedPath;
+    }
+
+    return "";
+}
+
+function resolveThumbnailPath(sourcePath, relativePath)
+{
+    if (!sourcePath) return "";
+    const dir = path.dirname(sourcePath);
+    const base = path.basename(relativePath || sourcePath, path.extname(relativePath || sourcePath));
+    const exts = [".jpg", ".jpeg", ".png", ".webp"];
+
+    for (const ext of exts)
+    {
+        const thumbPath = path.join(dir, "thumbnails", base + ext);
+        if (fs.existsSync(thumbPath)) return thumbPath;
     }
 
     return "";
@@ -145,6 +161,8 @@ function getVideoList()
             description: description,
             duration: "--:--",
             thumbnail: path.basename(path.dirname(relativePath || "Tracked Clip")) || "Tracked Clip",
+            thumbnailPath: resolveThumbnailPath(sourcePath, relativePath),
+            fileName: path.basename(relativePath || stateKey),
             relativePath: relativePath,
             sourcePath: sourcePath,
             metadataPath: metadataPath,
@@ -189,6 +207,33 @@ function buildStatusTokens(flags)
     return tokens;
 }
 
+function loadWorkflowSettings()
+{
+    try
+    {
+        return readSettings();
+    }
+    catch (_error)
+    {
+        return {};
+    }
+}
+
+function saveWorkflowSettings(settings)
+{
+    try
+    {
+        saveSettings(settings);
+        return { success: true };
+    }
+    catch (err)
+    {
+        return { success: false, errorMessage: err.message };
+    }
+}
+
 module.exports = {
-    getVideoList: getVideoList
+    getVideoList: getVideoList,
+    loadWorkflowSettings: loadWorkflowSettings,
+    saveWorkflowSettings: saveWorkflowSettings
 };

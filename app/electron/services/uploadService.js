@@ -111,7 +111,12 @@ async function runUpload(payload)
         args,
         {
             cwd: getRepoRoot(),
-            windowsHide: true
+            windowsHide: true,
+            env: Object.assign({}, process.env, {
+                PYTHONIOENCODING: "utf-8",
+                PYTHONUTF8: "1",
+                PYTHONUNBUFFERED: "1"
+            })
         }
     );
 
@@ -282,6 +287,13 @@ function updateStatus(partialStatus)
     };
 }
 
+function buildSchedulePlan(slots, date) {
+    return JSON.stringify(slots.map(function(slot) {
+        var utc = new Date(date + 'T' + slot.time + ':00').toISOString();
+        return { count: Number(slot.count), publish_at: utc };
+    }));
+}
+
 function buildUploadCommand(payload)
 {
     const platforms = payload.platforms || {};
@@ -296,25 +308,52 @@ function buildUploadCommand(payload)
         throw new Error("Select at least one platform before starting an upload.");
     }
 
-    if (!youtubeEnabled && (instagramEnabled || facebookEnabled))
+    const maxVid = String((options.maxVideos && Number(options.maxVideos) >= 1) ? Math.round(Number(options.maxVideos)) : 1);
+
+    // ── Instagram (±Facebook) with no YouTube → Reels API script ──────────────
+    if (!youtubeEnabled && instagramEnabled)
     {
+        const metaArgs = [
+            "--platform",
+            selectedMetaPlatform,
+            "--max-videos",
+            maxVid
+        ];
+        if (options.videosRoot) { metaArgs.push("--root", options.videosRoot); }
+        if (options.dryRun) { metaArgs.push("--dry-run"); }
+        if (options.ffmpegBin) { metaArgs.push("--ffmpeg-bin", options.ffmpegBin); }
+        if (options.ffprobeBin) { metaArgs.push("--ffprobe-bin", options.ffprobeBin); }
+        if (options.metaAccessToken) metaArgs.push("--access-token", options.metaAccessToken);
+        if (options.igUserId) metaArgs.push("--ig-user-id", options.igUserId);
+        if (options.fbPageId) metaArgs.push("--facebook-page-id", options.fbPageId);
+        if (options.metaGraphVersion) metaArgs.push("--graph-version", options.metaGraphVersion);
+        if (options.metaPollAttempts) metaArgs.push("--poll-attempts", String(options.metaPollAttempts));
+        if (options.metaPollInterval) metaArgs.push("--poll-interval-seconds", String(options.metaPollInterval));
+        if (options.metaRequestTimeout) metaArgs.push("--request-timeout-seconds", String(options.metaRequestTimeout));
+        if (options.metaDeleteConverted === false) metaArgs.push("--keep-converted-after-upload");
+        var sch = payload.schedule || {};
+        if (sch.enabled && sch.date && facebookEnabled && sch.facebookSlots && sch.facebookSlots.length) {
+            metaArgs.push('--schedule-plan', buildSchedulePlan(sch.facebookSlots, sch.date));
+        }
+        if (!sch.enabled && sch.instagramDraft && instagramEnabled) {
+            metaArgs.push('--instagram-draft');
+        }
         return {
             scriptName: "metaBatchReelsUpload.py",
             platformLabel: selectedMetaPlatform,
-            scriptArgs: [
-                "--platform",
-                selectedMetaPlatform,
-                "--max-videos",
-                "1"
-            ]
+            scriptArgs: metaArgs
         };
     }
 
+    // ── YouTube OR Facebook-only → youtubeBatchUpload.py ──────────────────────
+    // Facebook-only uses --upload-platform facebook; YouTube uses --upload-platform youtube
+    const uploadPlatform = youtubeEnabled ? "youtube" : "facebook";
+
     const args = [
         "--upload-platform",
-        "youtube",
+        uploadPlatform,
         "--max-videos",
-        "1",
+        maxVid,
         "--allow-fallback"
     ];
 
@@ -337,15 +376,62 @@ function buildUploadCommand(payload)
         args.push("--music-dir=");
     }
 
-    if (instagramEnabled || facebookEnabled)
+    if (youtubeEnabled && (instagramEnabled || facebookEnabled))
     {
+        // YouTube primary + crosspost to Meta
         args.push("--crosspost-meta");
         args.push("--meta-platform", selectedMetaPlatform);
+        if (options.metaAccessToken) args.push("--meta-access-token", options.metaAccessToken);
+        if (options.igUserId) args.push("--meta-ig-user-id", options.igUserId);
+        if (options.fbPageId) args.push("--meta-facebook-page-id", options.fbPageId);
+        if (options.metaGraphVersion) args.push("--meta-graph-version", options.metaGraphVersion);
+        if (options.metaPollAttempts) args.push("--meta-poll-attempts", String(options.metaPollAttempts));
+        if (options.metaPollInterval) args.push("--meta-poll-interval-seconds", String(options.metaPollInterval));
+        if (options.metaRequestTimeout) args.push("--meta-request-timeout-seconds", String(options.metaRequestTimeout));
+    }
+    else if (!youtubeEnabled && facebookEnabled)
+    {
+        // Facebook primary — direct Meta credentials (no --crosspost-meta)
+        if (options.metaAccessToken) args.push("--meta-access-token", options.metaAccessToken);
+        if (options.igUserId) args.push("--meta-ig-user-id", options.igUserId);
+        if (options.fbPageId) args.push("--meta-facebook-page-id", options.fbPageId);
+        if (options.metaGraphVersion) args.push("--meta-graph-version", options.metaGraphVersion);
+        if (options.metaPollAttempts) args.push("--meta-poll-attempts", String(options.metaPollAttempts));
+        if (options.metaPollInterval) args.push("--meta-poll-interval-seconds", String(options.metaPollInterval));
+        if (options.metaRequestTimeout) args.push("--meta-request-timeout-seconds", String(options.metaRequestTimeout));
+    }
+
+    if (options.videosRoot) { args.push("--root", options.videosRoot); }
+    if (options.privacy) { args.push("--privacy", options.privacy); }
+    if (options.playlistName) { args.push("--playlist-name", options.playlistName); }
+    if (options.dryRun) { args.push("--dry-run"); }
+    if (options.ffmpegBin) { args.push("--ffmpeg-bin", options.ffmpegBin); }
+    if (options.ffprobeBin) { args.push("--ffprobe-bin", options.ffprobeBin); }
+    if (options.extensions) { args.push("--extensions", options.extensions); }
+    if (options.excludeDirectories) { args.push("--exclude-dirs", options.excludeDirectories); }
+    if (options.excludeFiles) { args.push("--exclude-files", options.excludeFiles); }
+    if (options.requireUploadedOn) { args.push("--require-uploaded-on", options.requireUploadedOn); }
+    if (options.requireMissingOn) { args.push("--require-missing-on", options.requireMissingOn); }
+    if (options.clientSecretsPath) { args.push("--client-secrets", options.clientSecretsPath); }
+    if (options.tokenFilePath) { args.push("--token-file", options.tokenFilePath); }
+    if (options.openaiModel) args.push("--openai-model", options.openaiModel);
+    if (options.channelName) args.push("--channel-name", options.channelName);
+    if (options.extraKeywords) args.push("--extra-keywords", options.extraKeywords);
+    if (options.language) args.push("--language", options.language);
+    if (options.categoryId) args.push("--category-id", String(options.categoryId));
+    if (options.musicDir) args.push("--music-dir", options.musicDir);
+    if (options.musicVolume) args.push("--music-bg-volume", String(options.musicVolume));
+    if (options.musicInventory) args.push("--music-inventory-file", options.musicInventory);
+    var sch2 = payload.schedule || {};
+    if (sch2.enabled && sch2.date && sch2.youtubeSlots && sch2.youtubeSlots.length) {
+        args.push('--schedule-plan', buildSchedulePlan(sch2.youtubeSlots, sch2.date));
     }
 
     return {
         scriptName: "youtubeBatchUpload.py",
-        platformLabel: instagramEnabled || facebookEnabled ? "youtube+" + selectedMetaPlatform : "youtube",
+        platformLabel: youtubeEnabled
+            ? (instagramEnabled || facebookEnabled ? "youtube+" + selectedMetaPlatform : "youtube")
+            : "facebook",
         scriptArgs: args
     };
 }

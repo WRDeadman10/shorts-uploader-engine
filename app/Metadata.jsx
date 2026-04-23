@@ -43,6 +43,9 @@ function Metadata()
                     {selectedVideoId ? "Hydrated from the selected tracked video." : "Select a video in Library to hydrate metadata."}
                 </p>
             </div>
+            <div style={{background:"rgba(239,168,68,0.1)",border:"1px solid rgba(239,168,68,0.3)",borderRadius:8,padding:"10px 14px",marginBottom:16,fontSize:13,color:"#efa844"}}>
+                Preview Only — Metadata edits are not saved to disk yet. This page shows what the AI metadata generator would produce.
+            </div>
             <div className="metadata-grid">
                 <div className="metadata-form">
                     <label className="metadata-field">
