@@ -1,0 +1,27 @@
+{
+  "status": "failure",
+  "planned_tasks": 1,
+  "completed_task_ids": [],
+  "completed_tasks": 0,
+  "resumed_completed_task_ids": [
+    2,
+    3,
+    4
+  ],
+  "skipped_tasks": 0,
+  "failed_task_id": 1,
+  "diffs_recorded": 0,
+  "tasks": [
+    {
+      "id": 1,
+      "type": "validate",
+      "files": [
+        "missingFeatures/FEATURE_STATUS.md"
+      ],
+      "must_exist": [],
+      "must_not_exist": [],
+      "completed": false,
+      "commit_sha": null
+    }
+  ]
+}

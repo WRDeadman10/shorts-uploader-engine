@@ -1,0 +1,81 @@
+{
+    "uploadOptions": {
+        "includeShorts": true,
+        "includeMusic": true,
+        "includeMetadata": true,
+        "maxVideos": 20,
+        "videosRoot": "E:\\New folder\\Valorant Tracker\\VALORANT",
+        "privacy": "public",
+        "playlistName": "Valorant",
+        "dryRun": false,
+        "ffmpegBin": "ffmpeg",
+        "ffprobeBin": "ffprobe",
+        "extensions": "",
+        "excludeDirectories": "",
+        "excludeFiles": "",
+        "requireUploadedOn": "",
+        "requireMissingOn": "",
+        "clientSecretsPath": "C:\\Users\\winss\\Documents\\Projects\\old\\shorts-uploader-engine\\shorts-uploader-engine\\client_secret.json",
+        "tokenFilePath": "C:\\Users\\winss\\Documents\\Projects\\old\\shorts-uploader-engine\\shorts-uploader-engine\\token.json",
+        "openaiModel": "gpt-4.1-mini",
+        "musicVolume": 0.3,
+        "metaSkipUploaded": true,
+        "metaAccessToken": "EAARoVBi60SUBRfEsZBnSNfzpufAdt0ZBYIeuaUtDzYxBrTUml2elYJ0LVMoarVh8WpAopJWiGfqLZCZAtcpNJqnYXpJWlvNfa1BhPSozcur1GYO6CknQvXhexQjXbkncnhfy6lfBUn5PktgVWZCnywZCaLL7fFPI2TOrCF2QeW6MycFcFtF5Vm6RhNI4LMI7QWSZBCTdTbNufVWBCPan6ysiVSboGf4QdqHS1uOlHRQQccf",
+        "metaGraphVersion": "v25.0",
+        "igUserId": "17841442647474097",
+        "fbPageId": "1064411090088218",
+        "channelName": "GanpatiGamerBoi",
+        "musicInventory": "hollywood_music_inventory.json",
+        "musicDir": "E:/Music/Hollywood"
+    },
+    "uploadPlatforms": {
+        "youtube": true,
+        "instagram": false,
+        "facebook": false
+    },
+    "schedule": {
+        "enabled": true,
+        "date": "2026-04-21",
+        "youtubeSlots": [
+            {
+                "time": "20:00",
+                "count": 10
+            },
+            {
+                "time": "22:00",
+                "count": 10
+            }
+        ],
+        "facebookSlots": [
+            {
+                "time": "10:00",
+                "count": 10
+            },
+            {
+                "time": "12:00",
+                "count": 10
+            },
+            {
+                "time": "14:00",
+                "count": 10
+            },
+            {
+                "time": "10:00",
+                "count": 10
+            },
+            {
+                "time": "18:00",
+                "count": 10
+            },
+            {
+                "time": "20:00",
+                "count": 10
+            },
+            {
+                "time": "22:00",
+                "count": 10
+            }
+        ],
+        "instagramDraft": true
+    }
+}

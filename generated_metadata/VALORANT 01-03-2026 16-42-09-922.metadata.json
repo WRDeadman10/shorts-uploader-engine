@@ -1,52 +1,33 @@
 {
   "relative_path": "VALORANT_01-03-2026_16-03-59-277/VALORANT 01-03-2026 16-42-09-922.mp4",
-  "generated_at_utc": "2026-03-06T17:34:49.981729+00:00",
+  "generated_at_utc": "2026-04-17T03:54:19.396237+00:00",
   "metadata": {
-    "title": "Turning the Tide with a Surprise Mid Push in VALORANT",
-    "description": "Caught an unexpected move mid-round that flipped the fight fast. Watch how positioning and timing made the difference here. What\u2019s your favorite spot to catch opponents off guard?\n\nLet me know your best surprise play in the comments!\n\n#valorant #shorts #gaming #fps #valorantclips",
+    "title": "Clicked like I was chasing the Wi-Fi signal and somehow got 1 kill?! Valorant aim’s a glitch",
+    "description": "Me: panicking like my mouse betrayed me\nEnemy: probably uninstalling in confusion\nHow did that even connect? No clue but I’m cashing in\nIf your aim’s a lucky accident, this one’s for you\n\nTap if your aim ever surprises you mid-panic!\n\n#valorant #gamingfails #luckykill #funnygaming #shorts\n\nInstagram: @ganpatigamerboi",
     "tags": [
       "valorant",
       "valorant clips",
-      "valorant gameplay",
-      "valorant mid push",
-      "fps gaming",
-      "gaming shorts",
-      "valorant short clips",
-      "quick kills",
-      "tactical shooter",
-      "competitive gaming",
-      "gaming highlights",
-      "valorant moments",
-      "sharp shooting",
-      "gameplay reaction",
-      "shorts"
+      "gaming",
+      "fps",
+      "shorts",
+      "funny gaming",
+      "luckykill",
+      "gaming fail",
+      "viral clips",
+      "gaming humor",
+      "overconfidence",
+      "clutch moments",
+      "gamer pain",
+      "funny moments",
+      "high ctr"
     ],
     "hashtags": [
       "#valorant",
-      "#shorts",
-      "#gaming",
-      "#fps",
-      "#valorantclips"
+      "#gamingfails",
+      "#luckykill",
+      "#funnygaming",
+      "#shorts"
     ],
-    "cta": "Let me know your best surprise play in the comments!"
-  },
-  "kills": 1,
-  "agent_name": "Sage",
-  "kill_events": [
-    18.2
-  ],
-  "analysis_generated_at_utc": "2026-03-07T07:19:22.781201+00:00",
-  "kill_event_details": [
-    {
-      "timestamp": 18.2,
-      "site_name": "A",
-      "weapon_used": "Unknown",
-      "agent_name": "Breach",
-      "kill_banner_template": "normal_Kill_Banner.png",
-      "kill_banner_score": 0.33,
-      "username_left_score": 0.669,
-      "kill_feed_ui_score": 0.481
-    }
-  ],
-  "analysis_method": "fixed_roi_kill_banner_feed_v2"
+    "cta": "Tap if your aim ever surprises you mid-panic!"
+  }
 }

@@ -17,3 +17,23 @@ __pycache__/youtubeBatchUpload.cpython-313.pyc
 .youtube_uploaded_videos.json
 live_upload_audit/
 .metadata_history.json
+
+# ── Aider / Bridge artefacts ─────────────────────────────────────
+taskJsons/                               # AI-generated task plan JSON files
+.aider.tags.cache.v4/                    # Aider repo-map tag cache
+bridge_progress/                         # Bridge run state, checkpoints and reports
+logs.meta                                # Unity meta for bridge logs folder
+.aider.input.history                     # Aider interactive input history
+.aider.chat.history.md                   # Aider chat history
+bridge_progress.meta                     # Unity meta for bridge_progress folder
+bridge_progress/manual_supervisor/
+bridge_progress/bridge_run_task2.err.log
+bridge_progress/bridge_run_task2.out.log
+bridge_progress/bridge_run_task2b.err.log
+bridge_progress/bridge_run_task2b.out.log
+bridge_progress/bridge_run_task2c.err.log
+bridge_progress/bridge_run_task2c.out.log
+bridge_progress/bridge_run_task2d.err.log
+bridge_progress/bridge_run_task2d.out.log
+.aider.input.history
+.aider.chat.history.md

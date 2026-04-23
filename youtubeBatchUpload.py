@@ -53,9 +53,6 @@ try:
 except ImportError:  # pragma: no cover - handled at runtime.
     OpenAI = None  # type: ignore[assignment]
 
-sys.path.append(os.path.abspath("../valorant-clip-data-extractor-v3"))
-from valorant_clip_data_extractor_v3.KillJson import process_video  # your modified function
-
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube",
@@ -1092,10 +1089,6 @@ def get_sidecar_value(payload: Dict[str, Any], *keys: str) -> Any:
 
 def load_clip_context(file_path: Path) -> Optional[Dict[str, Any]]:
     sidecar_path = file_path.with_suffix(".json")
-
-    if sidecar_path.exists() == False:
-        process_video(file_path)
-
     payload = load_json_file(sidecar_path, default=None)
 
     

@@ -1,0 +1,21 @@
+{
+  "generated_at_utc": "2026-04-12T14:42:11.874147+00:00",
+  "root_directory": "E:\\New folder\\Valorant Tracker\\VALORANT",
+  "total_videos": 2120,
+  "youtube_state_file": "C:\\Users\\winss\\Documents\\Projects\\old\\shorts-uploader-engine\\shorts-uploader-engine\\.youtube_upload_state.json",
+  "meta_state_file": "C:\\Users\\winss\\Documents\\Projects\\old\\shorts-uploader-engine\\shorts-uploader-engine\\.meta_reels_upload_state.json",
+  "platforms": {
+    "youtube": {
+      "uploaded": 615,
+      "not_uploaded": 1505
+    },
+    "facebook": {
+      "uploaded": 0,
+      "not_uploaded": 2120
+    },
+    "instagram": {
+      "uploaded": 0,
+      "not_uploaded": 2120
+    }
+  }
+}

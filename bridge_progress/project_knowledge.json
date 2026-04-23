@@ -1,163 +1,239 @@
 {
-  "generated_at": "2026-04-02T00:00:00Z",
-  "generated_by": "Codex",
-  "project_name": "shorts-uploader-engine",
-  "project_type": "script-driven media upload automation with Electron desktop UI",
-  "primary_languages": [
-    "Python",
-    "JavaScript",
-    "JSX"
-  ],
-  "summary": "A repository for discovering local Valorant clips, generating metadata and derived assets, uploading to YouTube Shorts and Meta Reels, and auditing live platform uploads against local inventory. It uses root-level Python scripts plus two desktop UI layers: a Tkinter launcher and an Electron + React app.",
-  "core_identity": {
-    "stable_file_key": "relative_path|file_size|modified_time",
-    "notes": [
-      "This key links local source clips to YouTube state, Meta state, upload ledgers, and audit matching.",
-      "Most operational bugs should be investigated through the stable key first."
-    ]
+  "project": {
+    "name": "shorts-uploader-engine",
+    "type": "script-driven media upload automation with Electron desktop UI",
+    "language": "Python, JavaScript, JSX",
+    "summary": "A repository for discovering local Valorant clips, generating metadata and derived assets, uploading to YouTube Shorts and Meta Reels, and auditing live platform uploads against local inventory. It uses root-level Python scripts plus two desktop UI layers: a Tkinter launcher and an Electron + React app.",
+    "repo_root": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine",
+    "first_seen": "2026-04-02",
+    "last_updated": "2026-04-04",
+    "understanding_confirmed": true,
+    "scanned": true
   },
-  "architecture": {
-    "patterns": [
-      "script-first orchestration",
-      "file-based JSON state",
-      "two desktop operator UIs over shared scripts and ledgers",
-      "platform upload pipeline plus live audit pipeline"
-    ],
-    "operator_interfaces": [
-      {
-        "name": "Tkinter launcher",
-        "entry": "projectUiLauncher.py",
-        "status": "active"
-      },
-      {
-        "name": "Content Command Center",
-        "entry": "app/electron/main.js",
-        "status": "active"
-      }
-    ]
+  "files": {
+    "youtubeBatchUpload.py": {
+      "role": "Primary orchestration script for upload workflows, Shorts conversion, metadata generation, YouTube publishing, and optional Meta cross-posting.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "metaBatchReelsUpload.py": {
+      "role": "Instagram and Facebook reels publisher built on Meta Graph API using YouTube-uploaded items as source inventory.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "generateLiveUploadAudit.py": {
+      "role": "Fetches live platform uploads and compares them against local video inventory, producing audit snapshots and comparison output.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "rebuildUploadComparison.py": {
+      "role": "Recomputes upload_comparison.json from saved audit snapshots without making network calls.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "generateUploadStatusReport.py": {
+      "role": "Builds a local aggregate report of total clips and per-platform upload coverage.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "youtubeFixRepeatedMetadata.py": {
+      "role": "Maintenance utility for correcting repeated or problematic YouTube metadata.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "musicOverlaySample.py": {
+      "role": "Utility/experimental script for music inventory and background audio overlay workflows.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "projectUiLauncher.py": {
+      "role": "Tkinter desktop launcher that wraps script CLIs, validates inputs, previews commands, and streams output.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "app/electron/main.js": {
+      "role": "Electron main process bootstrap for the Content Command Center desktop app.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "app/electron/preload.js": {
+      "role": "Renderer bridge exposing safe APIs from Electron to the React frontend.",
+      "task_type": "modify",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "app/electron/services/uploadService.js": {
+      "role": "Runs Python upload scripts as child processes, tracks status, and streams logs back to the renderer.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "app/electron/services/dataService.js": {
+      "role": "Reads root JSON state and ledgers to build video rows and status summaries for the Electron UI.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "app/electron/services/pathService.js": {
+      "role": "Resolves repo paths, renderer build path, and the active video root.",
+      "task_type": "modify",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "app/useAppStore.js": {
+      "role": "Central Zustand store for page state, logs, upload status, metadata editing, and video filtering.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "README.md": {
+      "role": "Human-facing operational overview and setup guide.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "AGENT_CONTEXT.md": {
+      "role": "Agent-facing architecture and workflow summary.",
+      "task_type": "scan",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    },
+    "app/electron/ipc/systemHandlers.js": {
+      "role": "Add IPC handlers for loading and saving Electron UI workflow settings so the renderer can persist advanced upload configuration.",
+      "task_type": "modify",
+      "last_modified": "2026-04-02",
+      "created": "2026-04-02"
+    }
   },
-  "file_registry": [
-    {
-      "path": "youtubeBatchUpload.py",
-      "role": "Primary orchestration script for upload workflows, Shorts conversion, metadata generation, YouTube publishing, and optional Meta cross-posting."
-    },
-    {
-      "path": "metaBatchReelsUpload.py",
-      "role": "Instagram and Facebook reels publisher built on Meta Graph API using YouTube-uploaded items as source inventory."
-    },
-    {
-      "path": "generateLiveUploadAudit.py",
-      "role": "Fetches live platform uploads and compares them against local video inventory, producing audit snapshots and comparison output."
-    },
-    {
-      "path": "rebuildUploadComparison.py",
-      "role": "Recomputes upload_comparison.json from saved audit snapshots without making network calls."
-    },
-    {
-      "path": "generateUploadStatusReport.py",
-      "role": "Builds a local aggregate report of total clips and per-platform upload coverage."
-    },
-    {
-      "path": "youtubeFixRepeatedMetadata.py",
-      "role": "Maintenance utility for correcting repeated or problematic YouTube metadata."
-    },
-    {
-      "path": "musicOverlaySample.py",
-      "role": "Utility/experimental script for music inventory and background audio overlay workflows."
-    },
-    {
-      "path": "projectUiLauncher.py",
-      "role": "Tkinter desktop launcher that wraps script CLIs, validates inputs, previews commands, and streams output."
-    },
-    {
-      "path": "app/electron/main.js",
-      "role": "Electron main process bootstrap for the Content Command Center desktop app."
-    },
-    {
-      "path": "app/electron/preload.js",
-      "role": "Renderer bridge exposing safe APIs from Electron to the React frontend."
-    },
-    {
-      "path": "app/electron/services/uploadService.js",
-      "role": "Runs Python upload scripts as child processes, tracks status, and streams logs back to the renderer."
-    },
-    {
-      "path": "app/electron/services/dataService.js",
-      "role": "Reads root JSON state and ledgers to build video rows and status summaries for the Electron UI."
-    },
-    {
-      "path": "app/electron/services/pathService.js",
-      "role": "Resolves repo paths, renderer build path, and the active video root."
-    },
-    {
-      "path": "app/useAppStore.js",
-      "role": "Central Zustand store for page state, logs, upload status, metadata editing, and video filtering."
-    },
+  "docs": [
     {
       "path": "README.md",
-      "role": "Human-facing operational overview and setup guide."
+      "title": "Shorts Uploader Engine",
+      "summary": "# Shorts Uploader Engine This repository automates a Valorant short-form video pipeline: discover local source clips generate metadata upload to YouTube Shorts cross-post to Instagram and Facebook Reels audit live platform uploads against the local video library ## Content Command Center The repository now also contains a modular Electron + React desktop app under named Content Command Center. Current UI stack: Electron main process with preload bridge and IPC handlers React renderer with state-based page routing Zustand for shared UI state Framer Motion for transitions and interaction feedback Current UI modules: page modules for Dashboard, Library, Upload, Console, Audit, and Metadata Current UI behavior: renderer does not access Node directly preload exposes a safe Electron communication uses and Electron main can launch the existing Python scripts and stream stdout/stderr to the UI Library and Audit screens read the existing JSON state and ledger files the Tkinter launcher still exists and remains supported ## Desktop UI ### Tkinter launcher for the existing scripts. Responsibilities: expose the available CLI arguments as form fields validate common input combinations before launch show the exact generated command before execution stream script output live in the UI console persist the last-used values for each tab in Covered scripts: Typical usage: Behavior: saved form values are restored on the next launch scripts are launched unbuffered so the UI console updates progressively during long runs the UI wraps the existing scripts and does not replace their CLI entry points ## Main Scripts ### Primary YouTube uploader.",
+      "score": 195
+    },
+    {
+      "path": "missingFeatures/README.md",
+      "title": "Missing Features",
+      "summary": "# Missing Features This folder contains one short Markdown brief per missing Electron + React UI feature. Purpose: help an AI or developer understand the gap quickly map the missing UI capability back to the existing Python scripts make implementation planning easier without rereading the whole repo Scope: these docs compare the React + Electron app in against the currently available script capabilities in the repository root and, where useful, against the richer Tkinter launcher in Each file is intentionally brief and implementation-oriented.",
+      "score": 136
+    },
+    {
+      "path": ".aider.chat.history.md",
+      "title": "aider chat started at 2026-04-02 22:05:11",
+      "summary": "# aider chat started at 2026-04-02 22:05:11 Can't initialize prompt toolkit: No Windows console found. C:\\Users\\winss\\AppData\\Roaming\\Python\\Python311\\site-packages\\aider\\__main__.py --model ollama/qwen2.5-coder:14b --yes-always --no-pretty --no-stream --no-auto-lint --no-auto-commits --no-gitignore --no-show-model-warnings --message GOAL Implement shorts-uploader-engine Electron UI parity plan TASK 1 OF 43 (MODIFY) Update the feature tracker to add an implementation-session note section and a clear convention for marking features in progress and done during bridge-driven work. TARGET FILES \u2014 edit ONLY these exact paths, nothing else: C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\missingFeatures\\FEATURE_STATUS.md RULES CRITICAL: edit only the TARGET FILES listed above \u2014 do NOT create new files or write to any other path CRITICAL: use the exact absolute path shown \u2014 do not change the filename, directory, or extension Do not ask questions or request clarification \u2014 implement directly Do not write TODO/stub placeholders \u2014 write complete working code Do not remove existing unrelated code --file C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\missingFeatures\\FEATURE_STATUS.md Aider v0.86.2 Model: ollama/qwen2.5-coder:14b with whole edit format Git repo: .git with 485 files Repo-map: using 4096.0 tokens, auto refresh Added missingFeatures\\FEATURE_STATUS.md to the chat.",
+      "score": 75
     },
     {
       "path": "AGENT_CONTEXT.md",
-      "role": "Agent-facing architecture and workflow summary."
+      "title": "AGENT_CONTEXT",
+      "summary": "# AGENT_CONTEXT ## Purpose This repository is a script-driven pipeline for uploading Valorant gameplay clips as short-form content to: YouTube Shorts Instagram Reels Facebook Reels It also includes reporting and audit tooling for comparing the local clip library against live platform upload data. The repository now has two operator-facing UI layers: the existing Tkinter launcher in a newer Electron + React desktop app in named Content Command Center ## Architecture The core automation architecture is still file-based and script-centric. There is no application framework, package layout, or database.",
+      "score": 75
+    },
+    {
+      "path": "AI_UNDERSTANDING.md",
+      "title": "AI Understanding",
+      "summary": "# AI Understanding ## Project Summary is an operations-focused repository for publishing Valorant clips as short-form video content across YouTube Shorts, Instagram Reels, and Facebook Reels. The repository is centered on Python scripts and local JSON state files rather than a packaged backend application or database-backed service. It also contains two desktop operator interfaces: a mature Tkinter launcher in a newer Electron + React desktop app in The core mental model is: discover local source videos identify each clip by a stable file key generate metadata and derived media artifacts upload to one or more platforms persist local state and upload ledgers audit live platform inventories against the local library ## Architecture Summary ### Script-first automation The repository's primary business logic lives in top-level Python scripts: There is no shared Python package layout.",
+      "score": 75
+    },
+    {
+      "path": "missingFeatures/FEATURE_STATUS.md",
+      "title": "Feature Status",
+      "summary": "# Feature Status Use this file to track which Electron + React parity features are still pending and which have been completed. Status values: ## Tracker | Feature | Status | Notes | |---|---|---| | videos-root-selection | pending | Add root path control and command wiring | | video-discovery-filters | pending | Expose extensions and exclude filters | | max-videos-control | pending | Remove hardcoded | | youtube-privacy-and-playlist | pending | Add privacy and playlist controls | | cross-platform-queue-filters | pending | Add and | | ffmpeg-and-ffprobe-settings | pending | Expose binary paths for conversion and inspection | | advanced-ai-metadata-settings | pending | Add advanced metadata generation controls | | music-workflow-settings | pending | Add music dir, volume, inventory, and related settings | | credential-management-fields | pending | Add credential and ID inputs for YouTube and Meta | | meta-publishing-advanced-options | pending | Expose Meta retry, timeout, and cleanup settings | | dry-run-and-validation-modes | pending | Add dry-run and preflight validation behavior | | youtube-fix-repeated-metadata-flow | pending | Add dedicated maintenance flow | | music-overlay-sample-flow | pending | Add dedicated sample-generation flow | | live-upload-audit-runner | pending | Add UI flow for | | rebuild-upload-comparison-flow | pending | Add UI flow for | | upload-status-report-flow | pending | Add UI flow for | | audit-page-uses-local-status-not-live-audit | pending | Rebuild Audit page around audit artifacts | | metadata-page-not-persisted | pending | Make metadata page persist or clearly scope it | | library-missing-search-sort-and-details | pending | Expand inspection and navigation tooling | | console-missing-command-history-and-export | pending | Improve run history and console utility | | dashboard-missing-operational-actions | pending | Add dashboard action surface | | ui-state-persistence-parity | in_progress | Preload, IPC, and path-service groundwork is",
+      "score": 40
+    },
+    {
+      "path": "missingFeatures/IMPLEMENTATION_PLAN.md",
+      "title": "Electron UI Implementation Plan",
+      "summary": "# Electron UI Implementation Plan This plan turns the missing-feature analysis into a practical bridge + Aider workflow. Goal: bring the Electron + React UI closer to operational parity with the existing script surface implement features one by one in small, reviewable changes keep progress visible in ## Recommended Execution Mode Use the bridge in: Why: one-file tasks fit the current bridge design best manual-supervisor keeps architectural review local approved tasks can be committed in small recoverable steps ## Execution Order ### Phase 1: Foundation add a shared Electron-side persisted settings model extend preload and IPC so the renderer can read and save upload settings expand upload command building to consume real operator inputs instead of hardcoded defaults ### Phase 2: Core Upload Parity add root-path, batch-size, privacy, playlist, and queue-filter controls add ffmpeg / ffprobe controls add credential and Meta ID controls add advanced metadata and music settings add dry-run and validation-friendly behavior ### Phase 3: Standalone Tool Coverage add flows for: metadata fix music sample upload status report rebuild upload comparison live upload audit ### Phase 4: Page Upgrades upgrade Audit to use real audit artifacts upgrade Metadata so it persists or is explicitly workflow-backed upgrade Library with search, sorting, and richer details upgrade Console with better run utility upgrade Dashboard with action shortcuts ### Phase 5: Reliability add setup diagnostics and environment checks align Electron state persistence with Tkinter launcher expectations review remaining parity gaps and update ## Review Rule After each completed feature: mark the feature in add a one-line completion note if the implementation changed scope, update the matching feature brief in ## Suggested Review Questions For each feature task, check: does the UI actually expose the missing capability does the renderer persist or send the right value does preload / IPC pass it safely does or",
+      "score": 40
+    },
+    {
+      "path": "missingFeatures/advanced-ai-metadata-settings.md",
+      "title": "Advanced AI Metadata Settings",
+      "summary": "# Advanced AI Metadata Settings The Electron UI only has a simple \"AI Metadata\" toggle and misses the advanced metadata controls already supported by the script. Notable missing options: OpenAI model channel name hint Instagram / YouTube username cross-link fields extra keywords language category ID notify subscribers AI uniqueness window AI metadata retry count Why it matters: metadata quality is a major part of the upload pipeline these values influence output style and publishing behavior Expected outcome: advanced metadata section in the upload flow persisted operator defaults support in command preview and process launch",
+      "score": 24
     }
   ],
-  "state_files": [
-    {
-      "path": ".youtube_upload_state.json",
-      "role": "Primary local YouTube upload state keyed by stable clip key."
-    },
-    {
-      "path": ".meta_reels_upload_state.json",
-      "role": "Primary local Instagram/Facebook upload state keyed by stable clip key."
-    },
-    {
-      "path": ".youtube_uploaded_videos.json",
-      "role": "Execution ledger for YouTube upload attempts."
-    },
-    {
-      "path": ".instagram_uploaded_videos.json",
-      "role": "Execution ledger for Instagram upload attempts."
-    },
-    {
-      "path": ".facebook_uploaded_videos.json",
-      "role": "Execution ledger for Facebook upload attempts."
-    },
-    {
-      "path": ".metadata_history.json",
-      "role": "Accumulated metadata-generation history."
-    },
-    {
-      "path": ".project_ui_launcher_state.json",
-      "role": "Local Tkinter UI form persistence."
-    }
+  "patterns": [
+    "script-first orchestration",
+    "file-based JSON state",
+    "two desktop operator UIs over shared scripts and ledgers",
+    "platform upload pipeline plus live audit pipeline"
   ],
-  "generated_directories": [
-    {
-      "path": "generated_metadata",
-      "role": "Per-video generated metadata artifacts."
-    },
-    {
-      "path": "converted_shorts",
-      "role": "Converted or remixed video outputs for upload pipelines."
-    },
-    {
-      "path": "live_upload_audit",
-      "role": "Offline inventory, live platform snapshots, and upload comparison outputs."
-    }
+  "features_done": [
+    "Per-video generated metadata artifacts.",
+    "Converted or remixed video outputs for upload pipelines.",
+    "Offline inventory, live platform snapshots, and upload comparison outputs.",
+    "preload",
+    "systemHandlers",
+    "pathService"
   ],
-  "constraints": [
+  "suggested_next": [],
+  "clarifications": [
     "No test suite was found.",
     "Operational state is stored as mutable root JSON files.",
     "Large generated media and audit artifacts can dirty the repository quickly.",
     "The upload flow depends on local credentials and API access.",
     "youtubeBatchUpload.py imports from a sibling valorant_clip_data_extractor_v3 project."
   ],
-  "follow_up_read_order": [
-    "AI_UNDERSTANDING.md",
-    "bridge_progress/project_knowledge.json",
-    "bridge_progress/project_snapshot.json",
-    "README.md",
-    "AGENT_CONTEXT.md"
+  "runs": [
+    {
+      "date": "2026-04-02",
+      "goal": "Implement shorts-uploader-engine Electron UI parity plan",
+      "tasks_completed": 0,
+      "status": "failure"
+    },
+    {
+      "date": "2026-04-02",
+      "goal": "Implement shorts-uploader-engine Electron UI parity plan",
+      "tasks_completed": 0,
+      "status": "failure"
+    },
+    {
+      "date": "2026-04-02",
+      "goal": "Implement shorts-uploader-engine Electron UI parity plan",
+      "tasks_completed": 3,
+      "status": "failure"
+    },
+    {
+      "date": "2026-04-03",
+      "goal": "Identify the feature currently in progress from FEATURES.md.",
+      "tasks_completed": 3,
+      "status": "failure"
+    },
+    {
+      "date": "2026-04-03",
+      "goal": "Identify the feature currently in progress from FEATURES.md.",
+      "tasks_completed": 3,
+      "status": "failure"
+    },
+    {
+      "date": "2026-04-04",
+      "goal": "Determine which feature in missingFeatures/FEATURE_STATUS.md is currently in progress.",
+      "tasks_completed": 3,
+      "status": "failure"
+    },
+    {
+      "date": "2026-04-04",
+      "goal": "Identify features currently in progress based on the content of FEATURE_STATUS.md.",
+      "tasks_completed": 3,
+      "status": "failure"
+    },
+    {
+      "date": "2026-04-04",
+      "goal": "Identify features currently in progress based on the content of FEATURE_STATUS.md.",
+      "tasks_completed": 3,
+      "status": "failure"
+    }
   ]
 }

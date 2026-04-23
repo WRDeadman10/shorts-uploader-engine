@@ -1,0 +1,411 @@
+{
+  "sessions": [
+    {
+      "session_id": "fa3ed446-64d1-48f4-8fa9-d504af2735e5",
+      "timestamp": "2026-04-04T01:17:52",
+      "goal": "Identify features currently in progress based on the content of FEATURE_STATUS.md.",
+      "repo_root": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine",
+      "supervisor_command": "manual",
+      "supervisor": {
+        "plan_in": 0,
+        "plan_out": 0,
+        "review_in": 0,
+        "review_out": 0,
+        "subplan_in": 0,
+        "subplan_out": 0,
+        "total_in": 0,
+        "total_out": 0,
+        "total": 0
+      },
+      "session": {
+        "tokens": 11446,
+        "is_estimate": true,
+        "total_ai_tokens": 11446
+      },
+      "aider": {
+        "tasks_executed": 3,
+        "tasks_skipped": 0,
+        "reworks": 0,
+        "subplans_generated": 0,
+        "estimated_tokens": 0,
+        "per_task": []
+      },
+      "productivity": {
+        "is_productive": true,
+        "waste_reason": null
+      },
+      "savings": {
+        "estimated_direct_tokens": 26446,
+        "actual_supervisor_tokens": 0,
+        "total_ai_tokens": 11446,
+        "tokens_saved": 15000,
+        "savings_percent": 56.7,
+        "note": "Without bridge: plan (0 tokens) + 3 tasks x 5000 direct-coding tokens = 26446; with bridge: supervisor 11446 tokens (cloud) + Aider ~0 tokens (local/free); cloud AI saved: 15000"
+      },
+      "elapsed_seconds": 88.3
+    },
+    {
+      "session_id": "8fc1d50f-25c1-4384-89ed-6e4faa875547",
+      "timestamp": "2026-04-04T01:04:18",
+      "goal": "Identify features currently in progress based on the content of FEATURE_STATUS.md.",
+      "repo_root": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine",
+      "supervisor_command": "manual",
+      "supervisor": {
+        "plan_in": 0,
+        "plan_out": 0,
+        "review_in": 0,
+        "review_out": 0,
+        "subplan_in": 0,
+        "subplan_out": 0,
+        "total_in": 0,
+        "total_out": 0,
+        "total": 0
+      },
+      "session": {
+        "tokens": 7144,
+        "is_estimate": true,
+        "total_ai_tokens": 7144
+      },
+      "aider": {
+        "tasks_executed": 3,
+        "tasks_skipped": 0,
+        "reworks": 0,
+        "subplans_generated": 0,
+        "estimated_tokens": 0,
+        "per_task": []
+      },
+      "productivity": {
+        "is_productive": true,
+        "waste_reason": null
+      },
+      "savings": {
+        "estimated_direct_tokens": 22144,
+        "actual_supervisor_tokens": 0,
+        "total_ai_tokens": 7144,
+        "tokens_saved": 15000,
+        "savings_percent": 67.7,
+        "note": "Without bridge: plan (0 tokens) + 3 tasks x 5000 direct-coding tokens = 22144; with bridge: supervisor 7144 tokens (cloud) + Aider ~0 tokens (local/free); cloud AI saved: 15000"
+      },
+      "elapsed_seconds": 302.6
+    },
+    {
+      "session_id": "46d77b72-0e5c-4b12-844e-3f00617470d9",
+      "timestamp": "2026-04-04T00:21:39",
+      "goal": "Determine which feature in missingFeatures/FEATURE_STATUS.md is currently in progress.",
+      "repo_root": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine",
+      "supervisor_command": "manual",
+      "supervisor": {
+        "plan_in": 0,
+        "plan_out": 0,
+        "review_in": 0,
+        "review_out": 0,
+        "subplan_in": 0,
+        "subplan_out": 0,
+        "total_in": 0,
+        "total_out": 0,
+        "total": 0
+      },
+      "session": {
+        "tokens": 9616,
+        "is_estimate": true,
+        "total_ai_tokens": 9616
+      },
+      "aider": {
+        "tasks_executed": 3,
+        "tasks_skipped": 0,
+        "reworks": 0,
+        "subplans_generated": 0,
+        "estimated_tokens": 0,
+        "per_task": []
+      },
+      "productivity": {
+        "is_productive": true,
+        "waste_reason": null
+      },
+      "savings": {
+        "estimated_direct_tokens": 24616,
+        "actual_supervisor_tokens": 0,
+        "total_ai_tokens": 9616,
+        "tokens_saved": 15000,
+        "savings_percent": 60.9,
+        "note": "Without bridge: plan (0 tokens) + 3 tasks x 5000 direct-coding tokens = 24616; with bridge: supervisor 9616 tokens (cloud) + Aider ~0 tokens (local/free); cloud AI saved: 15000"
+      },
+      "elapsed_seconds": 306.1
+    },
+    {
+      "session_id": "783c48ee-88c1-45d0-849d-72846a07466c",
+      "timestamp": "2026-04-03T23:56:25",
+      "goal": "Identify the feature currently in progress from FEATURES.md.",
+      "repo_root": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine",
+      "supervisor_command": "manual",
+      "supervisor": {
+        "plan_in": 0,
+        "plan_out": 0,
+        "review_in": 0,
+        "review_out": 0,
+        "subplan_in": 0,
+        "subplan_out": 0,
+        "total_in": 0,
+        "total_out": 0,
+        "total": 0
+      },
+      "session": {
+        "tokens": 7042,
+        "is_estimate": true,
+        "total_ai_tokens": 7042
+      },
+      "aider": {
+        "tasks_executed": 3,
+        "tasks_skipped": 0,
+        "reworks": 0,
+        "subplans_generated": 0,
+        "estimated_tokens": 0,
+        "per_task": []
+      },
+      "productivity": {
+        "is_productive": true,
+        "waste_reason": null
+      },
+      "savings": {
+        "estimated_direct_tokens": 22042,
+        "actual_supervisor_tokens": 0,
+        "total_ai_tokens": 7042,
+        "tokens_saved": 15000,
+        "savings_percent": 68.1,
+        "note": "Without bridge: plan (0 tokens) + 3 tasks x 5000 direct-coding tokens = 22042; with bridge: supervisor 7042 tokens (cloud) + Aider ~0 tokens (local/free); cloud AI saved: 15000"
+      },
+      "elapsed_seconds": 302.9
+    },
+    {
+      "session_id": "721393fd-6e4b-40c2-8d2c-6f1b70a536c9",
+      "timestamp": "2026-04-03T23:04:41",
+      "goal": "Identify the feature currently in progress from FEATURES.md.",
+      "repo_root": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine",
+      "supervisor_command": "manual",
+      "supervisor": {
+        "plan_in": 0,
+        "plan_out": 0,
+        "review_in": 0,
+        "review_out": 0,
+        "subplan_in": 0,
+        "subplan_out": 0,
+        "total_in": 0,
+        "total_out": 0,
+        "total": 0
+      },
+      "session": {
+        "tokens": 6997,
+        "is_estimate": true,
+        "total_ai_tokens": 6997
+      },
+      "aider": {
+        "tasks_executed": 3,
+        "tasks_skipped": 0,
+        "reworks": 0,
+        "subplans_generated": 0,
+        "estimated_tokens": 0,
+        "per_task": []
+      },
+      "productivity": {
+        "is_productive": true,
+        "waste_reason": null
+      },
+      "savings": {
+        "estimated_direct_tokens": 21997,
+        "actual_supervisor_tokens": 0,
+        "total_ai_tokens": 6997,
+        "tokens_saved": 15000,
+        "savings_percent": 68.2,
+        "note": "Without bridge: plan (0 tokens) + 3 tasks x 5000 direct-coding tokens = 21997; with bridge: supervisor 6997 tokens (cloud) + Aider ~0 tokens (local/free); cloud AI saved: 15000"
+      },
+      "elapsed_seconds": 305.3
+    },
+    {
+      "session_id": "58ef2fd3-760e-44aa-ba86-f9b577417984",
+      "timestamp": "2026-04-02T23:05:22",
+      "goal": "Implement shorts-uploader-engine Electron UI parity plan",
+      "repo_root": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine",
+      "supervisor_command": "manual",
+      "supervisor": {
+        "plan_in": 0,
+        "plan_out": 0,
+        "review_in": 0,
+        "review_out": 0,
+        "subplan_in": 0,
+        "subplan_out": 0,
+        "total_in": 0,
+        "total_out": 0,
+        "total": 0
+      },
+      "session": {
+        "tokens": 13626,
+        "is_estimate": true,
+        "total_ai_tokens": 13626
+      },
+      "aider": {
+        "tasks_executed": 3,
+        "tasks_skipped": 0,
+        "reworks": 0,
+        "subplans_generated": 0
+      },
+      "productivity": {
+        "is_productive": true,
+        "waste_reason": null
+      },
+      "savings": {
+        "estimated_direct_tokens": 28626,
+        "actual_supervisor_tokens": 0,
+        "total_ai_tokens": 13626,
+        "tokens_saved": 15000,
+        "savings_percent": 52.4,
+        "note": "Without bridge: plan (0 tokens) + 3 tasks \u00d7 5000 direct-coding tokens = 28626; compared against total AI tokens 13626"
+      },
+      "elapsed_seconds": 2051.2
+    },
+    {
+      "session_id": "5f20aa46-657b-4da7-addc-e9de31bde719",
+      "timestamp": "2026-04-02T22:29:42",
+      "goal": "Implement shorts-uploader-engine Electron UI parity plan",
+      "repo_root": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine",
+      "supervisor_command": "manual",
+      "supervisor": {
+        "plan_in": 0,
+        "plan_out": 0,
+        "review_in": 0,
+        "review_out": 0,
+        "subplan_in": 0,
+        "subplan_out": 0,
+        "total_in": 0,
+        "total_out": 0,
+        "total": 0
+      },
+      "session": {
+        "tokens": 13408,
+        "is_estimate": true,
+        "total_ai_tokens": 13408
+      },
+      "aider": {
+        "tasks_executed": 0,
+        "tasks_skipped": 0,
+        "reworks": 0,
+        "subplans_generated": 0
+      },
+      "productivity": {
+        "is_productive": false,
+        "waste_reason": "manual_review_rerun"
+      },
+      "savings": {
+        "estimated_direct_tokens": 13408,
+        "actual_supervisor_tokens": 0,
+        "total_ai_tokens": 13408,
+        "tokens_saved": 0,
+        "savings_percent": 0.0,
+        "note": "Without bridge: plan (0 tokens) + 0 tasks \u00d7 5000 direct-coding tokens = 13408; compared against total AI tokens 13408; session completed no tasks and should be treated as overhead, not productive savings"
+      },
+      "elapsed_seconds": 348.5
+    },
+    {
+      "session_id": "a0eddeb3-048b-4c3e-bc7f-99bca02b2715",
+      "timestamp": "2026-04-02T22:22:46",
+      "goal": "Implement shorts-uploader-engine Electron UI parity plan",
+      "repo_root": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine",
+      "supervisor_command": "manual",
+      "supervisor": {
+        "plan_in": 0,
+        "plan_out": 0,
+        "review_in": 0,
+        "review_out": 0,
+        "subplan_in": 0,
+        "subplan_out": 0,
+        "total_in": 0,
+        "total_out": 0,
+        "total": 0
+      },
+      "session": {
+        "tokens": 13365,
+        "is_estimate": true,
+        "total_ai_tokens": 13365
+      },
+      "aider": {
+        "tasks_executed": 0,
+        "tasks_skipped": 0,
+        "reworks": 0,
+        "subplans_generated": 0
+      },
+      "productivity": {
+        "is_productive": false,
+        "waste_reason": "manual_review_rerun"
+      },
+      "savings": {
+        "estimated_direct_tokens": 13365,
+        "actual_supervisor_tokens": 0,
+        "total_ai_tokens": 13365,
+        "tokens_saved": 0,
+        "savings_percent": 0.0,
+        "note": "Without bridge: plan (0 tokens) + 0 tasks \u00d7 5000 direct-coding tokens = 13365; compared against total AI tokens 13365; session completed no tasks and should be treated as overhead, not productive savings"
+      },
+      "elapsed_seconds": 236.2
+    },
+    {
+      "session_id": "b5c4ca08-6b3b-4bd8-a20c-b0bb693c2949",
+      "timestamp": "2026-04-02T22:10:12",
+      "goal": "Implement shorts-uploader-engine Electron UI parity plan",
+      "repo_root": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine",
+      "supervisor_command": "manual",
+      "supervisor": {
+        "plan_in": 0,
+        "plan_out": 0,
+        "review_in": 0,
+        "review_out": 0,
+        "subplan_in": 0,
+        "subplan_out": 0,
+        "total_in": 0,
+        "total_out": 0,
+        "total": 0
+      },
+      "session": {
+        "tokens": 13228,
+        "is_estimate": true,
+        "total_ai_tokens": 13228
+      },
+      "aider": {
+        "tasks_executed": 0,
+        "tasks_skipped": 0,
+        "reworks": 0,
+        "subplans_generated": 0
+      },
+      "productivity": {
+        "is_productive": false,
+        "waste_reason": "zero_progress_other"
+      },
+      "savings": {
+        "estimated_direct_tokens": 13228,
+        "actual_supervisor_tokens": 0,
+        "total_ai_tokens": 13228,
+        "tokens_saved": 0,
+        "savings_percent": 0.0,
+        "note": "Without bridge: plan (0 tokens) + 0 tasks \u00d7 5000 direct-coding tokens = 13228; compared against total AI tokens 13228; session completed no tasks and should be treated as overhead, not productive savings"
+      },
+      "elapsed_seconds": 309.5
+    }
+  ],
+  "totals": {
+    "sessions_count": 9,
+    "tasks_executed_total": 18,
+    "supervisor_tokens_total": 0,
+    "session_tokens_total": 95872,
+    "total_ai_tokens_total": 95872,
+    "aider_tokens_total": 0,
+    "tokens_saved_total": 90000,
+    "savings_percent_weighted": 48.4,
+    "savings_percent_successful_avg": 62.3,
+    "savings_percent_avg": 62.3,
+    "wasted_tokens_total": 40001,
+    "wasted_sessions_count": 3,
+    "waste_reason_counts": {
+      "manual_review_rerun": 2,
+      "zero_progress_other": 1
+    },
+    "last_updated": "2026-04-04T01:17:52"
+  }
+}

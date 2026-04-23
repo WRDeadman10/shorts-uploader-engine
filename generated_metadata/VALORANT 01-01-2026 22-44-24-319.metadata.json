@@ -1,50 +1,33 @@
 {
   "relative_path": "VALORANT_01-01-2026_22-20-21-067/VALORANT 01-01-2026 22-44-24-319.mp4",
-  "generated_at_utc": "2026-03-05T16:56:12.125628+00:00",
+  "generated_at_utc": "2026-04-17T03:44:43.491247+00:00",
   "metadata": {
-    "title": "Incredible Clutch Play in VALORANT - Watch This FPS Highlight | 01-01 22:44:24",
-    "description": "Check out this intense VALORANT moment from a recent match. Perfect timing and sharp aim made all the difference. Don't miss this quick gaming highlight!\n\nSubscribe for more epic VALORANT plays and shorts!\n\n#valorant #gaming #fps #shorts #valorantclips\n\nSource clip: VALORANT 01-01-2026 22-44-24-319",
+    "title": "Clicked like my mouse was possessed and somehow gifted 1 poor soul a free exit?! Valorant logic",
+    "description": "Me: panicking like I lost all brain cells\nEnemy: probably questioning life choices\nHow did that even stick? No clue, but I’m cashing in\nIf your aim’s a beautiful disaster, you get this madness\n\nTap if your aim’s a lovable disaster too!\n\n#valorant #luckykill #gamingfails #funnygaming #shorts\n\nInstagram: @ganpatigamerboi",
     "tags": [
       "valorant",
       "valorant clips",
-      "valorant highlights",
       "gaming",
       "fps",
-      "shooter",
-      "gaming shorts",
-      "valorant gameplay",
-      "clutch",
-      "quick play",
-      "competitive gaming",
+      "funny",
+      "gamingfails",
+      "luckykill",
       "shorts",
-      "esports"
+      "viral",
+      "humor",
+      "overconfidence",
+      "fail",
+      "relatable",
+      "random",
+      "unexpected"
     ],
     "hashtags": [
       "#valorant",
-      "#gaming",
-      "#fps",
-      "#shorts",
-      "#valorantclips"
+      "#luckykill",
+      "#gamingfails",
+      "#funnygaming",
+      "#shorts"
     ],
-    "cta": "Subscribe for more epic VALORANT plays and shorts!"
-  },
-  "kills": 1,
-  "agent_name": "Unknown",
-  "kill_events": [
-    16.7
-  ],
-  "analysis_generated_at_utc": "2026-03-07T07:14:57.487073+00:00",
-  "kill_event_details": [
-    {
-      "timestamp": 16.7,
-      "site_name": "B SITE",
-      "weapon_used": "Unknown",
-      "agent_name": "Unknown",
-      "kill_banner_template": "normal_headshot_Kill_Banner.png",
-      "kill_banner_score": 0.21,
-      "username_left_score": 0.751,
-      "kill_feed_ui_score": 0.483
-    }
-  ],
-  "analysis_method": "fixed_roi_kill_banner_feed_v2"
+    "cta": "Tap if your aim’s a lovable disaster too!"
+  }
 }

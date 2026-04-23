@@ -1,51 +1,33 @@
 {
   "relative_path": "VALORANT_01-03-2026_16-03-59-277/VALORANT 01-03-2026 16-40-54-988.mp4",
-  "generated_at_utc": "2026-03-06T17:33:58.362620+00:00",
+  "generated_at_utc": "2026-04-17T03:53:43.744823+00:00",
   "metadata": {
-    "title": "Sharp Reflexes Win a 2v1 Duel in VALORANT Mid Fight",
-    "description": "Two enemies left, quick thinking wins the round. Watch how precise aim and smart positioning turn the tide fast. What\u2019s your clutch strategy in VALORANT?\n\nDrop a comment with your favorite agent to clutch with!\n\n#valorant #shorts #gaming #fps #valorantclips",
+    "title": "Clicked like a panic button and somehow gifted 1 poor soul a free exit?! Valorant aim’s a glitch",
+    "description": "Me: spazzing like my mouse is a confused squirrel\nEnemy: probably questioning life choices\nHow did that hit? No clue but I’m cashing in\nIf your aim ever surprises you, this is your moment\n\nTap if your aim’s a lovable disaster too!\n\n#valorant #luckykill #gamingfails #funnygaming #shorts\n\nInstagram: @ganpatigamerboi",
     "tags": [
       "valorant",
       "valorant clips",
-      "valorant gameplay",
-      "fps",
       "gaming",
+      "fps",
+      "funny gaming",
+      "gaming fails",
       "shorts",
-      "clutch",
-      "mid fight",
-      "quick reflexes",
-      "sharpshooter",
-      "gaming clips",
-      "competitive fps",
-      "valorant highlights",
-      "tactical shooter"
+      "luckykill",
+      "clutch fails",
+      "overconfidence",
+      "panic clicks",
+      "unexpected kills",
+      "viral gaming moments",
+      "funny fps",
+      "gaming humor"
     ],
     "hashtags": [
       "#valorant",
-      "#shorts",
-      "#gaming",
-      "#fps",
-      "#valorantclips"
+      "#luckykill",
+      "#gamingfails",
+      "#funnygaming",
+      "#shorts"
     ],
-    "cta": "Drop a comment with your favorite agent to clutch with!"
-  },
-  "kills": 1,
-  "agent_name": "Sage",
-  "kill_events": [
-    26.0
-  ],
-  "analysis_generated_at_utc": "2026-03-07T07:19:11.382114+00:00",
-  "kill_event_details": [
-    {
-      "timestamp": 26.0,
-      "site_name": "A",
-      "weapon_used": "Unknown",
-      "agent_name": "Sage",
-      "kill_banner_template": "normal_headshot_Kill_Banner.png",
-      "kill_banner_score": 0.212,
-      "username_left_score": 0.667,
-      "kill_feed_ui_score": 0.483
-    }
-  ],
-  "analysis_method": "fixed_roi_kill_banner_feed_v2"
+    "cta": "Tap if your aim’s a lovable disaster too!"
+  }
 }
