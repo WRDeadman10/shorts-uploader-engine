@@ -1675,8 +1675,6 @@ def crosspost_meta_reel(
                 timeout=args.meta_request_timeout_seconds,
                 scheduled_publish_time=_fb_scheduled_ts,
             )
-            _fb_idx += 1
-            success_facebook += 1
             state_row["facebook"] = {
                 "status": "ok",
                 "video_id": fb_video_id,
