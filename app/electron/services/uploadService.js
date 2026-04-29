@@ -399,7 +399,7 @@ function buildUploadCommand(payload)
             args.push('--schedule-plan', buildSchedulePlan(sch2.facebookSlots, sch2.date));
         }
     }
-    if (!sch2.enabled && sch2.instagramDraft && instagramEnabled && !facebookEnabled) {
+    if (!sch2.enabled && sch2.instagramDraft && instagramEnabled) {
         args.push('--instagram-draft');
     }
 
