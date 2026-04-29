@@ -431,6 +431,7 @@ def parse_args() -> argparse.Namespace:
         help="Seconds to wait between Instagram processing-failure retries.",
     )
     parser.add_argument('--schedule-plan', default=None, help='JSON schedule: [{"count": N, "publish_at": "ISO UTC datetime"}]')
+    parser.add_argument('--instagram-draft', action='store_true', default=False, help='Skip publishing Instagram reel — upload container only as draft.')
     return parser.parse_args()
 
 
@@ -1570,13 +1571,17 @@ def crosspost_meta_reel(
                     interval_seconds=args.meta_poll_interval_seconds,
                     timeout=args.meta_request_timeout_seconds,
                 )
-                ig_media_id = ig_publish_reel(
-                    graph_version=args.meta_graph_version,
-                    ig_user_id=clean_text(args.meta_ig_user_id),
-                    container_id=container_id,
-                    access_token=clean_text(args.meta_access_token),
-                    timeout=args.meta_request_timeout_seconds,
-                )
+                if not args.instagram_draft:
+                    ig_media_id = ig_publish_reel(
+                        graph_version=args.meta_graph_version,
+                        ig_user_id=clean_text(args.meta_ig_user_id),
+                        container_id=container_id,
+                        access_token=clean_text(args.meta_access_token),
+                        timeout=args.meta_request_timeout_seconds,
+                    )
+                else:
+                    ig_media_id = 'draft'
+                    print('[info][instagram] reel container uploaded as draft — publish manually')
                 state_row["instagram"] = {
                     "status": "ok",
                     "container_id": container_id,
@@ -1670,6 +1675,8 @@ def crosspost_meta_reel(
                 timeout=args.meta_request_timeout_seconds,
                 scheduled_publish_time=_fb_scheduled_ts,
             )
+            _fb_idx += 1
+            success_facebook += 1
             state_row["facebook"] = {
                 "status": "ok",
                 "video_id": fb_video_id,
