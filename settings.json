@@ -3,7 +3,7 @@
         "includeShorts": true,
         "includeMusic": true,
         "includeMetadata": true,
-        "maxVideos": 20,
+        "maxVideos": 70,
         "videosRoot": "E:\\New folder\\Valorant Tracker\\VALORANT",
         "privacy": "public",
         "playlistName": "Valorant",
@@ -13,14 +13,14 @@
         "extensions": "",
         "excludeDirectories": "",
         "excludeFiles": "",
-        "requireUploadedOn": "",
-        "requireMissingOn": "",
+        "requireUploadedOn": "instagram",
+        "requireMissingOn": "facebook",
         "clientSecretsPath": "C:\\Users\\winss\\Documents\\Projects\\old\\shorts-uploader-engine\\shorts-uploader-engine\\client_secret.json",
         "tokenFilePath": "C:\\Users\\winss\\Documents\\Projects\\old\\shorts-uploader-engine\\shorts-uploader-engine\\token.json",
         "openaiModel": "gpt-4.1-mini",
         "musicVolume": 0.3,
         "metaSkipUploaded": true,
-        "metaAccessToken": "EAARoVBi60SUBRfEsZBnSNfzpufAdt0ZBYIeuaUtDzYxBrTUml2elYJ0LVMoarVh8WpAopJWiGfqLZCZAtcpNJqnYXpJWlvNfa1BhPSozcur1GYO6CknQvXhexQjXbkncnhfy6lfBUn5PktgVWZCnywZCaLL7fFPI2TOrCF2QeW6MycFcFtF5Vm6RhNI4LMI7QWSZBCTdTbNufVWBCPan6ysiVSboGf4QdqHS1uOlHRQQccf",
+        "metaAccessToken": "EAARoVBi60SUBRXlnknuhZBcDGhVr6gsgEXV1bA0OaeOmDHY8qeVPs9WLtPE7I92Yya8HvHFWgMNZC29pqfBpmD0JctPy8NLNdNb9Rlhbn4xWSyfLNVXI0bSJjIzIje3tYHmlEukdiAuvKrEIB7oPedwFxuB0vuOVxi4PDfRJBbyGi6zWbFcLTyJPGIBO1EO8Y9ojFXXeVZA2iUhu9h0vMaNMfXCObkrVne5BFQZD",
         "metaGraphVersion": "v25.0",
         "igUserId": "17841442647474097",
         "fbPageId": "1064411090088218",
@@ -35,14 +35,34 @@
     },
     "schedule": {
         "enabled": true,
-        "date": "2026-04-21",
+        "date": "2026-04-30",
         "youtubeSlots": [
+            {
+                "time": "16:00",
+                "count": 10
+            },
+            {
+                "time": "17:00",
+                "count": 10
+            },
+            {
+                "time": "18:00",
+                "count": 10
+            },
             {
                 "time": "20:00",
                 "count": 10
             },
             {
-                "time": "22:00",
+                "time": "17:30",
+                "count": 10
+            },
+            {
+                "time": "18:30",
+                "count": 10
+            },
+            {
+                "time": "20:30",
                 "count": 10
             }
         ],
@@ -60,7 +80,7 @@
                 "count": 10
             },
             {
-                "time": "10:00",
+                "time": "17:00",
                 "count": 10
             },
             {
@@ -77,5 +97,32 @@
             }
         ],
         "instagramDraft": true
+    },
+    "toolsForm": {
+        "auditRoot": "E:\\New folder\\Valorant Tracker\\VALORANT",
+        "auditMetaAccessToken": "EAARoVBi60SUBRXlnknuhZBcDGhVr6gsgEXV1bA0OaeOmDHY8qeVPs9WLtPE7I92Yya8HvHFWgMNZC29pqfBpmD0JctPy8NLNdNb9Rlhbn4xWSyfLNVXI0bSJjIzIje3tYHmlEukdiAuvKrEIB7oPedwFxuB0vuOVxi4PDfRJBbyGi6zWbFcLTyJPGIBO1EO8Y9ojFXXeVZA2iUhu9h0vMaNMfXCObkrVne5BFQZD",
+        "auditIgUserId": "17841442647474097",
+        "auditFacebookPageId": "1064411090088218",
+        "auditGraphVersion": "v25.0",
+        "auditClientSecrets": "client_secret.json",
+        "auditTokenFile": "token.json",
+        "auditOutputDir": "live_upload_audit",
+        "deleteRoot": "E:\\New folder\\Valorant Tracker\\VALORANT",
+        "deleteYoutube": true,
+        "deleteInstagram": true,
+        "deleteFacebook": true,
+        "deleteDryRun": true,
+        "metaMode": "all",
+        "metaMaxUpdates": 25,
+        "metaDryRun": false,
+        "metaClientSecrets": "",
+        "metaTokenFile": "",
+        "musicDir": "",
+        "musicSampleVideo": "",
+        "musicSampleMusic": "",
+        "musicSampleOutput": "",
+        "musicBgVolume": 0.3,
+        "musicFfmpegBin": "",
+        "musicFfprobeBin": ""
     }
 }

@@ -383,7 +383,9 @@ def fetch_facebook_uploads(
 def metadata_file_for_video(root: Path, relative_path: str) -> Path:
     stem = Path(relative_path).stem
     return root / "generated_metadata" / f"{stem}.metadata.json"
-
+def normalize_text(text: str) -> str:
+    value = re.sub(r"\s+", " ", text or "").strip().lower()
+    return value
 
 def build_offline_entry(
     root: Path,
@@ -431,6 +433,9 @@ def build_offline_entry(
         },
     }
 
+
+def now_utc_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 def build_offline_inventory(
     root: Path,
