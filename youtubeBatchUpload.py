@@ -349,6 +349,22 @@ def parse_args() -> argparse.Namespace:
         help="Relative background music volume/weight when mixing under the original clip audio.",
     )
     parser.add_argument(
+        "--trending-audio-report",
+        default="",
+        help="Path to trending_audio_report.json. When set, downloads top audio tracks via yt-dlp and uses them as --music-dir.",
+    )
+    parser.add_argument(
+        "--trending-audio-cache-dir",
+        default=".trending_music_cache",
+        help="Directory to cache downloaded trending audio (default: .trending_music_cache).",
+    )
+    parser.add_argument(
+        "--trending-audio-max",
+        type=int,
+        default=5,
+        help="Max trending tracks to download (default: 5).",
+    )
+    parser.add_argument(
         "--crosspost-meta",
         action="store_true",
         help="After a successful YouTube upload, also upload the same file to Instagram/Facebook Reels.",
@@ -1734,6 +1750,79 @@ def crosspost_meta_reel(
     return had_error
 
 
+def prepare_trending_music(report_path: Path, cache_dir: Path, max_tracks: int) -> Optional[Path]:
+    """Download top audio tracks from trending_audio_report.json via yt-dlp.
+
+    Returns the cache directory path if at least one track was downloaded, else None.
+    Skips URLs already cached (file with matching safe-title exists).
+    """
+    from lib.file_utils import load_json_file
+
+    report = load_json_file(report_path, default={})
+    urls: List[Tuple[str, str]] = []  # (url, title)
+
+    yt_section = report.get("youtube") or {}
+    for t in (yt_section.get("tracks") or [])[:max_tracks]:
+        if t.get("url"):
+            urls.append((t["url"], t.get("title", "track")))
+
+    ig_section = report.get("instagram") or {}
+    remaining = max_tracks - len(urls)
+    for t in (ig_section.get("tracks") or [])[:remaining]:
+        if t.get("reel_url"):
+            urls.append((t["reel_url"], t.get("title", "track")))
+
+    if not urls:
+        print(f"[warn][trending] No URLs found in {report_path}")
+        return None
+
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    downloaded = 0
+
+    for url, title in urls[:max_tracks]:
+        safe = re.sub(r"[^\w\-]", "_", title)[:40].strip("_") or "track"
+        # Skip if already cached
+        existing = list(cache_dir.glob(f"{safe}.*"))
+        if existing:
+            print(f"[info][trending] cached: {existing[0].name}")
+            downloaded += 1
+            continue
+
+        output_tmpl = str(cache_dir / f"{safe}.%(ext)s")
+        try:
+            result = subprocess.run(
+                [
+                    "yt-dlp", "-x",
+                    "--audio-format", "mp3",
+                    "--audio-quality", "0",
+                    "--no-playlist",
+                    "-o", output_tmpl,
+                    url,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            if result.returncode == 0:
+                downloaded += 1
+                print(f"[info][trending] downloaded: {safe}.mp3")
+            else:
+                err = result.stderr.strip().splitlines()[-1] if result.stderr.strip() else "unknown"
+                print(f"[warn][trending] yt-dlp failed for {url}: {err}")
+        except FileNotFoundError:
+            print("[error][trending] yt-dlp not found — install with: pip install yt-dlp")
+            break
+        except subprocess.TimeoutExpired:
+            print(f"[warn][trending] yt-dlp timed out for {url}")
+
+    if downloaded == 0:
+        print("[warn][trending] No tracks downloaded — music overlay disabled.")
+        return None
+
+    print(f"[info][trending] {downloaded}/{len(urls)} tracks ready in {cache_dir}")
+    return cache_dir
+
+
 def main() -> int:
     args = parse_args()
     target_platform = args.upload_platform
@@ -1750,6 +1839,21 @@ def main() -> int:
     meta_reels_state_file = Path(args.meta_reels_state_file).resolve()
     music_dir = Path(args.music_dir).resolve() if args.music_dir.strip() else None
     music_inventory_file = Path(args.music_inventory_file).resolve()
+
+    if args.trending_audio_report.strip():
+        report_path = Path(args.trending_audio_report).resolve()
+        if not report_path.exists():
+            print(f"[error] trending audio report not found: {report_path}")
+            return 1
+        print(f"[info] Preparing trending music from {report_path}…")
+        trending_dir = prepare_trending_music(
+            report_path=report_path,
+            cache_dir=Path(args.trending_audio_cache_dir).resolve(),
+            max_tracks=args.trending_audio_max,
+        )
+        if trending_dir:
+            music_dir = trending_dir
+            print(f"[info] music_dir overridden → {music_dir}")
 
     if not root.exists():
         print(f"[error] root path not found: {root}")
@@ -2026,6 +2130,7 @@ def main() -> int:
 
         if music_enabled:
             original_upload_path = upload_path
+            _replace_audio = bool(args.trending_audio_report.strip())
             mixed_upload_path, chosen_music_path, music_failures = try_mix_background_music(
                 source=upload_path,
                 music_tracks=music_inventory,
@@ -2033,16 +2138,20 @@ def main() -> int:
                 ffmpeg_bin=ffmpeg_bin,
                 ffprobe_bin=ffprobe_bin,
                 bg_volume=args.music_bg_volume,
-                track_index = random.randint(0, len(music_inventory) - 1)
+                track_index=random.randint(0, len(music_inventory) - 1),
+                replace_audio=_replace_audio,
             )
             if chosen_music_path:
                 upload_path = mixed_upload_path
                 if upload_path != video_path:
                     cleanup_candidates.append(upload_path)
-                print(
-                    f"[audio] background music mixed: {chosen_music_path.name} "
-                    f"(volume={args.music_bg_volume:.3f})"
-                )
+                if _replace_audio:
+                    print(f"[audio] original audio replaced with trending track: {chosen_music_path.name}")
+                else:
+                    print(
+                        f"[audio] background music mixed: {chosen_music_path.name} "
+                        f"(volume={args.music_bg_volume:.3f})"
+                    )
             else:
                 upload_path = original_upload_path
                 if music_failures:

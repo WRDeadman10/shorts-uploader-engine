@@ -1,17 +1,17 @@
 # Bridge Run Report
 
-> Generated: 2026-04-04T01:17:52
+> Generated: 2026-04-29T23:07:18
 
 ## Run Summary
 
 | Field | Value |
 |---|---|
-| Goal | Identify features currently in progress based on the content of FEATURE_STATUS.md. |
+| Goal | Remove facebookEnabled guard from Instagram draft condition in uploadService.js |
 | Supervisor | manual |
-| Tasks executed | 3 |
+| Tasks executed | 0 |
 | Tasks skipped | 0 |
 | Reworks | 0 |
-| Duration | 88.3s |
+| Duration | 314.9s |
 
 ## Token Breakdown
 
@@ -20,24 +20,24 @@
 | Supervisor: Plan | 0 | 0 | 0 |
 | Supervisor: Review | 0 | 0 | 0 |
 | **Supervisor Total** | 0 | 0 | **0** |
-| Session overhead | — | — | 11,446 (est.) |
+| Session overhead | — | — | 32,202 (est.) |
 | **Aider (local LLM)** | — | — | **~0** (estimated) |
-| **Total AI (cloud)** | — | — | **11,446** |
+| **Total AI (cloud)** | — | — | **32,202** |
 
 ## Savings Comparison
 
 ```
 WITHOUT BRIDGE (all cloud AI):
   Planning:            0 tokens
-  Coding:         15,000 tokens  (3 tasks x 5,000)
-  TOTAL:          26,446 tokens
+  Coding:              0 tokens  (0 tasks x 5,000)
+  TOTAL:          32,202 tokens
 
 WITH BRIDGE:
-  Supervisor:     11,446 tokens  (cloud — costs money)
+  Supervisor:     32,202 tokens  (cloud — costs money)
   Aider:       ~       0 tokens  (local LLM — free)
-  TOTAL:          11,446 tokens  (only 11,446 charged)
+  TOTAL:          32,202 tokens  (only 32,202 charged)
 
-CLOUD AI SAVED:   15,000 tokens  (56.7%)
+CLOUD AI SAVED:        0 tokens  (0.0%)
 ```
 
 ---

@@ -93,7 +93,7 @@ function deriveStatuses(queue, logEntries, uploadStatus)
     });
 }
 
-export function computeUploadQueue(videoList, options)
+export function computeUploadQueue(videoList, options, platforms)
 {
     let filtered = videoList;
 
@@ -104,7 +104,16 @@ export function computeUploadQueue(videoList, options)
         filtered = filtered.filter(v => v[PLATFORM_KEY[uploadedOn]]);
 
     if (missingOn && PLATFORM_KEY[missingOn])
+    {
         filtered = filtered.filter(v => !v[PLATFORM_KEY[missingOn]]);
+    }
+    else if (!missingOn && platforms)
+    {
+        // Auto-filter: exclude videos already uploaded on ALL selected platforms
+        const selected = Object.keys(PLATFORM_KEY).filter(p => platforms[p]);
+        if (selected.length > 0)
+            filtered = filtered.filter(v => selected.every(p => !v[PLATFORM_KEY[p]]));
+    }
 
     const max = Math.max(1, Math.round(Number(options.maxVideos) || 1));
     return filtered.slice(0, max);

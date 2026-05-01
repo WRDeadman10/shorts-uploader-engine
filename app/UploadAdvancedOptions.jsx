@@ -121,21 +121,55 @@ const UploadAdvancedOptions = ({ options, setUploadOption }) => {
             <div style={section}>
                 <span style={sectionLabel}>Music</span>
                 <div style={row}>
-                    <span style={label}>Music Dir</span>
-                    <input style={input} type="text" placeholder="path/to/music" value={options.musicDir || ''}
-                        onChange={(e) => setUploadOption('musicDir', e.target.value)} />
+                    <ToggleSwitch
+                        label="Use Trending Audio"
+                        checked={!!options.useTrendingAudio}
+                        onChange={(v) => setUploadOption('useTrendingAudio', v)}
+                    />
                 </div>
-                <div style={row}>
-                    <span style={label}>Inventory File</span>
-                    <input style={input} type="text" placeholder="music_inventory.json" value={options.musicInventory || ''}
-                        onChange={(e) => setUploadOption('musicInventory', e.target.value)} />
-                </div>
-                <div style={row}>
-                    <span style={label}>BG Volume</span>
-                    <input style={inputNarrow} type="number" min={0} max={1} step={0.05}
-                        value={options.musicVolume !== undefined ? options.musicVolume : 0.3}
-                        onChange={(e) => setUploadOption('musicVolume', parseFloat(e.target.value))} />
-                </div>
+                {options.useTrendingAudio ? (
+                    <>
+                        <div style={row}>
+                            <span style={label}>Report JSON</span>
+                            <input style={input} type="text" placeholder="trending_audio_report.json"
+                                value={options.trendingAudioReportPath || ''}
+                                onChange={(e) => setUploadOption('trendingAudioReportPath', e.target.value)} />
+                        </div>
+                        <div style={row}>
+                            <span style={label}>Cache Dir</span>
+                            <input style={input} type="text" placeholder=".trending_music_cache"
+                                value={options.trendingAudioCacheDir || ''}
+                                onChange={(e) => setUploadOption('trendingAudioCacheDir', e.target.value)} />
+                        </div>
+                        <div style={row}>
+                            <span style={label}>Max Tracks</span>
+                            <input style={inputNarrow} type="number" min={1} max={20}
+                                value={options.trendingAudioMaxTracks || 5}
+                                onChange={(e) => setUploadOption('trendingAudioMaxTracks', parseInt(e.target.value) || 5)} />
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div style={row}>
+                            <span style={label}>Music Dir</span>
+                            <input style={input} type="text" placeholder="path/to/music" value={options.musicDir || ''}
+                                onChange={(e) => setUploadOption('musicDir', e.target.value)} />
+                        </div>
+                        <div style={row}>
+                            <span style={label}>Inventory File</span>
+                            <input style={input} type="text" placeholder="music_inventory.json" value={options.musicInventory || ''}
+                                onChange={(e) => setUploadOption('musicInventory', e.target.value)} />
+                        </div>
+                    </>
+                )}
+                {!options.useTrendingAudio && (
+                    <div style={row}>
+                        <span style={label}>BG Volume</span>
+                        <input style={inputNarrow} type="number" min={0} max={1} step={0.05}
+                            value={options.musicVolume !== undefined ? options.musicVolume : 0.3}
+                            onChange={(e) => setUploadOption('musicVolume', parseFloat(e.target.value))} />
+                    </div>
+                )}
             </div>
 
             {/* Meta Advanced */}

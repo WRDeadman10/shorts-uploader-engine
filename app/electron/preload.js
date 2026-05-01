@@ -71,5 +71,9 @@ contextBridge.exposeInMainWorld("api", {
     getThumbnail: function getThumbnail(thumbPath)
     {
         return ipcRenderer.invoke("get-thumbnail", thumbPath);
+    },
+    showInFolder: function showInFolder(filePath)
+    {
+        return ipcRenderer.invoke("show-in-folder", filePath);
     }
 });

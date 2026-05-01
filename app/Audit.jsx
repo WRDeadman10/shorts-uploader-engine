@@ -35,19 +35,31 @@ function Audit()
     // Selecting getAuditRows() directly returns a new array every render → infinite loop.
     // Instead select the stable videoList reference and derive rows in useMemo.
     const videoList = useAppStore(function selectVideoList(state) { return state.videoList; });
+    const fetchVideoList = useAppStore(function selectFetch(state) { return state.fetchVideoList; });
     const auditRows = useMemo(function buildAuditRows()
     {
         return videoList.map(function(video)
         {
             return {
                 id: video.id,
-                video: video.title,
+                displayPath: video.relativePath || video.uploadedFilePath || video.title || video.id,
+                openPath: video.sourcePath || video.uploadedFilePath || "",
                 yt: video.yt,
                 ig: video.ig,
                 fb: video.fb,
                 status: video.status
             };
         });
+    }, [videoList]);
+
+    const liveCounts = useMemo(function buildLiveCounts()
+    {
+        return {
+            yt: videoList.filter(function(v) { return v.yt; }).length,
+            ig: videoList.filter(function(v) { return v.ig; }).length,
+            fb: videoList.filter(function(v) { return v.fb; }).length,
+            total: videoList.length
+        };
     }, [videoList]);
 
     async function handleLoadReport()
@@ -65,12 +77,25 @@ function Audit()
                 <h1 className="page-title">Platform Coverage</h1>
                 <p className="page-placeholder">Rows are derived from the current JSON state and upload ledgers.</p>
             </div>
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ background: "#0f172a", borderRadius: 8, padding: 14, marginBottom: 16, display: "flex", gap: 24, alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: "#6b7280" }}>Live (from ledger):</span>
+                <span style={{ fontSize: 12, color: "#e2e8f0" }}>{"Total: " + liveCounts.total}</span>
+                <span style={{ fontSize: 12, color: "#e2e8f0" }}>{"YT: " + liveCounts.yt}</span>
+                <span style={{ fontSize: 12, color: "#e2e8f0" }}>{"IG: " + liveCounts.ig}</span>
+                <span style={{ fontSize: 12, color: "#e2e8f0" }}>{"FB: " + liveCounts.fb}</span>
+            </div>
+            <div style={{ marginBottom: 24, display: "flex", gap: 8, alignItems: "center" }}>
                 <button
                     onClick={handleLoadReport}
                     style={{ padding: "6px 16px", borderRadius: 6, border: "none", background: "#4f46e5", color: "#fff", cursor: "pointer", fontSize: 12 }}
                 >
                     {reportLoading ? "Loading..." : "Load Audit Report from Disk"}
+                </button>
+                <button
+                    onClick={fetchVideoList}
+                    style={{ padding: "6px 16px", borderRadius: 6, border: "none", background: "#1e293b", color: "#94a3b8", cursor: "pointer", fontSize: 12 }}
+                >
+                    Refresh
                 </button>
                 {auditReport !== null && (
                     <div style={{ background: "#111827", borderRadius: 8, padding: 14, marginTop: 12 }}>
@@ -88,7 +113,8 @@ function Audit()
                 <table className="audit-table">
                     <thead>
                         <tr>
-                            <th>Video</th>
+                            <th>Path</th>
+                            <th></th>
                             <th>YT</th>
                             <th>IG</th>
                             <th>FB</th>
@@ -102,7 +128,17 @@ function Audit()
 
                             return (
                                 <tr key={row.id} className={rowClassName}>
-                                    <td>{row.video}</td>
+                                    <td title={row.openPath || row.displayPath} style={{ maxWidth: 320, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.displayPath}</td>
+                                    <td style={{ whiteSpace: "nowrap" }}>
+                                        {row.openPath ? (
+                                            <button
+                                                onClick={function() { window.api && window.api.showInFolder && window.api.showInFolder(row.openPath); }}
+                                                style={{ padding: "2px 8px", borderRadius: 4, border: "none", background: "#1e293b", color: "#94a3b8", cursor: "pointer", fontSize: 11 }}
+                                            >
+                                                Show
+                                            </button>
+                                        ) : null}
+                                    </td>
                                     <td>{row.yt ? "Yes" : "No"}</td>
                                     <td>{row.ig ? "Yes" : "No"}</td>
                                     <td>{row.fb ? "Yes" : "No"}</td>

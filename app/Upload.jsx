@@ -64,8 +64,8 @@ function Upload()
     }, [syncUploadStatus]);
 
     const uploadQueue = useMemo(
-        () => computeUploadQueue(videoList, options),
-        [videoList, options.requireUploadedOn, options.requireMissingOn, options.maxVideos]
+        () => computeUploadQueue(videoList, options, platforms),
+        [videoList, options.requireUploadedOn, options.requireMissingOn, options.maxVideos, platforms.youtube, platforms.instagram, platforms.facebook]
     );
 
     const cliPreview = useMemo(function buildCliPreview()
@@ -91,6 +91,7 @@ function Upload()
         if (options.dryRun)        args.push("--dry-run");
         if (options.requireUploadedOn) args.push("--require-uploaded-on " + options.requireUploadedOn);
         if (options.requireMissingOn)  args.push("--require-missing-on "  + options.requireMissingOn);
+        if (instagramDraft && platforms.instagram) args.push("--instagram-draft");
         if (options.channelName)   args.push("--channel-name "  + options.channelName);
         if (options.musicDir)      args.push("--music-dir "     + options.musicDir);
         if (options.musicVolume !== undefined) args.push("--music-bg-volume " + options.musicVolume);
@@ -121,7 +122,7 @@ function Upload()
         }
 
         return args.join(" \\\n  ");
-    }, [options, platforms]);
+    }, [options, platforms, instagramDraft]);
 
     const uploadSessions = useAppStore(s => s.uploadSessions);
     const runningCount = Object.values(uploadSessions).filter(function(s) { return s.status === 'running'; }).length;
@@ -281,45 +282,26 @@ function Upload()
                                 onChange={e => setScheduleDate(e.target.value)}
                                 style={{ ...sideInput, width: '100%' }} />
                         )}
-                        {scheduleEnabled && (
-                            <>
-                                <div style={{ marginTop: 4 }}>
-                                    <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>YouTube Slots</p>
-                                    {youtubeSlots.map((slot, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
-                                            <input type="time" value={slot.time}
-                                                onChange={e => updateYoutubeSlot(i, 'time', e.target.value)}
-                                                style={{ flex: 1, ...sideInput, width: 'auto' }} />
-                                            <input type="number" min={1} value={slot.count}
-                                                onChange={e => updateYoutubeSlot(i, 'count', parseInt(e.target.value) || 1)}
-                                                style={{ ...sideInput, width: 50 }} />
-                                            <button onClick={() => removeYoutubeSlot(i)}
-                                                style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 12 }}>✕</button>
-                                        </div>
-                                    ))}
-                                    <button onClick={addYoutubeSlot}
-                                        style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
-                                </div>
-                                <div style={{ marginTop: 4 }}>
-                                    <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>Facebook Slots</p>
-                                    {facebookSlots.map((slot, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
-                                            <input type="time" value={slot.time}
-                                                onChange={e => updateFacebookSlot(i, 'time', e.target.value)}
-                                                style={{ flex: 1, ...sideInput, width: 'auto' }} />
-                                            <input type="number" min={1} value={slot.count}
-                                                onChange={e => updateFacebookSlot(i, 'count', parseInt(e.target.value) || 1)}
-                                                style={{ ...sideInput, width: 50 }} />
-                                            <button onClick={() => removeFacebookSlot(i)}
-                                                style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 12 }}>✕</button>
-                                        </div>
-                                    ))}
-                                    <button onClick={addFacebookSlot}
-                                        style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
-                                </div>
-                            </>
+                                        {scheduleEnabled && (
+                            <div style={{ marginTop: 4 }}>
+                                <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>Slots</p>
+                                {youtubeSlots.map((slot, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
+                                        <input type="time" value={slot.time}
+                                            onChange={e => updateYoutubeSlot(i, 'time', e.target.value)}
+                                            style={{ flex: 1, ...sideInput, width: 'auto' }} />
+                                        <input type="number" min={1} value={slot.count}
+                                            onChange={e => updateYoutubeSlot(i, 'count', parseInt(e.target.value) || 1)}
+                                            style={{ ...sideInput, width: 50 }} />
+                                        <button onClick={() => removeYoutubeSlot(i)}
+                                            style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 12 }}>✕</button>
+                                    </div>
+                                ))}
+                                <button onClick={addYoutubeSlot}
+                                    style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
+                            </div>
                         )}
-                        {!scheduleEnabled && (
+                        {platforms.instagram && (
                             <ToggleSwitch label="Instagram: Upload as Draft" checked={instagramDraft} onChange={setInstagramDraft} />
                         )}
                     </div>

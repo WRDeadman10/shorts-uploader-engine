@@ -306,6 +306,18 @@ export const useAppStore = create(function createAppStore(set, get)
             musicBgVolume: 0.3,
             musicFfmpegBin: '',
             musicFfprobeBin: '',
+            // Trending Audio
+            trendingYoutube: true,
+            trendingInstagram: true,
+            trendingYoutubeApiKey: '',
+            trendingClientSecrets: 'client_secret.json',
+            trendingTokenFile: 'token.json',
+            trendingIgUsername: '',
+            trendingIgPassword: '',
+            trendingIgSessionFile: '.ig_session.json',
+            trendingRegion: 'US',
+            trendingMaxResults: 20,
+            trendingOutputFile: 'trending_audio_report.json',
         },
         uploadOptions: {
             includeShorts: true,
@@ -324,7 +336,11 @@ export const useAppStore = create(function createAppStore(set, get)
             requireUploadedOn: "",
             requireMissingOn: "",
             clientSecretsPath: "",
-            tokenFilePath: ""
+            tokenFilePath: "",
+            useTrendingAudio: false,
+            trendingAudioReportPath: "trending_audio_report.json",
+            trendingAudioCacheDir: ".trending_music_cache",
+            trendingAudioMaxTracks: 5
         },
         setUploadPlatform: function setUploadPlatform(platformId, value)
         {

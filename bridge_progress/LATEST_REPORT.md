@@ -1,18 +1,18 @@
 # Latest Bridge Report
 
 Status: `failure`
-Goal: `Identify features currently in progress based on the content of FEATURE_STATUS.md.`
+Goal: `Remove facebookEnabled guard from Instagram draft condition in uploadService.js`
 Repo: `C:\Users\winss\Documents\Projects\shorts-uploader-engine`
 Workflow profile: `standard`
 Supervisor mode: `manual`
 Aider model: `ollama/qwen2.5-coder:7b`
-Elapsed seconds: `88.3`
+Elapsed seconds: `314.9`
 
 ## Task summary
 
 - Planned tasks: `1`
 - Completed tasks: `0`
-- Resumed-from-checkpoint tasks: `3`
+- Resumed-from-checkpoint tasks: `0`
 - Failed task: `1`
 
 ## Completed files
@@ -21,4 +21,4 @@ Elapsed seconds: `88.3`
 
 ## Pending files
 
-- `missingFeatures/FEATURE_STATUS.md`
+- `app/electron/services/uploadService.js`

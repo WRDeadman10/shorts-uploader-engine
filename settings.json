@@ -3,7 +3,7 @@
         "includeShorts": true,
         "includeMusic": true,
         "includeMetadata": true,
-        "maxVideos": 70,
+        "maxVideos": 1,
         "videosRoot": "E:\\New folder\\Valorant Tracker\\VALORANT",
         "privacy": "public",
         "playlistName": "Valorant",
@@ -13,14 +13,18 @@
         "extensions": "",
         "excludeDirectories": "",
         "excludeFiles": "",
-        "requireUploadedOn": "instagram",
-        "requireMissingOn": "facebook",
+        "requireUploadedOn": "",
+        "requireMissingOn": "",
         "clientSecretsPath": "C:\\Users\\winss\\Documents\\Projects\\old\\shorts-uploader-engine\\shorts-uploader-engine\\client_secret.json",
         "tokenFilePath": "C:\\Users\\winss\\Documents\\Projects\\old\\shorts-uploader-engine\\shorts-uploader-engine\\token.json",
+        "useTrendingAudio": true,
+        "trendingAudioReportPath": "trending_audio_report.json",
+        "trendingAudioCacheDir": ".trending_music_cache",
+        "trendingAudioMaxTracks": 30,
         "openaiModel": "gpt-4.1-mini",
         "musicVolume": 0.3,
         "metaSkipUploaded": true,
-        "metaAccessToken": "EAARoVBi60SUBRXlnknuhZBcDGhVr6gsgEXV1bA0OaeOmDHY8qeVPs9WLtPE7I92Yya8HvHFWgMNZC29pqfBpmD0JctPy8NLNdNb9Rlhbn4xWSyfLNVXI0bSJjIzIje3tYHmlEukdiAuvKrEIB7oPedwFxuB0vuOVxi4PDfRJBbyGi6zWbFcLTyJPGIBO1EO8Y9ojFXXeVZA2iUhu9h0vMaNMfXCObkrVne5BFQZD",
+        "metaAccessToken": "EAARoVBi60SUBReBXqHZBZCDyKIJ0lBqLNWgPz3w4F4LiHLJRRUx0LTnaUUfR4LLE3p5tZBpzpvk7AzFMoZB0OIMLPIv27kDdonb8el3LgDZBXeIH5YUFlHbHuiE3No67RPZCnE9TWdNFBUhgFGfNSMH8ZBzMH0y4uemiR4fTb07szP57V7Kmm29T8PP97bhXenS6KOHgC6NvmpCysZBNGTZBeZCi1rUsqXMZCfYSTlm8vZApguZA5",
         "metaGraphVersion": "v25.0",
         "igUserId": "17841442647474097",
         "fbPageId": "1064411090088218",
@@ -29,13 +33,13 @@
         "musicDir": "E:/Music/Hollywood"
     },
     "uploadPlatforms": {
-        "youtube": true,
-        "instagram": false,
+        "youtube": false,
+        "instagram": true,
         "facebook": false
     },
     "schedule": {
         "enabled": true,
-        "date": "2026-04-30",
+        "date": "2026-05-02",
         "youtubeSlots": [
             {
                 "time": "16:00",
@@ -68,11 +72,11 @@
         ],
         "facebookSlots": [
             {
-                "time": "10:00",
+                "time": "16:00",
                 "count": 10
             },
             {
-                "time": "12:00",
+                "time": "17:30",
                 "count": 10
             },
             {
@@ -123,6 +127,17 @@
         "musicSampleOutput": "",
         "musicBgVolume": 0.3,
         "musicFfmpegBin": "",
-        "musicFfprobeBin": ""
+        "musicFfprobeBin": "",
+        "trendingYoutube": true,
+        "trendingInstagram": true,
+        "trendingYoutubeApiKey": "",
+        "trendingClientSecrets": "client_secret.json",
+        "trendingTokenFile": "token.json",
+        "trendingIgUsername": "renuka.1196",
+        "trendingIgPassword": "singisking00*7",
+        "trendingIgSessionFile": ".ig_session.json",
+        "trendingRegion": "IN",
+        "trendingMaxResults": 70,
+        "trendingOutputFile": "trending_audio_report.json"
     }
 }

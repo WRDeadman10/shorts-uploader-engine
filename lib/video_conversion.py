@@ -105,10 +105,15 @@ def mix_background_music(
     ffmpeg_bin: str,
     ffprobe_bin: str,
     bg_volume: float,
+    replace_audio: bool = False,
 ) -> Path:
-    """Mix background music into a video with caching."""
+    """Mix background music into a video with caching.
+
+    When replace_audio=True, the original video audio is completely stripped
+    and replaced with the music track at full volume (trending audio mode).
+    """
     converted_dir.mkdir(parents=True, exist_ok=True)
-    output = build_mixed_music_path(source, music_path, converted_dir, bg_volume)
+    output = build_mixed_music_path(source, music_path, converted_dir, bg_volume, replace_audio)
     newest_input_mtime = max(source.stat().st_mtime, music_path.stat().st_mtime)
 
     if reuse_valid_cached_video(output, newest_input_mtime, ffprobe_bin, "music-mixed"):
@@ -116,31 +121,42 @@ def mix_background_music(
 
     temp_output = build_temp_media_output_path(output)
     delete_file_if_exists(temp_output)
-    has_audio = video_has_audio_stream(source, ffprobe_bin)
 
-    if has_audio:
-        filter_complex = (
-            f"[1:a]volume={bg_volume}[bg];"
-            "[0:a][bg]amix=inputs=2:duration=first:dropout_transition=3[aout]"
-        )
-        cmd = [
-            ffmpeg_bin, "-y",
-            "-i", str(source), "-i", str(music_path),
-            "-filter_complex", filter_complex,
-            "-map", "0:v", "-map", "[aout]",
-            "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
-            "-shortest", "-movflags", "+faststart",
-            str(temp_output),
-        ]
-    else:
+    if replace_audio:
+        # Strip original audio entirely — use trending track at full volume
         cmd = [
             ffmpeg_bin, "-y",
             "-i", str(source), "-i", str(music_path),
             "-map", "0:v", "-map", "1:a",
-            "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
+            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
             "-shortest", "-movflags", "+faststart",
             str(temp_output),
         ]
+    else:
+        has_audio = video_has_audio_stream(source, ffprobe_bin)
+        if has_audio:
+            filter_complex = (
+                f"[1:a]volume={bg_volume}[bg];"
+                "[0:a][bg]amix=inputs=2:duration=first:dropout_transition=3[aout]"
+            )
+            cmd = [
+                ffmpeg_bin, "-y",
+                "-i", str(source), "-i", str(music_path),
+                "-filter_complex", filter_complex,
+                "-map", "0:v", "-map", "[aout]",
+                "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
+                "-shortest", "-movflags", "+faststart",
+                str(temp_output),
+            ]
+        else:
+            cmd = [
+                ffmpeg_bin, "-y",
+                "-i", str(source), "-i", str(music_path),
+                "-map", "0:v", "-map", "1:a",
+                "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
+                "-shortest", "-movflags", "+faststart",
+                str(temp_output),
+            ]
 
     proc = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -169,6 +185,7 @@ def try_mix_background_music(
     ffmpeg_bin: str,
     ffprobe_bin: str,
     bg_volume: float,
+    replace_audio: bool = False,
 ) -> Tuple[Optional[Path], Optional[Path], List[str]]:
     """Try multiple music tracks, returning (mixed_path, track_path, failures)."""
     if not music_tracks:
@@ -196,6 +213,7 @@ def try_mix_background_music(
                 ffmpeg_bin=ffmpeg_bin,
                 ffprobe_bin=ffprobe_bin,
                 bg_volume=bg_volume,
+                replace_audio=replace_audio,
             )
             # Success!
             return mixed_path, music_path, music_failures

@@ -3,6 +3,7 @@ const uploadService = require("../services/uploadService");
 const { spawnSync } = require("child_process");
 const pythonService = require("../services/pythonService");
 const pathService = require("../services/pathService");
+const { shell } = require("electron");
 const fs = require('fs');
 const path = require('path');
 
@@ -31,6 +32,12 @@ function registerSystemHandlers(ipcMain)
     ipcMain.handle("get-audit-report", async function handleGetAuditReport()
     {
         return pathService.readAuditReport();
+    });
+
+    ipcMain.handle("show-in-folder", async function handleShowInFolder(_event, filePath)
+    {
+        if (!filePath) return;
+        shell.showItemInFolder(filePath);
     });
 
     ipcMain.handle("run-env-check", async function handleRunEnvCheck(_event)

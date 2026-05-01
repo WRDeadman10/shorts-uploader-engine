@@ -29,10 +29,11 @@ function Tools()
     const set = useAppStore(function(s) { return s.setToolsField; });
 
     // Transient run-status messages (no need to persist these)
-    const [metaStatus,   setMetaStatus]   = useState('');
-    const [musicStatus,  setMusicStatus]  = useState('');
-    const [auditStatus,  setAuditStatus]  = useState('');
-    const [deleteStatus, setDeleteStatus] = useState('');
+    const [metaStatus,    setMetaStatus]    = useState('');
+    const [musicStatus,   setMusicStatus]   = useState('');
+    const [auditStatus,   setAuditStatus]   = useState('');
+    const [deleteStatus,  setDeleteStatus]  = useState('');
+    const [trendingStatus, setTrendingStatus] = useState('');
 
     // ── Live Upload Audit ────────────────────────────────────────────────────
     async function runLiveAudit()
@@ -92,6 +93,27 @@ function Tools()
         setMusicStatus(r.success ? 'started (PID ' + r.pid + ')' : r.errorMessage);
     }
 
+    // ── Trending Audio ───────────────────────────────────────────────────────
+    async function runTrendingAudio()
+    {
+        if (!tf.trendingYoutube && !tf.trendingInstagram) { setTrendingStatus('Select at least one platform'); return; }
+        const args = [];
+        if (tf.trendingYoutube)   args.push('--youtube');
+        if (tf.trendingInstagram) args.push('--instagram');
+        if (tf.trendingYoutubeApiKey)  args.push('--youtube-api-key',  tf.trendingYoutubeApiKey);
+        if (tf.trendingClientSecrets)  args.push('--client-secrets',   tf.trendingClientSecrets);
+        if (tf.trendingTokenFile)      args.push('--token-file',        tf.trendingTokenFile);
+        if (tf.trendingIgUsername)     args.push('--ig-username',       tf.trendingIgUsername);
+        if (tf.trendingIgPassword)     args.push('--ig-password',       tf.trendingIgPassword);
+        if (tf.trendingIgSessionFile)  args.push('--ig-session-file',   tf.trendingIgSessionFile);
+        if (tf.trendingRegion)         args.push('--region',            tf.trendingRegion);
+        if (tf.trendingMaxResults)     args.push('--max-results',       String(tf.trendingMaxResults));
+        if (tf.trendingOutputFile)     args.push('--output-file',       tf.trendingOutputFile);
+        setTrendingStatus('running… fetching trending data');
+        const r = await runTool('getTrendingAudio.py', args);
+        setTrendingStatus(r.success ? 'started (PID ' + r.pid + ') — output → ' + (tf.trendingOutputFile || 'trending_audio_report.json') : r.errorMessage);
+    }
+
     async function stopAll()
     {
         await stopTool();
@@ -99,6 +121,7 @@ function Tools()
         setMusicStatus('stopped');
         setAuditStatus('stopped');
         setDeleteStatus('stopped');
+        setTrendingStatus('stopped');
     }
 
     return (
@@ -224,6 +247,88 @@ function Tools()
                     <button onClick={stopAll} style={stopBtnStyle}>Stop</button>
                 </div>
                 {metaStatus ? <p style={statusStyle}>{metaStatus}</p> : null}
+            </div>
+
+            {/* ── Trending Audio ─────────────────────────────────────────────── */}
+            <div style={panelStyle}>
+                <h2 style={{ fontSize: 16, marginBottom: 4, color: '#e2e8f0' }}>Trending Audio</h2>
+                <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 16 }}>Fetch currently trending audio from YouTube (music category) and Instagram (trending reels). Saves a JSON report you can reference when choosing background tracks.</p>
+
+                {/* Platform selection */}
+                <div style={{ display: 'flex', gap: 20, marginBottom: 14 }}>
+                    <div style={checkRow}>
+                        <input type="checkbox" id="trend-yt" checked={tf.trendingYoutube}   onChange={function(e) { set('trendingYoutube',   e.target.checked); }} />
+                        <label htmlFor="trend-yt"  style={{ fontSize: 13, color: '#ccc' }}>YouTube</label>
+                    </div>
+                    <div style={checkRow}>
+                        <input type="checkbox" id="trend-ig" checked={tf.trendingInstagram} onChange={function(e) { set('trendingInstagram', e.target.checked); }} />
+                        <label htmlFor="trend-ig"  style={{ fontSize: 13, color: '#ccc' }}>Instagram</label>
+                    </div>
+                </div>
+
+                {/* YouTube auth */}
+                {tf.trendingYoutube && (
+                    <div style={{ borderLeft: '2px solid #374151', paddingLeft: 12, marginBottom: 14 }}>
+                        <p style={{ fontSize: 11, color: '#6b7280', margin: '0 0 8px' }}>YouTube — provide API key (recommended) or OAuth credentials</p>
+                        <div style={fieldStyle}>
+                            <label style={labelStyle}>YouTube Data API Key</label>
+                            <input type="text" value={tf.trendingYoutubeApiKey} onChange={function(e) { set('trendingYoutubeApiKey', e.target.value); }} style={inputStyle} placeholder="AIza..." />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                            <div>
+                                <label style={labelStyle}>Client Secrets (OAuth fallback)</label>
+                                <input type="text" value={tf.trendingClientSecrets} onChange={function(e) { set('trendingClientSecrets', e.target.value); }} style={inputStyle} placeholder="client_secret.json" />
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Token File (OAuth fallback)</label>
+                                <input type="text" value={tf.trendingTokenFile} onChange={function(e) { set('trendingTokenFile', e.target.value); }} style={inputStyle} placeholder="token.json" />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Instagram auth */}
+                {tf.trendingInstagram && (
+                    <div style={{ borderLeft: '2px solid #374151', paddingLeft: 12, marginBottom: 14 }}>
+                        <p style={{ fontSize: 11, color: '#6b7280', margin: '0 0 8px' }}>Instagram — requires instagrapi (<code style={{ color: '#a3e635' }}>pip install instagrapi</code>)</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                            <div>
+                                <label style={labelStyle}>Instagram Username</label>
+                                <input type="text" value={tf.trendingIgUsername} onChange={function(e) { set('trendingIgUsername', e.target.value); }} style={inputStyle} placeholder="your_username" />
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Instagram Password</label>
+                                <input type="password" value={tf.trendingIgPassword} onChange={function(e) { set('trendingIgPassword', e.target.value); }} style={inputStyle} placeholder="••••••••" />
+                            </div>
+                        </div>
+                        <div style={fieldStyle}>
+                            <label style={labelStyle}>Session Cache File</label>
+                            <input type="text" value={tf.trendingIgSessionFile} onChange={function(e) { set('trendingIgSessionFile', e.target.value); }} style={inputStyle} placeholder=".ig_session.json" />
+                        </div>
+                    </div>
+                )}
+
+                {/* Shared options */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
+                    <div>
+                        <label style={labelStyle}>Region</label>
+                        <input type="text" value={tf.trendingRegion} onChange={function(e) { set('trendingRegion', e.target.value); }} style={inputStyle} placeholder="US" />
+                    </div>
+                    <div>
+                        <label style={labelStyle}>Max Results</label>
+                        <input type="number" min={1} max={50} value={tf.trendingMaxResults} onChange={function(e) { set('trendingMaxResults', parseInt(e.target.value) || 20); }} style={inputStyle} />
+                    </div>
+                    <div>
+                        <label style={labelStyle}>Output File</label>
+                        <input type="text" value={tf.trendingOutputFile} onChange={function(e) { set('trendingOutputFile', e.target.value); }} style={inputStyle} placeholder="trending_audio_report.json" />
+                    </div>
+                </div>
+
+                <div>
+                    <button onClick={runTrendingAudio} style={btnStyle}>Fetch Trending Audio</button>
+                    <button onClick={stopAll} style={stopBtnStyle}>Stop</button>
+                </div>
+                {trendingStatus ? <p style={statusStyle}>{trendingStatus}</p> : null}
             </div>
 
             {/* ── Music Overlay Sample ───────────────────────────────────────── */}

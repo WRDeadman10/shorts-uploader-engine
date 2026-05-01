@@ -380,7 +380,15 @@ function buildUploadCommand(payload)
     if (options.excludeDirectories) { args.push("--exclude-dirs", options.excludeDirectories); }
     if (options.excludeFiles) { args.push("--exclude-files", options.excludeFiles); }
     if (options.requireUploadedOn) { args.push("--require-uploaded-on", options.requireUploadedOn); }
-    if (options.requireMissingOn) { args.push("--require-missing-on", options.requireMissingOn); }
+    if (options.requireMissingOn)
+    {
+        args.push("--require-missing-on", options.requireMissingOn);
+    }
+    else
+    {
+        const autoPlatforms = ["youtube", "instagram", "facebook"].filter(function(p) { return Boolean(platforms[p]); });
+        if (autoPlatforms.length > 0) { args.push("--require-missing-on", autoPlatforms.join(",")); }
+    }
     if (options.clientSecretsPath) { args.push("--client-secrets", options.clientSecretsPath); }
     if (options.tokenFilePath) { args.push("--token-file", options.tokenFilePath); }
     if (options.openaiModel) args.push("--openai-model", options.openaiModel);
@@ -388,18 +396,26 @@ function buildUploadCommand(payload)
     if (options.extraKeywords) args.push("--extra-keywords", options.extraKeywords);
     if (options.language) args.push("--language", options.language);
     if (options.categoryId) args.push("--category-id", String(options.categoryId));
-    if (options.musicDir) args.push("--music-dir", options.musicDir);
+    if (options.useTrendingAudio && options.trendingAudioReportPath)
+    {
+        args.push("--trending-audio-report", options.trendingAudioReportPath);
+        if (options.trendingAudioCacheDir) args.push("--trending-audio-cache-dir", options.trendingAudioCacheDir);
+        if (options.trendingAudioMaxTracks) args.push("--trending-audio-max", String(options.trendingAudioMaxTracks));
+    }
+    else if (options.musicDir)
+    {
+        args.push("--music-dir", options.musicDir);
+    }
     if (options.musicVolume) args.push("--music-bg-volume", String(options.musicVolume));
-    if (options.musicInventory) args.push("--music-inventory-file", options.musicInventory);
+    if (options.musicInventory && !options.useTrendingAudio) args.push("--music-inventory-file", options.musicInventory);
     var sch2 = payload.schedule || {};
     if (sch2.enabled && sch2.date) {
-        if (youtubeEnabled && sch2.youtubeSlots && sch2.youtubeSlots.length) {
-            args.push('--schedule-plan', buildSchedulePlan(sch2.youtubeSlots, sch2.date));
-        } else if (!youtubeEnabled && sch2.facebookSlots && sch2.facebookSlots.length) {
-            args.push('--schedule-plan', buildSchedulePlan(sch2.facebookSlots, sch2.date));
+        var slots = (sch2.youtubeSlots && sch2.youtubeSlots.length) ? sch2.youtubeSlots : null;
+        if (slots) {
+            args.push('--schedule-plan', buildSchedulePlan(slots, sch2.date));
         }
     }
-    if (!sch2.enabled && sch2.instagramDraft && instagramEnabled) {
+    if (sch2.instagramDraft && instagramEnabled) {
         args.push('--instagram-draft');
     }
 

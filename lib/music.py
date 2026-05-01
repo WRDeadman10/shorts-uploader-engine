@@ -34,11 +34,13 @@ def build_mixed_music_path(
     music_path: Path,
     converted_dir: Path,
     bg_volume: float,
+    replace_audio: bool = False,
 ) -> Path:
     """Generate a deterministic output path for a music-mixed video."""
     profile = "bgmixv1"
+    mode = "replace" if replace_audio else f"{bg_volume:.3f}"
     digest = hashlib.sha1(
-        f"{source.resolve()}|{music_path.resolve()}|{bg_volume:.3f}|{profile}".encode("utf-8")
+        f"{source.resolve()}|{music_path.resolve()}|{mode}|{profile}".encode("utf-8")
     ).hexdigest()[:10]
     safe_stem = re.sub(r"[^a-zA-Z0-9._-]", "_", source.stem)[:80]
     return converted_dir / f"{safe_stem}.{digest}.{profile}.mp4"

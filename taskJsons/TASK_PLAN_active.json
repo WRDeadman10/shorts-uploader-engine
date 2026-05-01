@@ -1,0 +1,12 @@
+{
+  "goal": "Remove facebookEnabled guard from Instagram draft condition in uploadService.js",
+  "tasks": [
+    {
+      "id": 1,
+      "type": "modify",
+      "file": "app/electron/services/uploadService.js",
+      "instruction": "Find the line that reads: if (!sch2.enabled && sch2.instagramDraft && instagramEnabled && !facebookEnabled) { args.push('--instagram-draft'); } — change it to: if (!sch2.enabled && sch2.instagramDraft && instagramEnabled) { args.push('--instagram-draft'); } — only remove '&& !facebookEnabled', leave all other code unchanged.",
+      "model": "ollama/qwen2.5-coder:7b"
+    }
+  ]
+}
