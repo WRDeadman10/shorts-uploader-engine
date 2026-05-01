@@ -45,6 +45,7 @@ function Upload()
     const scheduleDate      = useAppStore(s => s.scheduleDate);
     const youtubeSlots      = useAppStore(s => s.youtubeSlots);
     const facebookSlots     = useAppStore(s => s.facebookSlots);
+    const instagramSlots    = useAppStore(s => s.instagramSlots);
     const instagramDraft    = useAppStore(s => s.instagramDraft);
     const setScheduleEnabled  = useAppStore(s => s.setScheduleEnabled);
     const setScheduleDate     = useAppStore(s => s.setScheduleDate);
@@ -55,6 +56,9 @@ function Upload()
     const addFacebookSlot     = useAppStore(s => s.addFacebookSlot);
     const removeFacebookSlot  = useAppStore(s => s.removeFacebookSlot);
     const updateFacebookSlot  = useAppStore(s => s.updateFacebookSlot);
+    const addInstagramSlot    = useAppStore(s => s.addInstagramSlot);
+    const removeInstagramSlot = useAppStore(s => s.removeInstagramSlot);
+    const updateInstagramSlot = useAppStore(s => s.updateInstagramSlot);
 
     useEffect(function pollStatus()
     {
@@ -292,9 +296,9 @@ function Upload()
                                 onChange={e => setScheduleDate(e.target.value)}
                                 style={{ ...sideInput, width: '100%' }} />
                         )}
-                                        {scheduleEnabled && (
+                        {scheduleEnabled && platforms.youtube && (
                             <div style={{ marginTop: 4 }}>
-                                <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>Slots</p>
+                                <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>YouTube Slots</p>
                                 {youtubeSlots.map((slot, i) => (
                                     <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
                                         <input type="time" value={slot.time}
@@ -308,6 +312,44 @@ function Upload()
                                     </div>
                                 ))}
                                 <button onClick={addYoutubeSlot}
+                                    style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
+                            </div>
+                        )}
+                        {scheduleEnabled && platforms.facebook && (
+                            <div style={{ marginTop: 8 }}>
+                                <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>Facebook Slots</p>
+                                {facebookSlots.map((slot, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
+                                        <input type="time" value={slot.time}
+                                            onChange={e => updateFacebookSlot(i, 'time', e.target.value)}
+                                            style={{ flex: 1, ...sideInput, width: 'auto' }} />
+                                        <input type="number" min={1} value={slot.count}
+                                            onChange={e => updateFacebookSlot(i, 'count', parseInt(e.target.value) || 1)}
+                                            style={{ ...sideInput, width: 50 }} />
+                                        <button onClick={() => removeFacebookSlot(i)}
+                                            style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 12 }}>×</button>
+                                    </div>
+                                ))}
+                                <button onClick={addFacebookSlot}
+                                    style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
+                            </div>
+                        )}
+                        {scheduleEnabled && platforms.instagram && (
+                            <div style={{ marginTop: 8 }}>
+                                <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>Instagram Slots</p>
+                                {instagramSlots.map((slot, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
+                                        <input type="time" value={slot.time}
+                                            onChange={e => updateInstagramSlot(i, 'time', e.target.value)}
+                                            style={{ flex: 1, ...sideInput, width: 'auto' }} />
+                                        <input type="number" min={1} value={slot.count}
+                                            onChange={e => updateInstagramSlot(i, 'count', parseInt(e.target.value) || 1)}
+                                            style={{ ...sideInput, width: 50 }} />
+                                        <button onClick={() => removeInstagramSlot(i)}
+                                            style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 12 }}>×</button>
+                                    </div>
+                                ))}
+                                <button onClick={addInstagramSlot}
                                     style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
                             </div>
                         )}

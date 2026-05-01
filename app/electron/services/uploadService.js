@@ -298,6 +298,20 @@ function buildSchedulePlan(slots, date) {
     }));
 }
 
+function pickScheduleSlots(schedule, platforms)
+{
+    if (!schedule) return null;
+    if (platforms.youtube && schedule.youtubeSlots && schedule.youtubeSlots.length) return schedule.youtubeSlots;
+    if (platforms.instagram && !platforms.facebook && schedule.instagramSlots && schedule.instagramSlots.length) return schedule.instagramSlots;
+    if (platforms.facebook && !platforms.instagram && schedule.facebookSlots && schedule.facebookSlots.length) return schedule.facebookSlots;
+    if (platforms.instagram && platforms.facebook)
+    {
+        if (schedule.instagramSlots && schedule.instagramSlots.length) return schedule.instagramSlots;
+        if (schedule.facebookSlots && schedule.facebookSlots.length) return schedule.facebookSlots;
+    }
+    return schedule.youtubeSlots && schedule.youtubeSlots.length ? schedule.youtubeSlots : null;
+}
+
 function buildUploadCommand(payload)
 {
     const platforms = payload.platforms || {};
@@ -414,7 +428,7 @@ function buildUploadCommand(payload)
     if (options.musicInventory && !trendingAudioEnabled) args.push("--music-inventory-file", options.musicInventory);
     var sch2 = payload.schedule || {};
     if (sch2.enabled && sch2.date) {
-        var slots = (sch2.youtubeSlots && sch2.youtubeSlots.length) ? sch2.youtubeSlots : null;
+        var slots = pickScheduleSlots(sch2, platforms);
         if (slots) {
             args.push('--schedule-plan', buildSchedulePlan(slots, sch2.date));
         }

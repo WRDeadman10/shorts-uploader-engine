@@ -513,6 +513,8 @@ def update_platform_upload_ledger(
         row[platform_id_key] = platform_id_value
     if status == "ok":
         row["uploaded_at_utc"] = datetime.now(timezone.utc).isoformat()
+    elif status == "scheduled":
+        row["scheduled_at_utc"] = datetime.now(timezone.utc).isoformat()
     elif error_message:
         row["error"] = error_message
     if extra_fields:
@@ -528,7 +530,7 @@ def is_platform_upload_completed(ledger_state: Dict[str, Any], state_key: str) -
     row = entries.get(state_key, {})
     if not isinstance(row, dict):
         return False
-    return str(row.get("status", "")).strip().lower() == "ok"
+    return str(row.get("status", "")).strip().lower() in {"ok", "scheduled"}
 
 
 def get_platform_upload_status(ledger_state: Dict[str, Any], state_key: str) -> str:
@@ -1589,6 +1591,16 @@ def crosspost_meta_reel(
     if do_instagram:
         for attempt in range(1, max(args.meta_instagram_retries, 1) + 1):
             try:
+                _ig_scheduled_ts: Optional[int] = None
+                if publish_at:
+                    try:
+                        _ig_scheduled_ts = int(
+                            datetime.fromisoformat(publish_at.replace("Z", "+00:00"))
+                            .astimezone(timezone.utc)
+                            .timestamp()
+                        )
+                    except Exception:
+                        _ig_scheduled_ts = None
                 container_id, ig_upload_uri = ig_create_reel_container(
                     graph_version=args.meta_graph_version,
                     ig_user_id=clean_text(args.meta_ig_user_id),
@@ -1617,8 +1629,9 @@ def crosspost_meta_reel(
                         container_id=container_id,
                         access_token=clean_text(args.meta_access_token),
                         timeout=args.meta_request_timeout_seconds,
+                        publish_time=_ig_scheduled_ts,
                     )
-                    instagram_status = "ok"
+                    instagram_status = "scheduled" if _ig_scheduled_ts is not None else "ok"
                 else:
                     ig_media_id = ""
                     instagram_status = "draft"
@@ -1631,6 +1644,9 @@ def crosspost_meta_reel(
                 }
                 if instagram_status == "ok":
                     state_row["instagram"]["published_at_utc"] = meta_now_utc_iso()
+                elif instagram_status == "scheduled":
+                    state_row["instagram"]["scheduled_for_utc"] = publish_at
+                    state_row["instagram"]["scheduled_at_utc"] = meta_now_utc_iso()
                 else:
                     state_row["instagram"]["drafted_at_utc"] = meta_now_utc_iso()
                 update_platform_upload_ledger(
@@ -1650,6 +1666,8 @@ def crosspost_meta_reel(
                 )
                 if instagram_status == "ok":
                     print(f"[ok][instagram] media_id={ig_media_id}")
+                elif instagram_status == "scheduled":
+                    print(f"[scheduled][instagram] media_id={ig_media_id} publish_at={publish_at}")
                 else:
                     print(f"[draft][instagram] container_id={container_id}")
                 break
@@ -2489,6 +2507,9 @@ def main() -> int:
             if target_platform == "instagram" and instagram_status == "ok":
                 uploaded_count += 1
                 print(f"[ok][instagram] uploaded: {rel_path}")
+            elif target_platform == "instagram" and instagram_status == "scheduled":
+                uploaded_count += 1
+                print(f"[scheduled][instagram] queued: {rel_path}")
             elif target_platform == "instagram" and instagram_status == "draft":
                 print(f"[draft][instagram] container created: {rel_path}")
             elif target_platform == "facebook" and facebook_status == "ok":

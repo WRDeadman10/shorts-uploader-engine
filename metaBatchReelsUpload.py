@@ -304,7 +304,7 @@ def should_skip_platform(
     platform_row = row.get(platform_name, {})
     if not isinstance(platform_row, dict):
         return False
-    return clean_one_line(str(platform_row.get("status", ""))).lower() == "ok"
+    return clean_one_line(str(platform_row.get("status", ""))).lower() in {"ok", "scheduled"}
 
 
 def main() -> int:
@@ -438,6 +438,7 @@ def main() -> int:
             continue
 
         ig_caption, fb_description, fb_title = build_caption_from_entry(entry)
+        current_publish_at = _fb_seq[_fb_idx] if _fb_idx < len(_fb_seq) else None
 
         print(f"\n[video] {entry.get('relative_path') or source_file.name}")
         print(f"[file] {source_file}")
@@ -450,6 +451,14 @@ def main() -> int:
 
         if do_instagram:
             try:
+                _ig_scheduled_ts: Optional[int] = None
+                if current_publish_at:
+                    try:
+                        _ig_scheduled_ts = int(
+                            _dt.datetime.fromisoformat(current_publish_at).timestamp()
+                        )
+                    except Exception:
+                        _ig_scheduled_ts = None
                 container_id, ig_upload_uri = ig_create_reel_container(
                     graph_version=args.graph_version,
                     ig_user_id=ig_user_id,
@@ -478,8 +487,9 @@ def main() -> int:
                         container_id=container_id,
                         access_token=access_token,
                         timeout=args.request_timeout_seconds,
+                        publish_time=_ig_scheduled_ts,
                     )
-                    instagram_status = "ok"
+                    instagram_status = "scheduled" if _ig_scheduled_ts is not None else "ok"
                 else:
                     ig_media_id = ""
                     instagram_status = "draft"
@@ -494,6 +504,9 @@ def main() -> int:
                 }
                 if instagram_status == "ok":
                     state_row["instagram"]["published_at_utc"] = now_utc_iso()
+                elif instagram_status == "scheduled":
+                    state_row["instagram"]["scheduled_for_utc"] = current_publish_at
+                    state_row["instagram"]["scheduled_at_utc"] = now_utc_iso()
                 else:
                     state_row["instagram"]["drafted_at_utc"] = now_utc_iso()
                 update_platform_upload_ledger(
@@ -513,6 +526,8 @@ def main() -> int:
                 )
                 if instagram_status == "ok":
                     print(f"[ok][instagram] media_id={ig_media_id}")
+                elif instagram_status == "scheduled":
+                    print(f"[scheduled][instagram] media_id={ig_media_id} publish_at={current_publish_at}")
                 else:
                     print(f"[draft][instagram] container_id={container_id}")
             except Exception as exc:  # noqa: BLE001
@@ -562,9 +577,8 @@ def main() -> int:
                     description=fb_description,
                     title=fb_title,
                     timeout=args.request_timeout_seconds,
-                    scheduled_publish_time=(int(_dt.datetime.fromisoformat(_fb_seq[_fb_idx]).timestamp()) if _fb_idx < len(_fb_seq) else None),
+                    scheduled_publish_time=(int(_dt.datetime.fromisoformat(current_publish_at).timestamp()) if current_publish_at else None),
                 )
-                _fb_idx += 1
                 success_facebook += 1
                 state_row["facebook"] = {
                     "status": "ok",
@@ -619,6 +633,9 @@ def main() -> int:
                         "[warn][facebook] Facebook returned code 368/subcode 1390008. "
                         "Skipping Facebook uploads for the rest of this run."
                     )
+
+        if current_publish_at and (do_instagram or do_facebook):
+            _fb_idx += 1
 
         if args.delete_converted_after_upload:
             selected_instagram_ok = (not do_instagram) or (

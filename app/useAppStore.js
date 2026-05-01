@@ -99,6 +99,7 @@ export const useAppStore = create(function createAppStore(set, get)
         scheduleDate: new Date().toISOString().slice(0, 10),
         youtubeSlots: [{ time: '10:00', count: 10 }],
         facebookSlots: [{ time: '10:00', count: 10 }],
+        instagramSlots: [{ time: '10:00', count: 10 }],
         instagramDraft: false,
 
         // Called when the backend broadcasts an app:sessions event
@@ -134,6 +135,7 @@ export const useAppStore = create(function createAppStore(set, get)
                 if (sch.date) updates.scheduleDate = sch.date;
                 if (Array.isArray(sch.youtubeSlots) && sch.youtubeSlots.length) updates.youtubeSlots = sch.youtubeSlots;
                 if (Array.isArray(sch.facebookSlots) && sch.facebookSlots.length) updates.facebookSlots = sch.facebookSlots;
+                if (Array.isArray(sch.instagramSlots) && sch.instagramSlots.length) updates.instagramSlots = sch.instagramSlots;
                 if (sch.instagramDraft !== undefined) updates.instagramDraft = sch.instagramDraft;
             }
             set(updates);
@@ -150,6 +152,7 @@ export const useAppStore = create(function createAppStore(set, get)
                     date: get().scheduleDate,
                     youtubeSlots: get().youtubeSlots,
                     facebookSlots: get().facebookSlots,
+                    instagramSlots: get().instagramSlots,
                     instagramDraft: get().instagramDraft
                 }
             });
@@ -371,6 +374,9 @@ export const useAppStore = create(function createAppStore(set, get)
         addFacebookSlot: function addFacebookSlot() { set(function(s) { return { facebookSlots: s.facebookSlots.concat({ time: '10:00', count: 10 }) }; }); get().saveAdvancedUploadSettings(); },
         removeFacebookSlot: function removeFacebookSlot(i) { set(function(s) { return { facebookSlots: s.facebookSlots.filter(function(_, j) { return j !== i; }) }; }); get().saveAdvancedUploadSettings(); },
         updateFacebookSlot: function updateFacebookSlot(i, field, val) { set(function(s) { var sl = s.facebookSlots.slice(); sl[i] = Object.assign({}, sl[i], { [field]: val }); return { facebookSlots: sl }; }); get().saveAdvancedUploadSettings(); },
+        addInstagramSlot: function addInstagramSlot() { set(function(s) { return { instagramSlots: s.instagramSlots.concat({ time: '10:00', count: 10 }) }; }); get().saveAdvancedUploadSettings(); },
+        removeInstagramSlot: function removeInstagramSlot(i) { set(function(s) { return { instagramSlots: s.instagramSlots.filter(function(_, j) { return j !== i; }) }; }); get().saveAdvancedUploadSettings(); },
+        updateInstagramSlot: function updateInstagramSlot(i, field, val) { set(function(s) { var sl = s.instagramSlots.slice(); sl[i] = Object.assign({}, sl[i], { [field]: val }); return { instagramSlots: sl }; }); get().saveAdvancedUploadSettings(); },
 
         startConsole: async function startConsole()
         {
@@ -386,6 +392,7 @@ export const useAppStore = create(function createAppStore(set, get)
                     date: state.scheduleDate,
                     youtubeSlots: state.youtubeSlots,
                     facebookSlots: state.facebookSlots,
+                    instagramSlots: state.instagramSlots,
                     instagramDraft: state.instagramDraft
                 }
             });

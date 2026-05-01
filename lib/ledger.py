@@ -46,6 +46,8 @@ def update_platform_upload_ledger(
         row[platform_id_key] = platform_id_value
     if status == "ok":
         row["uploaded_at_utc"] = datetime.now(timezone.utc).isoformat()
+    elif status == "scheduled":
+        row["scheduled_at_utc"] = datetime.now(timezone.utc).isoformat()
     elif error_message:
         row["error"] = error_message
     if extra_fields:
@@ -62,7 +64,7 @@ def is_platform_upload_completed(ledger_state: Dict[str, Any], state_key: str) -
     row = entries.get(state_key, {})
     if not isinstance(row, dict):
         return False
-    return str(row.get("status", "")).strip().lower() == "ok"
+    return str(row.get("status", "")).strip().lower() in {"ok", "scheduled"}
 
 
 def normalize_platform_names_csv(raw: str) -> List[str]:

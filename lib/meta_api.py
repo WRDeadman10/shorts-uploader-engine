@@ -174,15 +174,21 @@ def ig_publish_reel(
     container_id: str,
     graph_version: str = "v25.0",
     timeout: float = 120,
+    publish_time: Optional[int] = None,
 ) -> str:
     """Publish a ready Instagram Reel. Returns the media ID."""
+    data: Dict[str, Any] = {
+        "creation_id": container_id,
+        "access_token": access_token,
+    }
+    if publish_time is not None:
+        data["publish_time"] = publish_time
+        data["published"] = "false"
     result = request_json(
         "POST",
         f"https://graph.facebook.com/{graph_version}/{ig_user_id}/media_publish",
-        data={
-            "creation_id": container_id,
-            "access_token": access_token,
-        },
+        data=data,
+        timeout=timeout,
     )
     media_id = result.get("id")
     if not media_id:
