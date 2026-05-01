@@ -5,6 +5,8 @@ const { resolvePythonCommand } = require("./pythonService");
 
 let getMainWindow = null;
 
+const ANSI_ESCAPE_RE = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
+
 // sessionId → { process, logBuffer, status, stopRequested }
 const sessions = new Map();
 
@@ -242,7 +244,7 @@ function emitChunk(sessionId, streamName, chunk)
     const lines = String(chunk).split(/\r?\n/);
     for (const line of lines)
     {
-        const trimmedLine = line.trimEnd();
+        const trimmedLine = line.replace(ANSI_ESCAPE_RE, "").trimEnd();
         if (!trimmedLine) continue;
         pushLog(sessionId, streamName, trimmedLine);
     }
@@ -396,8 +398,10 @@ function buildUploadCommand(payload)
     if (options.extraKeywords) args.push("--extra-keywords", options.extraKeywords);
     if (options.language) args.push("--language", options.language);
     if (options.categoryId) args.push("--category-id", String(options.categoryId));
-    if (options.useTrendingAudio && options.trendingAudioReportPath)
+    const trendingAudioEnabled = Boolean(options.includeMusic && options.useTrendingAudio);
+    if (trendingAudioEnabled && options.trendingAudioReportPath)
     {
+        args.push("--use-trending-audio");
         args.push("--trending-audio-report", options.trendingAudioReportPath);
         if (options.trendingAudioCacheDir) args.push("--trending-audio-cache-dir", options.trendingAudioCacheDir);
         if (options.trendingAudioMaxTracks) args.push("--trending-audio-max", String(options.trendingAudioMaxTracks));
@@ -406,8 +410,8 @@ function buildUploadCommand(payload)
     {
         args.push("--music-dir", options.musicDir);
     }
-    if (options.musicVolume) args.push("--music-bg-volume", String(options.musicVolume));
-    if (options.musicInventory && !options.useTrendingAudio) args.push("--music-inventory-file", options.musicInventory);
+    if (!trendingAudioEnabled && options.musicVolume) args.push("--music-bg-volume", String(options.musicVolume));
+    if (options.musicInventory && !trendingAudioEnabled) args.push("--music-inventory-file", options.musicInventory);
     var sch2 = payload.schedule || {};
     if (sch2.enabled && sch2.date) {
         var slots = (sch2.youtubeSlots && sch2.youtubeSlots.length) ? sch2.youtubeSlots : null;

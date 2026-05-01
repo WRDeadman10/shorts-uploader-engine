@@ -479,21 +479,27 @@ def main() -> int:
                         access_token=access_token,
                         timeout=args.request_timeout_seconds,
                     )
+                    instagram_status = "ok"
                 else:
-                    ig_media_id = 'draft'
-                    print('[info][instagram] reel container uploaded as draft — publish manually')
-                success_instagram += 1
+                    ig_media_id = ""
+                    instagram_status = "draft"
+                    print("[info][instagram] reel container uploaded as draft container only — not counted as uploaded")
+                if instagram_status == "ok":
+                    success_instagram += 1
                 state_row["instagram"] = {
-                    "status": "ok",
+                    "status": instagram_status,
                     "container_id": container_id,
                     "media_id": ig_media_id,
-                    "published_at_utc": now_utc_iso(),
                     "source_file": str(source_file),
                 }
+                if instagram_status == "ok":
+                    state_row["instagram"]["published_at_utc"] = now_utc_iso()
+                else:
+                    state_row["instagram"]["drafted_at_utc"] = now_utc_iso()
                 update_platform_upload_ledger(
                     instagram_upload_ledger,
                     state_key=state_key,
-                    status="ok",
+                    status=instagram_status,
                     relative_path=str(entry.get("relative_path", "")).strip(),
                     source_file=source_file,
                     metadata_file=str(entry.get("metadata_file", "")).strip(),
@@ -505,7 +511,10 @@ def main() -> int:
                         "youtube_video_id": str(entry.get("video_id", "")).strip(),
                     },
                 )
-                print(f"[ok][instagram] media_id={ig_media_id}")
+                if instagram_status == "ok":
+                    print(f"[ok][instagram] media_id={ig_media_id}")
+                else:
+                    print(f"[draft][instagram] container_id={container_id}")
             except Exception as exc:  # noqa: BLE001
                 failed_instagram += 1
                 state_row["instagram"] = {

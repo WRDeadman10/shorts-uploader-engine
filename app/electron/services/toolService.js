@@ -3,6 +3,8 @@ const { spawn } = require('child_process');
 const { getRepoRoot } = require('./pathService');
 const { resolvePythonCommand } = require('./pythonService');
 
+const ANSI_ESCAPE_RE = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
+
 let getMainWindow = null;
 
 // sessionId → { process, logBuffer, status }
@@ -88,11 +90,17 @@ async function runTool(payload) {
 
     proc.stdout.on('data', function onStdout(chunk) {
         const lines = chunk.toString().split(/\r?\n/);
-        lines.forEach(function(l) { if (l.trim()) pushLog(sessionId, 'stdout', l.trimEnd()); });
+        lines.forEach(function(l) {
+            const cleaned = l.replace(ANSI_ESCAPE_RE, '').trimEnd();
+            if (cleaned.trim()) pushLog(sessionId, 'stdout', cleaned);
+        });
     });
     proc.stderr.on('data', function onStderr(chunk) {
         const lines = chunk.toString().split(/\r?\n/);
-        lines.forEach(function(l) { if (l.trim()) pushLog(sessionId, 'stderr', l.trimEnd()); });
+        lines.forEach(function(l) {
+            const cleaned = l.replace(ANSI_ESCAPE_RE, '').trimEnd();
+            if (cleaned.trim()) pushLog(sessionId, 'stderr', cleaned);
+        });
     });
     proc.on('close', function onClose(code) {
         session.process = null;

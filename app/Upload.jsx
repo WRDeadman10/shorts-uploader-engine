@@ -93,8 +93,18 @@ function Upload()
         if (options.requireMissingOn)  args.push("--require-missing-on "  + options.requireMissingOn);
         if (instagramDraft && platforms.instagram) args.push("--instagram-draft");
         if (options.channelName)   args.push("--channel-name "  + options.channelName);
-        if (options.musicDir)      args.push("--music-dir "     + options.musicDir);
-        if (options.musicVolume !== undefined) args.push("--music-bg-volume " + options.musicVolume);
+        if (options.useTrendingAudio && options.includeMusic && options.trendingAudioReportPath)
+        {
+            args.push("--use-trending-audio");
+            args.push("--trending-audio-report " + options.trendingAudioReportPath);
+            if (options.trendingAudioCacheDir) args.push("--trending-audio-cache-dir " + options.trendingAudioCacheDir);
+            if (options.trendingAudioMaxTracks) args.push("--trending-audio-max " + options.trendingAudioMaxTracks);
+        }
+        else
+        {
+            if (options.musicDir) args.push("--music-dir " + options.musicDir);
+            if (options.musicVolume !== undefined) args.push("--music-bg-volume " + options.musicVolume);
+        }
 
         args.push(options.includeShorts ? "--shorts-policy convert" : "--shorts-policy off");
         if (!options.includeMetadata) args.push("--no-ai");

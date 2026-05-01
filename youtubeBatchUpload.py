@@ -52,7 +52,12 @@ from lib.youtube_auth import build_youtube_client
 from lib.youtube_upload import upload_video, resolve_playlist_id, add_video_to_playlist, extract_http_error_reason, RETRIABLE_STATUS_CODES
 from lib.ai_metadata import load_clip_context, build_clip_focus, build_fallback_metadata, finalize_metadata, is_metadata_unique, generate_ai_metadata, build_meta_captions
 from lib.meta_api import is_facebook_rate_limited_error, is_retryable_instagram_processing_error, request_json, ig_create_reel_container, ig_upload_reel_binary, ig_wait_until_ready, ig_publish_reel, fb_start_reel_session, fb_upload_reel_binary, fb_finish_reel_publish, extract_meta_error_message
-from lib.video_conversion import convert_to_shorts, mix_background_music, try_mix_background_music, reuse_valid_cached_video
+from lib.video_conversion import (
+    convert_to_shorts,
+    mix_background_music,
+    try_mix_background_music as video_try_mix_background_music,
+    reuse_valid_cached_video,
+)
 from lib.text_utils import (
     clean_text, parse_json_response, normalize_hashtag, normalize_tags,
     trim_title, get_sidecar_value, normalize_handle, normalize_compare_text,
@@ -365,6 +370,14 @@ def parse_args() -> argparse.Namespace:
         help="Max trending tracks to download (default: 5).",
     )
     parser.add_argument(
+        "--use-trending-audio",
+        action="store_true",
+        help=(
+            "Treat trending audio as a dedicated upload mode: fetch tracks from "
+            "--trending-audio-report and replace original video audio completely."
+        ),
+    )
+    parser.add_argument(
         "--crosspost-meta",
         action="store_true",
         help="After a successful YouTube upload, also upload the same file to Instagram/Facebook Reels.",
@@ -516,6 +529,16 @@ def is_platform_upload_completed(ledger_state: Dict[str, Any], state_key: str) -
     if not isinstance(row, dict):
         return False
     return str(row.get("status", "")).strip().lower() == "ok"
+
+
+def get_platform_upload_status(ledger_state: Dict[str, Any], state_key: str) -> str:
+    entries = ledger_state.get("entries", {})
+    if not isinstance(entries, dict):
+        return ""
+    row = entries.get(state_key, {})
+    if not isinstance(row, dict):
+        return ""
+    return str(row.get("status", "")).strip().lower()
 
 
 def normalize_platform_names_csv(raw: str) -> List[str]:
@@ -1595,20 +1618,25 @@ def crosspost_meta_reel(
                         access_token=clean_text(args.meta_access_token),
                         timeout=args.meta_request_timeout_seconds,
                     )
+                    instagram_status = "ok"
                 else:
-                    ig_media_id = 'draft'
-                    print('[info][instagram] reel container uploaded as draft — publish manually')
+                    ig_media_id = ""
+                    instagram_status = "draft"
+                    print("[info][instagram] reel container uploaded as draft container only — not counted as uploaded")
                 state_row["instagram"] = {
-                    "status": "ok",
+                    "status": instagram_status,
                     "container_id": container_id,
                     "media_id": ig_media_id,
-                    "published_at_utc": meta_now_utc_iso(),
                     "source_file": str(source_file),
                 }
+                if instagram_status == "ok":
+                    state_row["instagram"]["published_at_utc"] = meta_now_utc_iso()
+                else:
+                    state_row["instagram"]["drafted_at_utc"] = meta_now_utc_iso()
                 update_platform_upload_ledger(
                     instagram_upload_ledger,
                     state_key=state_key,
-                    status="ok",
+                    status=instagram_status,
                     relative_path=rel_path,
                     source_file=source_file,
                     metadata_file=metadata_path,
@@ -1620,7 +1648,10 @@ def crosspost_meta_reel(
                         "youtube_video_id": youtube_video_id,
                     },
                 )
-                print(f"[ok][instagram] media_id={ig_media_id}")
+                if instagram_status == "ok":
+                    print(f"[ok][instagram] media_id={ig_media_id}")
+                else:
+                    print(f"[draft][instagram] container_id={container_id}")
                 break
             except Exception as exc:  # noqa: BLE001
                 retryable = is_retryable_instagram_processing_error(exc)
@@ -1779,6 +1810,11 @@ def prepare_trending_music(report_path: Path, cache_dir: Path, max_tracks: int) 
     cache_dir.mkdir(parents=True, exist_ok=True)
     downloaded = 0
 
+    ytdlp_commands = [
+        ["yt-dlp"],
+        [sys.executable, "-m", "yt_dlp"],
+    ]
+
     for url, title in urls[:max_tracks]:
         safe = re.sub(r"[^\w\-]", "_", title)[:40].strip("_") or "track"
         # Skip if already cached
@@ -1789,31 +1825,46 @@ def prepare_trending_music(report_path: Path, cache_dir: Path, max_tracks: int) 
             continue
 
         output_tmpl = str(cache_dir / f"{safe}.%(ext)s")
-        try:
-            result = subprocess.run(
-                [
-                    "yt-dlp", "-x",
-                    "--audio-format", "mp3",
-                    "--audio-quality", "0",
-                    "--no-playlist",
-                    "-o", output_tmpl,
-                    url,
-                ],
-                capture_output=True,
-                text=True,
-                timeout=120,
-            )
-            if result.returncode == 0:
-                downloaded += 1
-                print(f"[info][trending] downloaded: {safe}.mp3")
-            else:
+        success = False
+        saw_missing_command = False
+
+        for base_command in ytdlp_commands:
+            try:
+                result = subprocess.run(
+                    base_command + [
+                        "-x",
+                        "--audio-format", "mp3",
+                        "--audio-quality", "0",
+                        "--no-playlist",
+                        "-o", output_tmpl,
+                        url,
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                )
+                if result.returncode == 0:
+                    downloaded += 1
+                    success = True
+                    print(f"[info][trending] downloaded: {safe}.mp3")
+                    break
+
                 err = result.stderr.strip().splitlines()[-1] if result.stderr.strip() else "unknown"
                 print(f"[warn][trending] yt-dlp failed for {url}: {err}")
-        except FileNotFoundError:
-            print("[error][trending] yt-dlp not found — install with: pip install yt-dlp")
+                break
+            except FileNotFoundError:
+                saw_missing_command = True
+                continue
+            except subprocess.TimeoutExpired:
+                print(f"[warn][trending] yt-dlp timed out for {url}")
+                break
+
+        if not success and saw_missing_command:
+            print(
+                "[error][trending] yt-dlp not found in PATH and not importable via python -m yt_dlp. "
+                "Install with: pip install -r requirements.txt"
+            )
             break
-        except subprocess.TimeoutExpired:
-            print(f"[warn][trending] yt-dlp timed out for {url}")
 
     if downloaded == 0:
         print("[warn][trending] No tracks downloaded — music overlay disabled.")
@@ -1840,7 +1891,10 @@ def main() -> int:
     music_dir = Path(args.music_dir).resolve() if args.music_dir.strip() else None
     music_inventory_file = Path(args.music_inventory_file).resolve()
 
-    if args.trending_audio_report.strip():
+    if args.trending_audio_report.strip() or args.use_trending_audio:
+        if args.use_trending_audio and not args.trending_audio_report.strip():
+            print("[error] --use-trending-audio requires --trending-audio-report.")
+            return 1
         report_path = Path(args.trending_audio_report).resolve()
         if not report_path.exists():
             print(f"[error] trending audio report not found: {report_path}")
@@ -1854,6 +1908,12 @@ def main() -> int:
         if trending_dir:
             music_dir = trending_dir
             print(f"[info] music_dir overridden → {music_dir}")
+        elif args.use_trending_audio:
+            print(
+                "[error] Trending audio mode is enabled but no usable tracks were prepared. "
+                "Check yt-dlp, the report URLs, or the cache directory."
+            )
+            return 1
 
     if not root.exists():
         print(f"[error] root path not found: {root}")
@@ -2130,15 +2190,16 @@ def main() -> int:
 
         if music_enabled:
             original_upload_path = upload_path
-            _replace_audio = bool(args.trending_audio_report.strip())
-            mixed_upload_path, chosen_music_path, music_failures = try_mix_background_music(
+            _replace_audio = bool(args.use_trending_audio)
+            music_track_index = (index - 1) if args.use_trending_audio else random.randint(0, len(music_inventory) - 1)
+            mixed_upload_path, chosen_music_path, music_failures = video_try_mix_background_music(
                 source=upload_path,
                 music_tracks=music_inventory,
                 converted_dir=converted_dir,
                 ffmpeg_bin=ffmpeg_bin,
                 ffprobe_bin=ffprobe_bin,
                 bg_volume=args.music_bg_volume,
-                track_index=random.randint(0, len(music_inventory) - 1),
+                track_index=music_track_index,
                 replace_audio=_replace_audio,
             )
             if chosen_music_path:
@@ -2168,6 +2229,12 @@ def main() -> int:
                         )
                 else:
                     print("[warn] no usable background music tracks found; uploading video without music.")
+                    if args.use_trending_audio:
+                        print(
+                            "[error] Trending audio mode requested a full audio replacement, "
+                            "but no track could be applied."
+                        )
+                        continue
 
         clip_context = load_clip_context(video_path)
         if clip_context:
@@ -2417,10 +2484,14 @@ def main() -> int:
             metadata_history["titles"] = history_titles[-5000:]
             metadata_history["descriptions"] = history_descriptions[-5000:]
             save_json_file(metadata_history_file, metadata_history)
-            if target_platform == "instagram" and is_platform_upload_completed(instagram_upload_ledger, key):
+            instagram_status = get_platform_upload_status(instagram_upload_ledger, key)
+            facebook_status = get_platform_upload_status(facebook_upload_ledger, key)
+            if target_platform == "instagram" and instagram_status == "ok":
                 uploaded_count += 1
                 print(f"[ok][instagram] uploaded: {rel_path}")
-            elif target_platform == "facebook" and is_platform_upload_completed(facebook_upload_ledger, key):
+            elif target_platform == "instagram" and instagram_status == "draft":
+                print(f"[draft][instagram] container created: {rel_path}")
+            elif target_platform == "facebook" and facebook_status == "ok":
                 uploaded_count += 1
                 print(f"[ok][facebook] uploaded: {rel_path}")
 
@@ -2428,7 +2499,10 @@ def main() -> int:
         print("\n[done] dry run completed.")
     else:
         print(f"\n[done] uploads completed: {uploaded_count}/{len(pending)}")
-        print(f"[done] state file: {state_file}")
+        if target_platform == "youtube":
+            print(f"[done] state file: {state_file}")
+        else:
+            print(f"[done] reels state file: {meta_reels_state_file}")
     if skipped_not_shorts:
         print(f"[done] skipped by Shorts policy: {skipped_not_shorts}")
     if hit_upload_limit:
