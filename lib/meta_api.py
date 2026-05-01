@@ -71,21 +71,28 @@ def ig_create_reel_container(
     caption: str,
     graph_version: str = "v25.0",
     timeout: float = 120,
+    scheduled_publish_time: Optional[int] = None,
 ) -> Tuple[str, str]:
     """Create an Instagram Reels resumable-upload container.
 
     Returns (container_id, upload_uri).
     The caller must POST the video binary to upload_uri via ig_upload_reel_binary().
+    If scheduled_publish_time (Unix timestamp) is provided the container is created
+    with published=false so Meta will auto-publish at the scheduled time.
     """
+    data: Dict[str, Any] = {
+        "media_type": "REELS",
+        "upload_type": "resumable",
+        "caption": caption,
+        "access_token": access_token,
+    }
+    if scheduled_publish_time is not None:
+        data["scheduled_publish_time"] = scheduled_publish_time
+        data["published"] = "false"
     result = request_json(
         "POST",
         f"https://graph.facebook.com/{graph_version}/{ig_user_id}/media",
-        data={
-            "media_type": "REELS",
-            "upload_type": "resumable",
-            "caption": caption,
-            "access_token": access_token,
-        },
+        data=data,
         timeout=timeout,
     )
     container_id = result.get("id")
@@ -174,20 +181,19 @@ def ig_publish_reel(
     container_id: str,
     graph_version: str = "v25.0",
     timeout: float = 120,
-    publish_time: Optional[int] = None,
 ) -> str:
-    """Publish a ready Instagram Reel. Returns the media ID."""
-    data: Dict[str, Any] = {
-        "creation_id": container_id,
-        "access_token": access_token,
-    }
-    if publish_time is not None:
-        data["publish_time"] = publish_time
-        data["published"] = "false"
+    """Publish a ready Instagram Reel. Returns the media ID.
+
+    For scheduled reels, scheduled_publish_time must be set on the container
+    (ig_create_reel_container) — not here. This call is always immediate-publish.
+    """
     result = request_json(
         "POST",
         f"https://graph.facebook.com/{graph_version}/{ig_user_id}/media_publish",
-        data=data,
+        data={
+            "creation_id": container_id,
+            "access_token": access_token,
+        },
         timeout=timeout,
     )
     media_id = result.get("id")

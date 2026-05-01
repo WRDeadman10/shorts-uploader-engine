@@ -433,10 +433,6 @@ function buildUploadCommand(payload)
             args.push('--schedule-plan', buildSchedulePlan(slots, sch2.date));
         }
     }
-    if (sch2.instagramDraft && instagramEnabled) {
-        args.push('--instagram-draft');
-    }
-
     const platformLabel = youtubeEnabled
         ? (instagramEnabled || facebookEnabled ? "youtube+" + selectedMetaPlatform : "youtube")
         : selectedMetaPlatform;

@@ -465,6 +465,7 @@ def main() -> int:
                     access_token=access_token,
                     caption=ig_caption,
                     timeout=args.request_timeout_seconds,
+                    scheduled_publish_time=_ig_scheduled_ts,
                 )
                 ig_upload_reel_binary(
                     upload_uri=ig_upload_uri,
@@ -480,20 +481,14 @@ def main() -> int:
                     interval_seconds=args.poll_interval_seconds,
                     timeout=args.request_timeout_seconds,
                 )
-                if not getattr(args, 'instagram_draft', False):
-                    ig_media_id = ig_publish_reel(
-                        graph_version=args.graph_version,
-                        ig_user_id=ig_user_id,
-                        container_id=container_id,
-                        access_token=access_token,
-                        timeout=args.request_timeout_seconds,
-                        publish_time=_ig_scheduled_ts,
-                    )
-                    instagram_status = "scheduled" if _ig_scheduled_ts is not None else "ok"
-                else:
-                    ig_media_id = ""
-                    instagram_status = "draft"
-                    print("[info][instagram] reel container uploaded as draft container only — not counted as uploaded")
+                ig_media_id = ig_publish_reel(
+                    graph_version=args.graph_version,
+                    ig_user_id=ig_user_id,
+                    container_id=container_id,
+                    access_token=access_token,
+                    timeout=args.request_timeout_seconds,
+                )
+                instagram_status = "scheduled" if _ig_scheduled_ts is not None else "ok"
                 if instagram_status == "ok":
                     success_instagram += 1
                 state_row["instagram"] = {

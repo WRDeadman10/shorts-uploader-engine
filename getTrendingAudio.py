@@ -24,7 +24,7 @@ import argparse
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from lib.file_utils import save_json_file
 
@@ -79,8 +79,8 @@ def parse_args() -> argparse.Namespace:
     # YouTube options
     parser.add_argument(
         "--region",
-        default="US",
-        help="ISO 3166-1 alpha-2 region code for trending results (default: US).",
+        default="IN",
+        help="ISO 3166-1 alpha-2 region code for trending results (default: IN).",
     )
     parser.add_argument(
         "--max-results",
@@ -211,37 +211,188 @@ def _login_instagram(username: str, password: str, session_file: Path):
     return cl
 
 
-def _fetch_clips_channel_raw(cl: Any, amount: int) -> List[Dict[str, Any]]:
-    """Call /api/v1/clips/channel/ directly via the instagrapi private session.
+def _ig_get(cl: Any, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Make a GET request via instagrapi's authenticated private_request().
 
-    This bypasses named method wrappers so it works across all instagrapi versions.
-    The endpoint returns the same trending clips feed as the Instagram Reels tab.
+    Uses cl.private_request() so all required Instagram headers
+    (X-IG-App-ID, User-Agent, X-IG-Capabilities, etc.) are sent automatically.
+    endpoint is relative, e.g. "music/trending_music_for_media_type/".
     """
+    return cl.private_request("GET", endpoint, params=params or {})
+
+
+def _fetch_trending_music_tracks(cl: Any, amount: int) -> List[Dict[str, Any]]:
+    """Fetch trending music from Instagram's catalog endpoints.
+
+    Tries several endpoints the Instagram app uses for "Add Music".
+    All are account-activity-independent.
+    """
+    all_tracks: List[Dict[str, Any]] = []
+    seen_ids: set = set()
+
+    # Endpoint variants to try
+    attempts = [
+        ("music/trending_music_for_media_type/", {"product": "clips_share_sheet"}),
+        ("music/trending_music_for_media_type/", {"product": "story"}),
+        ("music/search/",                        {"q": "trending", "query_type": "TRENDING"}),
+        ("clips/music/",                         {"product": "clips_share_sheet"}),
+    ]
+
+    for endpoint, params in attempts:
+        if len(all_tracks) >= amount:
+            break
+        try:
+            data = _ig_get(cl, endpoint, params)
+        except Exception as exc:
+            print(f"[warn][instagram] {endpoint} failed: {exc}")
+            continue
+
+        # Different endpoints use different keys
+        raw_list = (
+            data.get("tracks")
+            or data.get("items")
+            or data.get("music_tracks")
+            or []
+        )
+        print(f"[info][instagram] {endpoint} → {len(raw_list)} tracks")
+        for t in raw_list:
+            if len(all_tracks) >= amount:
+                break
+            audio_id = str(t.get("id") or t.get("audio_asset_id") or "")
+            if not audio_id or audio_id in seen_ids:
+                continue
+            seen_ids.add(audio_id)
+            all_tracks.append(t)
+
+    return all_tracks
+
+
+def _fetch_explore_reels(cl: Any, amount: int) -> List[Dict[str, Any]]:
+    """Fallback: scrape audio from explore feed via private_request."""
     items: List[Dict[str, Any]] = []
     max_id: Optional[str] = None
 
     while len(items) < amount:
-        params: Dict[str, Any] = {"has_visited_clips_tab": "true"}
+        params: Dict[str, Any] = {
+            "cluster_id": "explore_all_clips",
+            "is_prefetch": "false",
+            "omit_cover_media": "false",
+            "use_sectional_payload": "true",
+            "timezone_offset": "19800",  # IST = UTC+5:30
+        }
         if max_id:
             params["max_id"] = max_id
         try:
-            resp = cl.private.get("clips/channel/", params=params)
-            resp.raise_for_status()
-            data = resp.json()
+            data = _ig_get(cl, "discover/topical_explore/", params)
         except Exception as exc:
-            print(f"[warn][instagram] clips/channel/ request failed: {exc}")
+            print(f"[warn][instagram] topical_explore failed: {exc}")
             break
 
-        batch = data.get("items", [])
+        batch: List[Dict[str, Any]] = []
+        for section in data.get("sections", []):
+            for ri in section.get("layout_content", {}).get("medias", []):
+                media = ri.get("media") or ri
+                batch.append(media)
+        # Also try ranked_items at top level
+        for ri in data.get("ranked_items", []):
+            media = ri.get("media") or ri
+            batch.append(media)
+
         if not batch:
             break
         items.extend(batch)
-
-        max_id = data.get("next_max_id") or data.get("paging_info", {}).get("max_id")
+        max_id = data.get("next_max_id")
         if not max_id:
             break
 
     return items[:amount]
+
+
+def _fetch_hashtag_reels(cl: Any, amount: int) -> List[Dict[str, Any]]:
+    """Last-resort fallback: pull reels from trending Indian hashtags."""
+    hashtags = ["trending", "reels", "viral", "reelsindia", "india"]
+    items: List[Dict[str, Any]] = []
+
+    for tag in hashtags:
+        if len(items) >= amount:
+            break
+        try:
+            # instagrapi built-in — always works, no version issues
+            medias = cl.hashtag_medias_reels_v1(tag, amount=max(20, amount // len(hashtags)))
+            for m in medias:
+                # Convert instagrapi Media object → dict
+                try:
+                    items.append(m.dict() if hasattr(m, "dict") else vars(m))
+                except Exception:
+                    items.append({"id": str(getattr(m, "pk", "")), "code": getattr(m, "code", "")})
+            print(f"[info][instagram] hashtag #{tag} → {len(medias)} reels")
+        except Exception as exc:
+            print(f"[warn][instagram] hashtag #{tag} failed: {exc}")
+
+    return items[:amount]
+
+
+def _parse_music_catalog_track(rank: int, raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Parse a track from music/trending_music_for_media_type response."""
+    audio_id = str(raw.get("id") or raw.get("audio_asset_id") or "")
+    title = raw.get("title") or raw.get("subtitle") or "Unknown"
+    artist = raw.get("display_artist") or raw.get("subtitle") or ""
+    # subtitle sometimes is "Artist" when title is song name
+    if not artist and raw.get("subtitle") and raw.get("subtitle") != title:
+        artist = raw.get("subtitle", "")
+    return {
+        "rank": rank,
+        "audio_id": audio_id,
+        "title": title,
+        "author": artist,
+        "usage_count": int(raw.get("use_count") or raw.get("usage_count") or 0),
+        "is_explicit": bool(raw.get("is_explicit", False)),
+        "audio_type": "licensed_music",
+        "reel_id": "",
+        "reel_url": "",
+        "reel_play_count": 0,
+    }
+
+
+def _parse_reel_media_audio(rank: int, media: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Extract audio info from a raw reel media dict."""
+    clips_meta = media.get("clips_metadata") or {}
+    media_id = str(media.get("id", ""))
+    code = media.get("code", "")
+    play_count = int(media.get("play_count", 0) or 0)
+    caption = (media.get("caption") or {}).get("text", "")
+
+    original = clips_meta.get("original_sound_info") or {}
+    music = (clips_meta.get("music_info") or {}).get("music_asset_info") or {}
+
+    if original:
+        ig_artist = original.get("ig_artist") or {}
+        return {
+            "rank": rank,
+            "audio_id": str(original.get("audio_asset_id", "")),
+            "title": original.get("original_audio_title") or caption or "Unknown",
+            "author": ig_artist.get("username", "") if isinstance(ig_artist, dict) else "",
+            "usage_count": int(original.get("usage_count", 0) or 0),
+            "is_explicit": bool(original.get("is_explicit", False)),
+            "audio_type": "original_sound",
+            "reel_id": media_id,
+            "reel_url": f"https://www.instagram.com/reel/{code}/",
+            "reel_play_count": play_count,
+        }
+    elif music:
+        return {
+            "rank": rank,
+            "audio_id": str(music.get("audio_asset_id", "")),
+            "title": music.get("title", "Unknown"),
+            "author": music.get("display_artist", ""),
+            "usage_count": 0,
+            "is_explicit": bool(music.get("is_explicit", False)),
+            "audio_type": "licensed_music",
+            "reel_id": media_id,
+            "reel_url": f"https://www.instagram.com/reel/{code}/",
+            "reel_play_count": play_count,
+        }
+    return None
 
 
 def fetch_instagram_trending(
@@ -265,76 +416,49 @@ def fetch_instagram_trending(
 
     tracks: List[Dict[str, Any]] = []
     seen_audio_ids: set = set()
-    fetch_amount = max_results * 3
 
-    # Use raw private API — version-independent, no method name guessing.
-    # cl.private is a requests.Session pointed at https://i.instagram.com/api/v1/
-    raw_items = _fetch_clips_channel_raw(cl, fetch_amount)
-    print(f"[info][instagram] clips/channel/ returned {len(raw_items)} raw items.")
+    def _absorb_medias(medias: List[Dict[str, Any]], source: str) -> None:
+        for media in medias:
+            if len(tracks) >= max_results:
+                break
+            try:
+                parsed = _parse_reel_media_audio(len(tracks) + 1, media)
+                if parsed and parsed["audio_id"] and parsed["audio_id"] not in seen_audio_ids:
+                    seen_audio_ids.add(parsed["audio_id"])
+                    tracks.append(parsed)
+            except Exception as exc:
+                print(f"[warn][instagram] Skipped {source} reel: {exc}")
 
-    if not raw_items:
-        print("[warn][instagram] No reels returned — account may need to browse Reels first.")
-        return []
-
-    for item in raw_items:
+    # ── Stage 1: catalog trending music (account-independent) ─────────────────
+    print("[info][instagram] Stage 1: music catalog trending endpoint…")
+    catalog_raw = _fetch_trending_music_tracks(cl, max_results * 2)
+    for raw in catalog_raw:
         if len(tracks) >= max_results:
             break
-        try:
-            # Raw API: items are {"media": {...}} dicts
-            media = item.get("media") or item  # handle both wrapped and unwrapped
-            clips_meta = media.get("clips_metadata") or {}
-            media_id = str(media.get("id", ""))
-            code = media.get("code", "")
-            play_count = int(media.get("play_count", 0) or 0)
-            caption = (media.get("caption") or {}).get("text", "")
+        parsed = _parse_music_catalog_track(len(tracks) + 1, raw)
+        if parsed and parsed["audio_id"] and parsed["audio_id"] not in seen_audio_ids:
+            seen_audio_ids.add(parsed["audio_id"])
+            tracks.append(parsed)
+    print(f"[info][instagram] Stage 1 → {len(tracks)} tracks")
 
-            original = clips_meta.get("original_sound_info") or {}
-            music = (clips_meta.get("music_info") or {}).get("music_asset_info") or {}
+    # ── Stage 2: explore reels audio extraction ────────────────────────────────
+    if len(tracks) < max_results:
+        needed = (max_results - len(tracks)) * 4
+        print(f"[info][instagram] Stage 2: explore reels (need {max_results - len(tracks)} more)…")
+        explore_medias = _fetch_explore_reels(cl, needed)
+        print(f"[info][instagram] explore → {len(explore_medias)} raw reels")
+        _absorb_medias(explore_medias, "explore")
+        print(f"[info][instagram] Stage 2 → {len(tracks)} tracks")
 
-            if original:
-                audio_id = str(original.get("audio_asset_id", ""))
-                if audio_id and audio_id in seen_audio_ids:
-                    continue
-                if audio_id:
-                    seen_audio_ids.add(audio_id)
+    # ── Stage 3: hashtag reels fallback ───────────────────────────────────────
+    if len(tracks) < max_results:
+        print(f"[info][instagram] Stage 3: hashtag reels fallback (need {max_results - len(tracks)} more)…")
+        hashtag_medias = _fetch_hashtag_reels(cl, (max_results - len(tracks)) * 4)
+        _absorb_medias(hashtag_medias, "hashtag")
+        print(f"[info][instagram] Stage 3 → {len(tracks)} tracks")
 
-                ig_artist = original.get("ig_artist") or {}
-                tracks.append({
-                    "rank": len(tracks) + 1,
-                    "audio_id": audio_id,
-                    "title": original.get("original_audio_title") or caption or "Unknown",
-                    "author": ig_artist.get("username", "") if isinstance(ig_artist, dict) else "",
-                    "usage_count": int(original.get("usage_count", 0) or 0),
-                    "is_explicit": bool(original.get("is_explicit", False)),
-                    "audio_type": "original_sound",
-                    "reel_id": media_id,
-                    "reel_url": f"https://www.instagram.com/reel/{code}/",
-                    "reel_play_count": play_count,
-                })
-
-            elif music:
-                audio_id = str(music.get("audio_asset_id", ""))
-                if audio_id and audio_id in seen_audio_ids:
-                    continue
-                if audio_id:
-                    seen_audio_ids.add(audio_id)
-
-                tracks.append({
-                    "rank": len(tracks) + 1,
-                    "audio_id": audio_id,
-                    "title": music.get("title", "Unknown"),
-                    "author": music.get("display_artist", ""),
-                    "usage_count": 0,
-                    "is_explicit": bool(music.get("is_explicit", False)),
-                    "audio_type": "licensed_music",
-                    "reel_id": media_id,
-                    "reel_url": f"https://www.instagram.com/reel/{code}/",
-                    "reel_play_count": play_count,
-                })
-
-        except Exception as exc:
-            print(f"[warn][instagram] Skipped reel {getattr(reel, 'pk', '?')}: {exc}")
-            continue
+    if not tracks:
+        print("[warn][instagram] No tracks fetched from any source.")
 
     return tracks
 

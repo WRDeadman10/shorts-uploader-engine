@@ -312,7 +312,7 @@ function Tools()
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
                     <div>
                         <label style={labelStyle}>Region</label>
-                        <input type="text" value={tf.trendingRegion} onChange={function(e) { set('trendingRegion', e.target.value); }} style={inputStyle} placeholder="US" />
+                        <input type="text" value={tf.trendingRegion} onChange={function(e) { set('trendingRegion', e.target.value); }} style={inputStyle} placeholder="IN" />
                     </div>
                     <div>
                         <label style={labelStyle}>Max Results</label>

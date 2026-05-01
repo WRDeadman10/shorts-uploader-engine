@@ -46,10 +46,8 @@ function Upload()
     const youtubeSlots      = useAppStore(s => s.youtubeSlots);
     const facebookSlots     = useAppStore(s => s.facebookSlots);
     const instagramSlots    = useAppStore(s => s.instagramSlots);
-    const instagramDraft    = useAppStore(s => s.instagramDraft);
     const setScheduleEnabled  = useAppStore(s => s.setScheduleEnabled);
     const setScheduleDate     = useAppStore(s => s.setScheduleDate);
-    const setInstagramDraft   = useAppStore(s => s.setInstagramDraft);
     const addYoutubeSlot      = useAppStore(s => s.addYoutubeSlot);
     const removeYoutubeSlot   = useAppStore(s => s.removeYoutubeSlot);
     const updateYoutubeSlot   = useAppStore(s => s.updateYoutubeSlot);
@@ -95,7 +93,6 @@ function Upload()
         if (options.dryRun)        args.push("--dry-run");
         if (options.requireUploadedOn) args.push("--require-uploaded-on " + options.requireUploadedOn);
         if (options.requireMissingOn)  args.push("--require-missing-on "  + options.requireMissingOn);
-        if (instagramDraft && platforms.instagram) args.push("--instagram-draft");
         if (options.channelName)   args.push("--channel-name "  + options.channelName);
         if (options.useTrendingAudio && options.includeMusic && options.trendingAudioReportPath)
         {
@@ -136,7 +133,7 @@ function Upload()
         }
 
         return args.join(" \\\n  ");
-    }, [options, platforms, instagramDraft]);
+    }, [options, platforms]);
 
     const uploadSessions = useAppStore(s => s.uploadSessions);
     const runningCount = Object.values(uploadSessions).filter(function(s) { return s.status === 'running'; }).length;
@@ -352,9 +349,6 @@ function Upload()
                                 <button onClick={addInstagramSlot}
                                     style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
                             </div>
-                        )}
-                        {platforms.instagram && (
-                            <ToggleSwitch label="Instagram: Upload as Draft" checked={instagramDraft} onChange={setInstagramDraft} />
                         )}
                     </div>
 

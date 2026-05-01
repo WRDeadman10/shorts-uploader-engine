@@ -100,7 +100,6 @@ export const useAppStore = create(function createAppStore(set, get)
         youtubeSlots: [{ time: '10:00', count: 10 }],
         facebookSlots: [{ time: '10:00', count: 10 }],
         instagramSlots: [{ time: '10:00', count: 10 }],
-        instagramDraft: false,
 
         // Called when the backend broadcasts an app:sessions event
         applySessionsUpdate: function applySessionsUpdate(data)
@@ -136,7 +135,6 @@ export const useAppStore = create(function createAppStore(set, get)
                 if (Array.isArray(sch.youtubeSlots) && sch.youtubeSlots.length) updates.youtubeSlots = sch.youtubeSlots;
                 if (Array.isArray(sch.facebookSlots) && sch.facebookSlots.length) updates.facebookSlots = sch.facebookSlots;
                 if (Array.isArray(sch.instagramSlots) && sch.instagramSlots.length) updates.instagramSlots = sch.instagramSlots;
-                if (sch.instagramDraft !== undefined) updates.instagramDraft = sch.instagramDraft;
             }
             set(updates);
         },
@@ -153,7 +151,6 @@ export const useAppStore = create(function createAppStore(set, get)
                     youtubeSlots: get().youtubeSlots,
                     facebookSlots: get().facebookSlots,
                     instagramSlots: get().instagramSlots,
-                    instagramDraft: get().instagramDraft
                 }
             });
             const response = await window.api.saveWorkflowSettings(payload);
@@ -318,7 +315,7 @@ export const useAppStore = create(function createAppStore(set, get)
             trendingIgUsername: '',
             trendingIgPassword: '',
             trendingIgSessionFile: '.ig_session.json',
-            trendingRegion: 'US',
+            trendingRegion: 'IN',
             trendingMaxResults: 20,
             trendingOutputFile: 'trending_audio_report.json',
         },
@@ -367,7 +364,6 @@ export const useAppStore = create(function createAppStore(set, get)
         },
         setScheduleEnabled: function setScheduleEnabled(v) { set({ scheduleEnabled: v }); get().saveAdvancedUploadSettings(); },
         setScheduleDate: function setScheduleDate(v) { set({ scheduleDate: v }); get().saveAdvancedUploadSettings(); },
-        setInstagramDraft: function setInstagramDraft(v) { set({ instagramDraft: v }); get().saveAdvancedUploadSettings(); },
         addYoutubeSlot: function addYoutubeSlot() { set(function(s) { return { youtubeSlots: s.youtubeSlots.concat({ time: '10:00', count: 10 }) }; }); get().saveAdvancedUploadSettings(); },
         removeYoutubeSlot: function removeYoutubeSlot(i) { set(function(s) { return { youtubeSlots: s.youtubeSlots.filter(function(_, j) { return j !== i; }) }; }); get().saveAdvancedUploadSettings(); },
         updateYoutubeSlot: function updateYoutubeSlot(i, field, val) { set(function(s) { var sl = s.youtubeSlots.slice(); sl[i] = Object.assign({}, sl[i], { [field]: val }); return { youtubeSlots: sl }; }); get().saveAdvancedUploadSettings(); },
@@ -393,7 +389,6 @@ export const useAppStore = create(function createAppStore(set, get)
                     youtubeSlots: state.youtubeSlots,
                     facebookSlots: state.facebookSlots,
                     instagramSlots: state.instagramSlots,
-                    instagramDraft: state.instagramDraft
                 }
             });
 

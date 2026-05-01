@@ -460,7 +460,6 @@ def parse_args() -> argparse.Namespace:
         help="Seconds to wait between Instagram processing-failure retries.",
     )
     parser.add_argument('--schedule-plan', default=None, help='JSON schedule: [{"count": N, "publish_at": "ISO UTC datetime"}]')
-    parser.add_argument('--instagram-draft', action='store_true', default=False, help='Skip publishing Instagram reel — upload container only as draft.')
     return parser.parse_args()
 
 
@@ -1607,6 +1606,7 @@ def crosspost_meta_reel(
                     access_token=clean_text(args.meta_access_token),
                     caption=ig_caption,
                     timeout=args.meta_request_timeout_seconds,
+                    scheduled_publish_time=_ig_scheduled_ts,
                 )
                 ig_upload_reel_binary(
                     upload_uri=ig_upload_uri,
@@ -1622,20 +1622,14 @@ def crosspost_meta_reel(
                     interval_seconds=args.meta_poll_interval_seconds,
                     timeout=args.meta_request_timeout_seconds,
                 )
-                if not args.instagram_draft:
-                    ig_media_id = ig_publish_reel(
-                        graph_version=args.meta_graph_version,
-                        ig_user_id=clean_text(args.meta_ig_user_id),
-                        container_id=container_id,
-                        access_token=clean_text(args.meta_access_token),
-                        timeout=args.meta_request_timeout_seconds,
-                        publish_time=_ig_scheduled_ts,
-                    )
-                    instagram_status = "scheduled" if _ig_scheduled_ts is not None else "ok"
-                else:
-                    ig_media_id = ""
-                    instagram_status = "draft"
-                    print("[info][instagram] reel container uploaded as draft container only — not counted as uploaded")
+                ig_media_id = ig_publish_reel(
+                    graph_version=args.meta_graph_version,
+                    ig_user_id=clean_text(args.meta_ig_user_id),
+                    container_id=container_id,
+                    access_token=clean_text(args.meta_access_token),
+                    timeout=args.meta_request_timeout_seconds,
+                )
+                instagram_status = "scheduled" if _ig_scheduled_ts is not None else "ok"
                 state_row["instagram"] = {
                     "status": instagram_status,
                     "container_id": container_id,
@@ -1647,8 +1641,6 @@ def crosspost_meta_reel(
                 elif instagram_status == "scheduled":
                     state_row["instagram"]["scheduled_for_utc"] = publish_at
                     state_row["instagram"]["scheduled_at_utc"] = meta_now_utc_iso()
-                else:
-                    state_row["instagram"]["drafted_at_utc"] = meta_now_utc_iso()
                 update_platform_upload_ledger(
                     instagram_upload_ledger,
                     state_key=state_key,
@@ -1668,8 +1660,6 @@ def crosspost_meta_reel(
                     print(f"[ok][instagram] media_id={ig_media_id}")
                 elif instagram_status == "scheduled":
                     print(f"[scheduled][instagram] media_id={ig_media_id} publish_at={publish_at}")
-                else:
-                    print(f"[draft][instagram] container_id={container_id}")
                 break
             except Exception as exc:  # noqa: BLE001
                 retryable = is_retryable_instagram_processing_error(exc)
@@ -2206,8 +2196,11 @@ def main() -> int:
                     skipped_not_shorts += 1
                     continue
 
-        if music_enabled:
-            original_upload_path = upload_path
+        # Track pre-music path — Meta (Instagram/Facebook) always gets video
+        # without music overlay regardless of whether YouTube gets music.
+        pre_music_path = upload_path
+
+        if music_enabled and target_platform == "youtube":
             _replace_audio = bool(args.use_trending_audio)
             music_track_index = (index - 1) if args.use_trending_audio else random.randint(0, len(music_inventory) - 1)
             mixed_upload_path, chosen_music_path, music_failures = video_try_mix_background_music(
@@ -2232,7 +2225,7 @@ def main() -> int:
                         f"(volume={args.music_bg_volume:.3f})"
                     )
             else:
-                upload_path = original_upload_path
+                upload_path = pre_music_path
                 if music_failures:
                     print(
                         "[warn] background music mix failed for all available tracks; "
@@ -2253,6 +2246,8 @@ def main() -> int:
                             "but no track could be applied."
                         )
                         continue
+        elif music_enabled and target_platform != "youtube":
+            print("[info] music skipped — Meta platform upload uses original video audio")
 
         clip_context = load_clip_context(video_path)
         if clip_context:
@@ -2412,7 +2407,7 @@ def main() -> int:
                         facebook_upload_ledger=facebook_upload_ledger,
                         state_key=key,
                         rel_path=rel_path,
-                        source_file=upload_path,
+                        source_file=pre_music_path,
                         metadata=metadata,
                         metadata_path=metadata_path,
                         youtube_video_id=video_id,
@@ -2484,7 +2479,7 @@ def main() -> int:
                 facebook_upload_ledger=facebook_upload_ledger,
                 state_key=key,
                 rel_path=rel_path,
-                source_file=upload_path,
+                source_file=pre_music_path,
                 metadata=metadata,
                 metadata_path=metadata_path,
                 youtube_video_id="",
@@ -2510,8 +2505,6 @@ def main() -> int:
             elif target_platform == "instagram" and instagram_status == "scheduled":
                 uploaded_count += 1
                 print(f"[scheduled][instagram] queued: {rel_path}")
-            elif target_platform == "instagram" and instagram_status == "draft":
-                print(f"[draft][instagram] container created: {rel_path}")
             elif target_platform == "facebook" and facebook_status == "ok":
                 uploaded_count += 1
                 print(f"[ok][facebook] uploaded: {rel_path}")
