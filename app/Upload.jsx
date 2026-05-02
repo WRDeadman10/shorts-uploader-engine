@@ -1,9 +1,66 @@
-import { useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import ToggleSwitch from "./ToggleSwitch.jsx";
 import UploadAdvancedOptions from './UploadAdvancedOptions.jsx';
 import UploadQueuePreview, { computeUploadQueue } from './UploadQueuePreview.jsx';
 import { useAppStore } from "./useAppStore.js";
+
+// ── Thin themed scrollbar injected once ───────────────────────────────────────
+const SCROLLBAR_STYLE = `
+.upload-sidebar::-webkit-scrollbar { width: 4px; }
+.upload-sidebar::-webkit-scrollbar-track { background: transparent; }
+.upload-sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+.upload-sidebar::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
+`;
+if (typeof document !== "undefined" && !document.getElementById("upload-sidebar-sb")) {
+    const s = document.createElement("style");
+    s.id = "upload-sidebar-sb";
+    s.textContent = SCROLLBAR_STYLE;
+    document.head.appendChild(s);
+}
+
+// ── Collapsible section wrapper ────────────────────────────────────────────────
+function SidebarSection({ title, defaultOpen = true, children, indent = false }) {
+    const [open, setOpen] = useState(defaultOpen);
+    return (
+        <div style={{ borderRadius: 8, overflow: 'hidden', background: indent ? 'transparent' : 'rgba(255,255,255,0.03)', border: indent ? 'none' : '1px solid #1e293b' }}>
+            <button
+                onClick={() => setOpen(o => !o)}
+                style={{
+                    width: '100%', display: 'flex', alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: indent ? '6px 0' : '9px 14px',
+                    background: 'transparent', border: 'none',
+                    borderBottom: open ? (indent ? '1px solid #1e293b' : '1px solid #1e293b') : 'none',
+                    cursor: 'pointer', color: indent ? '#94a3b8' : '#e2e8f0',
+                    fontSize: indent ? 11 : 12,
+                    fontWeight: indent ? 500 : 700,
+                    textTransform: indent ? 'uppercase' : 'none',
+                    letterSpacing: indent ? 1 : 0,
+                }}
+            >
+                <span>{title}</span>
+                <span style={{ fontSize: 10, color: '#64748b', transition: 'transform 0.2s', transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'inline-block' }}>▼</span>
+            </button>
+            <AnimatePresence initial={false}>
+                {open && (
+                    <motion.div
+                        key="content"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.18, ease: 'easeInOut' }}
+                        style={{ overflow: 'hidden' }}
+                    >
+                        <div style={{ padding: indent ? '6px 0 0' : '12px 14px' }}>
+                            {children}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
 
 const platformOptions = [
     { id: "youtube",   label: "YouTube Shorts" },
@@ -25,7 +82,7 @@ const sideRow = {
 const sideInput = {
     padding: '4px 8px', borderRadius: 4,
     border: '1px solid #444', background: '#1a1a2e',
-    color: '#fff', fontSize: 13, width: 130,
+    color: '#fff', fontSize: 13, width: 110,
 };
 
 function Upload()
@@ -171,187 +228,205 @@ function Upload()
             {/* ── Body: left sidebar + right queue ── */}
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
-                {/* LEFT SIDEBAR */}
-                <div style={{
-                    width: 300, flexShrink: 0, overflowY: 'auto',
+                {/* LEFT SIDEBAR — 2-column grid, scrollable */}
+                <div className="upload-sidebar" style={{
+                    width: 600, flexShrink: 0, overflowY: 'auto',
                     borderRight: '1px solid var(--border)',
-                    padding: '20px 16px',
-                    display: 'flex', flexDirection: 'column', gap: 18,
+                    padding: '12px 12px',
                 }}>
+                    {/* Top row: 2 columns */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
 
-                    {/* Platforms */}
-                    <div className="upload-panel" style={{ gap: 10, padding: 16 }}>
-                        <span className="upload-panel-title" style={{ fontWeight: 700 }}>Platforms</span>
-                        {platformOptions.map(p => (
-                            <ToggleSwitch key={p.id} label={p.label} checked={platforms[p.id]}
-                                onChange={v => setUploadPlatform(p.id, v)} />
-                        ))}
-                    </div>
-
-                    {/* Core Options */}
-                    <div className="upload-panel" style={{ gap: 10, padding: 16 }}>
-                        <span className="upload-panel-title" style={{ fontWeight: 700 }}>Options</span>
-
-                        {uploadOptions.map(o => (
-                            <ToggleSwitch key={o.id} label={o.label} checked={options[o.id]}
-                                onChange={v => setUploadOption(o.id, v)} />
-                        ))}
-
-                        <ToggleSwitch label="Dry Run" checked={options.dryRun || false}
-                            onChange={v => setUploadOption('dryRun', v)} />
-
-                        <div style={sideRow}>
-                            <span style={{ fontSize: 14 }}>Max Videos</span>
-                            <input type="number" min={1} max={500} style={{ ...sideInput, width: 70 }}
-                                value={options.maxVideos || 1}
-                                onChange={e => setUploadOption('maxVideos', Math.max(1, parseInt(e.target.value, 10) || 1))} />
-                        </div>
-                        <div style={sideRow}>
-                            <span style={{ fontSize: 14 }}>Videos Root</span>
-                            <input type="text" placeholder="folder path" style={sideInput}
-                                value={options.videosRoot || ''}
-                                onChange={e => setUploadOption('videosRoot', e.target.value)} />
-                        </div>
-                        <div style={sideRow}>
-                            <span style={{ fontSize: 14 }}>Privacy</span>
-                            <select style={sideInput} value={options.privacy || ''}
-                                onChange={e => setUploadOption('privacy', e.target.value)}>
-                                <option value="">Default</option>
-                                <option value="private">Private</option>
-                                <option value="unlisted">Unlisted</option>
-                                <option value="public">Public</option>
-                            </select>
-                        </div>
-                        <div style={sideRow}>
-                            <span style={{ fontSize: 14 }}>Playlist</span>
-                            <input type="text" placeholder="Optional" style={sideInput}
-                                value={options.playlistName || ''}
-                                onChange={e => setUploadOption('playlistName', e.target.value)} />
-                        </div>
-
-                        {/* Discovery Filters */}
-                        <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid #333' }}>
-                            <span style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Discovery Filters</span>
-                            <div style={sideRow}>
-                                <span style={{ fontSize: 14 }}>Extensions</span>
-                                <input type="text" placeholder=".mp4,.mov" style={sideInput}
-                                    value={options.extensions || ''}
-                                    onChange={e => setUploadOption('extensions', e.target.value)} />
+                        {/* Platforms */}
+                        <SidebarSection title="Platforms" defaultOpen={true}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {platformOptions.map(p => (
+                                    <ToggleSwitch key={p.id} label={p.label} checked={platforms[p.id]}
+                                        onChange={v => setUploadPlatform(p.id, v)} />
+                                ))}
                             </div>
-                            <div style={sideRow}>
-                                <span style={{ fontSize: 14 }}>Exclude Dirs</span>
-                                <input type="text" placeholder="drafts,archive" style={sideInput}
-                                    value={options.excludeDirectories || ''}
-                                    onChange={e => setUploadOption('excludeDirectories', e.target.value)} />
+                        </SidebarSection>
+
+                        {/* Core Options */}
+                        <SidebarSection title="Options" defaultOpen={true}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                                {uploadOptions.map(o => (
+                                    <ToggleSwitch key={o.id} label={o.label} checked={options[o.id]}
+                                        onChange={v => setUploadOption(o.id, v)} />
+                                ))}
+                                <ToggleSwitch label="Dry Run" checked={options.dryRun || false}
+                                    onChange={v => setUploadOption('dryRun', v)} />
+                                <div style={sideRow}>
+                                    <span style={{ fontSize: 13 }}>Max Videos</span>
+                                    <input type="number" min={1} max={500} style={{ ...sideInput, width: 60 }}
+                                        value={options.maxVideos || 1}
+                                        onChange={e => setUploadOption('maxVideos', Math.max(1, parseInt(e.target.value, 10) || 1))} />
+                                </div>
+                                <div style={sideRow}>
+                                    <span style={{ fontSize: 13 }}>Privacy</span>
+                                    <select style={{ ...sideInput, width: 100 }} value={options.privacy || ''}
+                                        onChange={e => setUploadOption('privacy', e.target.value)}>
+                                        <option value="">Default</option>
+                                        <option value="private">Private</option>
+                                        <option value="unlisted">Unlisted</option>
+                                        <option value="public">Public</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
+                        </SidebarSection>
 
                         {/* Queue Filters */}
-                        <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid #333' }}>
-                            <span style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Queue Filters</span>
-                            <div style={sideRow}>
-                                <span style={{ fontSize: 14 }}>Uploaded On</span>
-                                <input type="text" placeholder="youtube" style={sideInput}
-                                    value={options.requireUploadedOn || ''}
-                                    onChange={e => setUploadOption('requireUploadedOn', e.target.value)} />
+                        <SidebarSection title="Queue Filters" defaultOpen={true}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <div style={sideRow}>
+                                    <span style={{ fontSize: 13 }}>Uploaded On</span>
+                                    <input type="text" placeholder="youtube" style={sideInput}
+                                        value={options.requireUploadedOn || ''}
+                                        onChange={e => setUploadOption('requireUploadedOn', e.target.value)} />
+                                </div>
+                                <div style={sideRow}>
+                                    <span style={{ fontSize: 13 }}>Missing On</span>
+                                    <input type="text" placeholder="instagram" style={sideInput}
+                                        value={options.requireMissingOn || ''}
+                                        onChange={e => setUploadOption('requireMissingOn', e.target.value)} />
+                                </div>
                             </div>
-                            <div style={sideRow}>
-                                <span style={{ fontSize: 14 }}>Missing On</span>
-                                <input type="text" placeholder="instagram" style={sideInput}
-                                    value={options.requireMissingOn || ''}
-                                    onChange={e => setUploadOption('requireMissingOn', e.target.value)} />
+                        </SidebarSection>
+
+                        {/* Discovery Filters */}
+                        <SidebarSection title="Discovery Filters" defaultOpen={false}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <div style={sideRow}>
+                                    <span style={{ fontSize: 13 }}>Extensions</span>
+                                    <input type="text" placeholder=".mp4,.mov" style={sideInput}
+                                        value={options.extensions || ''}
+                                        onChange={e => setUploadOption('extensions', e.target.value)} />
+                                </div>
+                                <div style={sideRow}>
+                                    <span style={{ fontSize: 13 }}>Exclude Dirs</span>
+                                    <input type="text" placeholder="drafts,archive" style={sideInput}
+                                        value={options.excludeDirectories || ''}
+                                        onChange={e => setUploadOption('excludeDirectories', e.target.value)} />
+                                </div>
+                                <div style={sideRow}>
+                                    <span style={{ fontSize: 13 }}>Videos Root</span>
+                                    <input type="text" placeholder="folder path" style={sideInput}
+                                        value={options.videosRoot || ''}
+                                        onChange={e => setUploadOption('videosRoot', e.target.value)} />
+                                </div>
+                                <div style={sideRow}>
+                                    <span style={{ fontSize: 13 }}>Playlist</span>
+                                    <input type="text" placeholder="Optional" style={sideInput}
+                                        value={options.playlistName || ''}
+                                        onChange={e => setUploadOption('playlistName', e.target.value)} />
+                                </div>
                             </div>
-                        </div>
+                        </SidebarSection>
+
+                    </div>
+
+                    {/* Full-width sections below */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
 
                         {/* Credentials */}
-                        <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid #333' }}>
-                            <span style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1 }}>Credentials</span>
-                            <div style={sideRow}>
-                                <span style={{ fontSize: 14 }}>Client Secrets</span>
-                                <input type="text" placeholder="client_secret.json" style={sideInput}
-                                    value={options.clientSecretsPath || ''}
-                                    onChange={e => setUploadOption('clientSecretsPath', e.target.value)} />
+                        <SidebarSection title="Credentials" defaultOpen={false}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                <div style={sideRow}>
+                                    <span style={{ fontSize: 13 }}>Client Secrets</span>
+                                    <input type="text" placeholder="client_secret.json" style={sideInput}
+                                        value={options.clientSecretsPath || ''}
+                                        onChange={e => setUploadOption('clientSecretsPath', e.target.value)} />
+                                </div>
+                                <div style={sideRow}>
+                                    <span style={{ fontSize: 13 }}>Token File</span>
+                                    <input type="text" placeholder="token.json" style={sideInput}
+                                        value={options.tokenFilePath || ''}
+                                        onChange={e => setUploadOption('tokenFilePath', e.target.value)} />
+                                </div>
                             </div>
-                            <div style={sideRow}>
-                                <span style={{ fontSize: 14 }}>Token File</span>
-                                <input type="text" placeholder="token.json" style={sideInput}
-                                    value={options.tokenFilePath || ''}
-                                    onChange={e => setUploadOption('tokenFilePath', e.target.value)} />
-                            </div>
-                        </div>
+                        </SidebarSection>
 
-                        {/* Advanced options (binary paths, meta creds, AI, music, etc.) */}
-                        <UploadAdvancedOptions options={options} setUploadOption={setUploadOption} />
+                        {/* Advanced */}
+                        <SidebarSection title="Advanced" defaultOpen={false}>
+                            <UploadAdvancedOptions options={options} setUploadOption={setUploadOption} />
+                        </SidebarSection>
+
+                        {/* Scheduled Publishing */}
+                        <SidebarSection title="Scheduled Publishing" defaultOpen={true}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                    <ToggleSwitch label="Enable Schedule" checked={scheduleEnabled} onChange={setScheduleEnabled} />
+                                    {scheduleEnabled && (
+                                        <input type="date" value={scheduleDate}
+                                            onChange={e => setScheduleDate(e.target.value)}
+                                            style={{ ...sideInput, width: 140 }} />
+                                    )}
+                                </div>
+                                {scheduleEnabled && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+                                        {platforms.youtube && (
+                                            <div>
+                                                <p style={{ fontSize: 11, color: '#818cf8', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>YouTube Slots</p>
+                                                {youtubeSlots.map((slot, i) => (
+                                                    <div key={i} style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 5 }}>
+                                                        <input type="time" value={slot.time}
+                                                            onChange={e => updateYoutubeSlot(i, 'time', e.target.value)}
+                                                            style={{ flex: 1, ...sideInput, width: 'auto' }} />
+                                                        <input type="number" min={1} value={slot.count}
+                                                            onChange={e => updateYoutubeSlot(i, 'count', parseInt(e.target.value) || 1)}
+                                                            style={{ ...sideInput, width: 44 }} />
+                                                        <button onClick={() => removeYoutubeSlot(i)}
+                                                            style={{ padding: '4px 6px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 11 }}>✕</button>
+                                                    </div>
+                                                ))}
+                                                <button onClick={addYoutubeSlot}
+                                                    style={{ fontSize: 11, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}>+ Add</button>
+                                            </div>
+                                        )}
+                                        {platforms.facebook && (
+                                            <div>
+                                                <p style={{ fontSize: 11, color: '#818cf8', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>Facebook Slots</p>
+                                                {facebookSlots.map((slot, i) => (
+                                                    <div key={i} style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 5 }}>
+                                                        <input type="time" value={slot.time}
+                                                            onChange={e => updateFacebookSlot(i, 'time', e.target.value)}
+                                                            style={{ flex: 1, ...sideInput, width: 'auto' }} />
+                                                        <input type="number" min={1} value={slot.count}
+                                                            onChange={e => updateFacebookSlot(i, 'count', parseInt(e.target.value) || 1)}
+                                                            style={{ ...sideInput, width: 44 }} />
+                                                        <button onClick={() => removeFacebookSlot(i)}
+                                                            style={{ padding: '4px 6px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 11 }}>×</button>
+                                                    </div>
+                                                ))}
+                                                <button onClick={addFacebookSlot}
+                                                    style={{ fontSize: 11, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}>+ Add</button>
+                                            </div>
+                                        )}
+                                        {platforms.instagram && (
+                                            <div>
+                                                <p style={{ fontSize: 11, color: '#818cf8', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>Instagram Slots</p>
+                                                {instagramSlots.map((slot, i) => (
+                                                    <div key={i} style={{ display: 'flex', gap: 4, alignItems: 'center', marginBottom: 5 }}>
+                                                        <input type="time" value={slot.time}
+                                                            onChange={e => updateInstagramSlot(i, 'time', e.target.value)}
+                                                            style={{ flex: 1, ...sideInput, width: 'auto' }} />
+                                                        <input type="number" min={1} value={slot.count}
+                                                            onChange={e => updateInstagramSlot(i, 'count', parseInt(e.target.value) || 1)}
+                                                            style={{ ...sideInput, width: 44 }} />
+                                                        <button onClick={() => removeInstagramSlot(i)}
+                                                            style={{ padding: '4px 6px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 11 }}>×</button>
+                                                    </div>
+                                                ))}
+                                                <button onClick={addInstagramSlot}
+                                                    style={{ fontSize: 11, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 8px', cursor: 'pointer' }}>+ Add</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </SidebarSection>
+
                     </div>
-
-                    {/* Scheduled Publishing */}
-                    <div className="upload-panel" style={{ gap: 10, padding: 16 }}>
-                        <span className="upload-panel-title" style={{ fontWeight: 700 }}>Scheduled Publishing</span>
-                        <ToggleSwitch label="Enable Schedule" checked={scheduleEnabled} onChange={setScheduleEnabled} />
-                        {scheduleEnabled && (
-                            <input type="date" value={scheduleDate}
-                                onChange={e => setScheduleDate(e.target.value)}
-                                style={{ ...sideInput, width: '100%' }} />
-                        )}
-                        {scheduleEnabled && platforms.youtube && (
-                            <div style={{ marginTop: 4 }}>
-                                <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>YouTube Slots</p>
-                                {youtubeSlots.map((slot, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
-                                        <input type="time" value={slot.time}
-                                            onChange={e => updateYoutubeSlot(i, 'time', e.target.value)}
-                                            style={{ flex: 1, ...sideInput, width: 'auto' }} />
-                                        <input type="number" min={1} value={slot.count}
-                                            onChange={e => updateYoutubeSlot(i, 'count', parseInt(e.target.value) || 1)}
-                                            style={{ ...sideInput, width: 50 }} />
-                                        <button onClick={() => removeYoutubeSlot(i)}
-                                            style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 12 }}>✕</button>
-                                    </div>
-                                ))}
-                                <button onClick={addYoutubeSlot}
-                                    style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
-                            </div>
-                        )}
-                        {scheduleEnabled && platforms.facebook && (
-                            <div style={{ marginTop: 8 }}>
-                                <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>Facebook Slots</p>
-                                {facebookSlots.map((slot, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
-                                        <input type="time" value={slot.time}
-                                            onChange={e => updateFacebookSlot(i, 'time', e.target.value)}
-                                            style={{ flex: 1, ...sideInput, width: 'auto' }} />
-                                        <input type="number" min={1} value={slot.count}
-                                            onChange={e => updateFacebookSlot(i, 'count', parseInt(e.target.value) || 1)}
-                                            style={{ ...sideInput, width: 50 }} />
-                                        <button onClick={() => removeFacebookSlot(i)}
-                                            style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 12 }}>×</button>
-                                    </div>
-                                ))}
-                                <button onClick={addFacebookSlot}
-                                    style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
-                            </div>
-                        )}
-                        {scheduleEnabled && platforms.instagram && (
-                            <div style={{ marginTop: 8 }}>
-                                <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 6px' }}>Instagram Slots</p>
-                                {instagramSlots.map((slot, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
-                                        <input type="time" value={slot.time}
-                                            onChange={e => updateInstagramSlot(i, 'time', e.target.value)}
-                                            style={{ flex: 1, ...sideInput, width: 'auto' }} />
-                                        <input type="number" min={1} value={slot.count}
-                                            onChange={e => updateInstagramSlot(i, 'count', parseInt(e.target.value) || 1)}
-                                            style={{ ...sideInput, width: 50 }} />
-                                        <button onClick={() => removeInstagramSlot(i)}
-                                            style={{ padding: '4px 8px', borderRadius: 4, border: 'none', background: '#374151', color: '#fff', cursor: 'pointer', fontSize: 12 }}>×</button>
-                                    </div>
-                                ))}
-                                <button onClick={addInstagramSlot}
-                                    style={{ fontSize: 12, color: '#818cf8', background: 'transparent', border: '1px solid #4f46e5', borderRadius: 4, padding: '3px 10px', cursor: 'pointer' }}>+ Add</button>
-                            </div>
-                        )}
-                    </div>
-
                 </div>
 
                 {/* RIGHT: Upload Queue Grid */}
@@ -362,21 +437,6 @@ function Upload()
                         uploadStatus={uploadStatus}
                     />
                 </div>
-            </div>
-
-            {/* BOTTOM: CLI Preview pinned */}
-            <div style={{
-                borderTop: '1px solid var(--border)', padding: '10px 24px',
-                background: 'rgba(0,0,0,0.25)', flexShrink: 0,
-            }}>
-                <span style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1 }}>CLI Preview</span>
-                <pre style={{
-                    margin: '4px 0 0', fontSize: 12, color: '#94a3b8',
-                    whiteSpace: 'pre-wrap', wordBreak: 'break-all',
-                    maxHeight: 80, overflowY: 'auto',
-                }}>
-                    {uploadStatus.commandPreview || cliPreview}
-                </pre>
             </div>
 
         </section>
