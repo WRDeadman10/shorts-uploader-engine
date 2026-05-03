@@ -7,14 +7,14 @@ from __future__ import annotations
 
 import json
 import re
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from lib.file_utils import load_json_file
 from lib.text_utils import (
     clean_text, get_sidecar_value, normalize_tags, trim_title,
-    normalize_handle, parse_json_response, text_similarity,
-    normalize_compare_text,
+    normalize_handle, parse_json_response, normalize_compare_text,
 )
 
 
@@ -66,8 +66,6 @@ def load_clip_context(file_path: Path) -> Optional[Dict[str, Any]]:
             headshots = max(int(headshots_raw), 0)
         except (TypeError, ValueError):
             headshots = None
-    for val_name in [site_name, agent_name, weapon, victim_agent]:
-        pass  # normalization already done above
     if site_name.lower() == "unknown":
         site_name = ""
     if agent_name.lower() == "unknown":
@@ -165,7 +163,12 @@ def finalize_metadata(
     fallback: Dict[str, Any],
     instagram_username: str = "",
 ) -> Dict[str, Any]:
-    """Merge AI-generated metadata with fallback, normalize tags/title."""
+    """Merge AI-generated metadata with fallback, normalize tags/title.
+
+    Returns a dict with keys: title, description, tags, hashtags, cta.
+    The description includes the cta appended; cta is also returned separately
+    so callers can access it independently.
+    """
     title = trim_title(str(raw.get("title") or fallback["title"]))
     description = str(raw.get("description") or fallback["description"]).strip()
     cta = str(raw.get("cta") or fallback["cta"]).strip()
@@ -173,25 +176,51 @@ def finalize_metadata(
     raw_tags = raw.get("tags")
     tags_input = raw_tags if isinstance(raw_tags, list) else fallback["tags"]
     tags = normalize_tags([str(x) for x in tags_input])
-    if "valorant" not in [t.lower().lstrip("#") for t in tags]:
-        tags.insert(0, "valorant")
+    if "valorant" not in tags:
+        tags = normalize_tags(["valorant"] + tags)
+    if "shorts" not in tags:
+        tags = normalize_tags(tags + ["shorts"])
 
     raw_hashtags = raw.get("hashtags")
     hashtags_input = raw_hashtags if isinstance(raw_hashtags, list) else fallback["hashtags"]
-    hashtags = normalize_tags([str(x) for x in hashtags_input], max_tags=5)
-    if "#shorts" not in [h.lower() for h in hashtags]:
-        hashtags.insert(0, "#shorts")
+    hashtags: List[str] = []
+    seen: set = set()
+    for value in hashtags_input:
+        tag = _normalize_hashtag_simple(str(value))
+        if tag and tag not in seen:
+            hashtags.append(tag)
+            seen.add(tag)
+    for required in ("#shorts", "#valorant"):
+        if required not in seen:
+            hashtags.append(required)
+            seen.add(required)
+    hashtags = hashtags[:5]
 
-    if instagram_username:
-        handle = normalize_handle(instagram_username)
-        description += f"\n\nIG: @{handle}"
+    lines = [description]
+    if cta:
+        lines.extend(["", cta])
+    if hashtags:
+        lines.extend(["", " ".join(hashtags)])
+    insta_handle = normalize_handle(instagram_username)
+    if insta_handle:
+        lines.extend(["", f"Instagram: @{insta_handle}"])
+    final_description = "\n".join(line.strip() for line in lines if line is not None).strip()
+    if len(final_description) > 5000:
+        final_description = final_description[:4999]
 
     return {
         "title": title,
-        "description": f"{description}\n\n{cta}" if cta else description,
+        "description": final_description,
         "tags": tags,
         "hashtags": hashtags,
+        "cta": cta,
     }
+
+
+def _normalize_hashtag_simple(tag: str) -> str:
+    """Normalize a hashtag: strip #, remove non-alnum, re-prefix #."""
+    text = re.sub(r"[^a-zA-Z0-9_]", "", tag.replace("#", "").strip().lower())
+    return f"#{text}" if text else ""
 
 
 def is_metadata_unique(
@@ -199,15 +228,28 @@ def is_metadata_unique(
     description: str,
     recent_titles: List[str],
     recent_descriptions: List[str],
-    threshold: float = 0.7,
 ) -> Tuple[bool, str]:
-    """Check if metadata is sufficiently unique vs recent outputs."""
-    for recent in recent_titles:
-        if text_similarity(title, recent) > threshold:
-            return False, f"Title too similar to recent: {recent}"
-    for recent in recent_descriptions:
-        if text_similarity(description, recent) > threshold:
-            return False, f"Description too similar to recent: {recent}"
+    """Check if metadata is sufficiently unique vs recent outputs.
+
+    Uses SequenceMatcher with thresholds 0.90 (title) and 0.86 (description).
+    """
+    norm_title = normalize_compare_text(title)
+    norm_description = normalize_compare_text(description)
+
+    for old_title in recent_titles:
+        old_norm = normalize_compare_text(old_title)
+        if old_norm and old_norm == norm_title:
+            return False, "exact title duplicate"
+        if SequenceMatcher(None, norm_title, old_norm).ratio() >= 0.90:
+            return False, "title too similar to previous upload"
+
+    for old_description in recent_descriptions:
+        old_norm = normalize_compare_text(old_description)
+        if old_norm and old_norm == norm_description:
+            return False, "exact description duplicate"
+        if SequenceMatcher(None, norm_description, old_norm).ratio() >= 0.86:
+            return False, "description too similar to previous upload"
+
     return True, ""
 
 
@@ -227,27 +269,90 @@ def generate_ai_metadata(
     system_prompt = (
         "You are a YouTube Shorts growth strategist for VALORANT content who specializes in FUNNY, VIRAL, HIGH-CTR metadata. "
         "Your goal is to make viewers laugh, relate, or feel curious enough to instantly click. "
+
         "You ONLY produce funny, entertaining, or ironic content. No serious esports tone.\n\n"
+
+        "Your humor style includes:\n"
+        "- Relatable gamer pain\n"
+        "- Whiffs, fails, lucky shots\n"
+        "- Overconfidence gone wrong\n"
+        "- 'This should not have worked' moments\n"
+        "- Sarcasm, exaggeration, irony\n\n"
+        "- Make fun of gameplay\n\n"
+
         "Titles must feel like memes or inside jokes gamers instantly understand.\n"
         "Descriptions should feel like a human reacting, not describing.\n\n"
+
         "Avoid robotic phrasing, templates, or generic wording.\n"
         "Return ONLY strict JSON."
     )
     clip_context_text = json.dumps(clip_context, ensure_ascii=False) if clip_context else "none"
     user_prompt = (
         "Create FUNNY, HIGH-CTR metadata for a VALORANT short.\n\n"
+
         f"Video file name: {file_path.name}\n"
         f"Relative path: {rel_path}\n"
         f"Channel name/style: {channel_name or 'not provided'}\n"
         f"Language: {language}\n"
         f"Extra keywords: {', '.join(extra_keywords) if extra_keywords else 'none'}\n\n"
+
         f"Sibling sidecar JSON facts: {clip_context_text}\n\n"
+
+        "CORE GOAL:\n"
+        "- Make the viewer laugh OR say 'I need to see this'\n"
+        "- Focus on relatable or absurd moments\n"
+        "- Prioritize humor over skill\n\n"
+
+        "TITLE RULES:\n"
+        "- Max 100 characters\n"
+        "- Must be funny, ironic, or meme-like\n"
+        "- Create curiosity or confusion ('how did this happen?')\n"
+        "- Use VALORANT terms naturally (ace, clutch, jett, etc.)\n"
+        "- Avoid generic phrases completely\n\n"
+
+        "HUMOR STYLES (IMPORTANT):\n"
+        "- 'this should not have worked'\n"
+        "- 'enemy uninstalling after this'\n"
+        "- 'i did NOT deserve that'\n"
+        "- 'my aim finally clocked in'\n"
+        "- 'valorant logic makes no sense'\n\n"
+
+        "DESCRIPTION RULES:\n"
+        "- 2-4 short lines\n"
+        "- First line = funny hook\n"
+        "- Add reaction-style commentary\n"
+        "- Keep it casual and human\n\n"
+
+        "VARIETY RULE:\n"
+        "- Do NOT repeat phrasing from past outputs\n"
+        "- Each output should feel like a new joke\n\n"
+
+        # Caller already slices to args.ai_uniqueness_window; defensive cap
+        # here is large enough to keep the full window in most runs while
+        # still bounding pathological cases.
+        f"Recent titles to avoid repeating:\n{json.dumps(recent_titles[-50:], ensure_ascii=False)}\n\n"
+        f"Recent descriptions to avoid repeating:\n{json.dumps(recent_descriptions[-30:], ensure_ascii=False)}\n\n"
+
         "Output JSON schema:\n"
-        '{"title": "funny <=100 chars", "description": "2-4 lines", '
-        '"tags": ["10-15 tags"], "hashtags": ["3-5"], "cta": "short CTA"}\n\n'
-        "RULES: No emojis, no serious tone, no generic phrases, use clip context if available.\n\n"
-        f"Recent titles to avoid:\n{json.dumps(recent_titles[-5:], ensure_ascii=False)}\n"
-        f"Recent descriptions to avoid:\n{json.dumps(recent_descriptions[-3:], ensure_ascii=False)}\n"
+        "{\n"
+        '  "title": "funny, high-CTR, <=100 chars",\n'
+        '  "description": "2-4 short funny lines",\n'
+        '  "tags": ["10-15 relevant tags"],\n'
+        '  "hashtags": ["3-5 hashtags"],\n'
+        '  "cta": "short playful call-to-action"\n'
+        "}\n\n"
+
+        "STRICT RULES:\n"
+        "- No emojis\n"
+        "- No serious tone\n"
+        "- No generic phrases\n"
+        "- Use clip context if available\n"
+        "- If kills = 0, treat as 1\n"
+        "- Do not mention unknown info\n"
+        "- Do not use round numbers\n"
+        "- No Agent Name\n"
+        "- No Weapon Name\n"
+        "- No Flick\n"
     )
     response = client.chat.completions.create(
         model=model,
@@ -266,33 +371,37 @@ def build_meta_captions(
     metadata: Dict[str, Any],
     youtube_username: str = "",
     instagram_username: str = "",
-) -> tuple:
+) -> Tuple[str, str, str]:
     """Build platform-specific captions for IG and FB crosspost.
 
     Returns (ig_caption, fb_description, fb_title).
+    IG caption excludes hashtags (hashtags inflate character count and reduce reach).
+    FB description includes hashtags.
     """
-    title = str(metadata.get("title", ""))
-    description = str(metadata.get("description", ""))
-    hashtags = metadata.get("hashtags", [])
-    hashtag_line = " ".join(str(h) for h in hashtags) if hashtags else ""
+    title = clean_text(str(metadata.get("title", "")))
+    description = str(metadata.get("description", "")).strip()
 
-    ig_parts = [title]
     if description:
-        ig_parts.append(description)
-    if hashtag_line:
-        ig_parts.append(hashtag_line)
-    if youtube_username:
-        yt_handle = normalize_handle(youtube_username)
-        ig_parts.append(f"YT: @{yt_handle}")
-    ig_caption = "\n\n".join(ig_parts)
+        ig_caption = description
+        if title and title.lower() not in description.lower():
+            ig_caption = f"{title}\n\n{description}"
+        fb_description = description
+    else:
+        ig_caption = title
+        fb_description = title
 
-    fb_parts = [description] if description else [title]
-    if hashtag_line:
-        fb_parts.append(hashtag_line)
-    if instagram_username:
-        ig_handle = normalize_handle(instagram_username)
-        fb_parts.append(f"IG: @{ig_handle}")
-    fb_description = "\n\n".join(fb_parts)
-    fb_title = title
+    youtube_handle = normalize_handle(youtube_username)
+    if youtube_handle:
+        promo_line = f"YouTube: @{youtube_handle}"
+        ig_caption = f"{ig_caption}\n\n{promo_line}".strip()
 
-    return ig_caption, fb_description, fb_title
+    footer_lines: List[str] = []
+    insta_handle = normalize_handle(instagram_username)
+    if insta_handle:
+        footer_lines.append(f"Instagram: @{insta_handle}")
+    if youtube_handle:
+        footer_lines.append(f"YouTube: @{youtube_handle}")
+    if footer_lines:
+        fb_description = f"{fb_description}\n\n" + "\n".join(footer_lines)
+
+    return ig_caption[:2200].rstrip(), fb_description[:5000].rstrip(), title[:255].rstrip()

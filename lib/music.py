@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from lib.file_utils import delete_file_if_exists
-from lib.media_tools import video_has_audio_stream, build_temp_media_output_path
+from lib.media_tools import video_has_audio_stream, build_temp_media_output_path, probe_video_info
 
 _WIN_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
@@ -61,6 +61,9 @@ def reuse_valid_cached_video(
         if output_path.stat().st_mtime < source_path.stat().st_mtime:
             return False
     except OSError:
+        return False
+    info = probe_video_info(output_path, ffprobe_bin)
+    if not info or info.get("duration", 0) < min_duration:
         return False
     return True
 

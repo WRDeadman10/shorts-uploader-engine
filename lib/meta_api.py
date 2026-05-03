@@ -12,17 +12,30 @@ import requests
 
 
 def is_facebook_rate_limited_error(exc: Exception) -> bool:
-    """Check if an exception is a Facebook rate limit error."""
+    """Check if an exception is a Facebook rate limit / temporary block error.
+
+    Matches:
+    - generic rate-limit phrases ("rate limit", "too many calls", "#32")
+    - FB error code 368 / subcode 1390008 (temporary block from posting)
+    """
     msg = str(exc).lower()
-    return "rate limit" in msg or "too many calls" in msg or "#32" in msg
+    return (
+        "rate limit" in msg
+        or "too many calls" in msg
+        or "#32" in msg
+        or "368" in msg
+        or "1390008" in msg
+    )
 
 
 def is_retryable_instagram_processing_error(exc: Exception) -> bool:
     """Return True for transient Instagram processing errors worth retrying."""
     msg = str(exc).lower()
     return any(phrase in msg for phrase in [
-        "in_progress", "in progress", "processing", "media not found",
-        "try again", "temporarily", "transient",
+        "in_progress", "in progress", "processing", "processingfailederror",
+        "media not found", "try again", "temporarily", "transient",
+        "internal server error", "internal error", "(#1)", "(#2)",
+        "service temporarily unavailable", "please try again later",
     ])
 
 
@@ -209,7 +222,6 @@ def fb_start_reel_session(
     timeout: float = 120,
 ) -> Tuple[str, str]:
     """Start a Facebook Reel upload session. Returns (video_id, upload_url)."""
-    print(f"[fb_start_reel_session]")
     result = request_json(
         "POST",
         f"https://graph.facebook.com/{graph_version}/{page_id}/video_reels",
@@ -237,7 +249,6 @@ def fb_upload_reel_binary(
     rupload.facebook.com requires raw binary with Authorization/offset/file_size
     headers — NOT multipart form data.
     """
-    print(f"[fb_upload_reel_binary]")
     file_size = os.path.getsize(file_path)
     with open(file_path, "rb") as f:
         response = requests.post(
@@ -277,7 +288,6 @@ def fb_finish_reel_publish(
     scheduled_publish_time: Optional[int] = None,
 ) -> str:
     """Finish and publish a Facebook Reel. Returns the post ID."""
-    print(f"[fb_finish_reel_publish]")
     data: Dict[str, Any] = {
         "upload_phase": "finish",
         "video_id": video_id,

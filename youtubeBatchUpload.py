@@ -38,44 +38,27 @@ from lib.file_utils import (
     load_json_file, save_json_file, normalize_extensions, normalize_names_csv,
     discover_videos, file_key, delete_file_if_exists, get_default_video_root,
 )
-from lib.ledger import (
-    ensure_platform_upload_ledger_shape, update_platform_upload_ledger,
-    is_platform_upload_completed, normalize_platform_names_csv, is_uploaded_on_platform,
+# NOTE: lib/* symbols below are re-implemented inline in this module
+# (ledger, media_tools, music, youtube_auth, ai_metadata, video_conversion,
+# text_utils). Only lib.meta_api and the non-shadowed lib.youtube_upload
+# helpers are imported live; everything else is intentionally local — inline
+# behavior diverges from the lib/ variants in several places (normalize_tags,
+# normalize_hashtag, parse_json_response, get_sidecar_value, trim_title,
+# build_converted_path, finalize_metadata, is_metadata_unique). Reconciliation
+# is tracked separately.
+from lib.youtube_upload import (
+    upload_video, resolve_playlist_id, add_video_to_playlist,
+    extract_http_error_reason,
 )
-from lib.media_tools import (
-    check_tool_available, resolve_media_tool, probe_video_info,
-    video_has_audio_stream, is_shorts_eligible, build_converted_path,
-    build_temp_media_output_path,
-)
-from lib.music import build_music_inventory, build_mixed_music_path
-from lib.youtube_auth import build_youtube_client
-from lib.youtube_upload import upload_video, resolve_playlist_id, add_video_to_playlist, extract_http_error_reason, RETRIABLE_STATUS_CODES
-from lib.ai_metadata import load_clip_context, build_clip_focus, build_fallback_metadata, finalize_metadata, is_metadata_unique, generate_ai_metadata, build_meta_captions
-from lib.meta_api import is_facebook_rate_limited_error, is_retryable_instagram_processing_error, request_json, ig_create_reel_container, ig_upload_reel_binary, ig_wait_until_ready, ig_publish_reel, fb_start_reel_session, fb_upload_reel_binary, fb_finish_reel_publish, extract_meta_error_message
-from lib.video_conversion import (
-    convert_to_shorts,
-    mix_background_music,
-    try_mix_background_music as video_try_mix_background_music,
-    reuse_valid_cached_video,
-)
-from lib.text_utils import (
-    clean_text, parse_json_response, normalize_hashtag, normalize_tags,
-    trim_title, get_sidecar_value, normalize_handle, normalize_compare_text,
-    text_similarity,
-)
-from metaBatchReelsUpload import (
-    ensure_meta_state_shape,
-    fb_finish_reel_publish,
-    fb_start_reel_session,
-    fb_upload_reel_binary,
-    ig_create_reel_container,
-    ig_publish_reel,
-    ig_upload_reel_binary,
-    ig_wait_until_ready,
-    now_utc_iso as meta_now_utc_iso,
-    platform_enabled as meta_platform_enabled,
-    requests as meta_requests,
-    should_skip_platform as meta_should_skip_platform,
+# lib.video_conversion.try_mix_background_music is the live mixer used by the
+# YouTube path (aliased to disambiguate from the inline copy at line ~1033,
+# which is currently retained as dead-ish backup until reconciliation).
+from lib.video_conversion import try_mix_background_music as video_try_mix_background_music
+from lib.meta_api import (
+    is_facebook_rate_limited_error, is_retryable_instagram_processing_error,
+    request_json, ig_create_reel_container, ig_upload_reel_binary,
+    ig_wait_until_ready, ig_publish_reel, fb_start_reel_session,
+    fb_upload_reel_binary, fb_finish_reel_publish, extract_meta_error_message,
 )
 try:
     from openai import OpenAI
@@ -90,6 +73,9 @@ RETRIABLE_STATUS_CODES = {500, 502, 503, 504}
 DEFAULT_YOUTUBE_UPLOAD_LEDGER_FILE = ".youtube_uploaded_videos.json"
 DEFAULT_INSTAGRAM_UPLOAD_LEDGER_FILE = ".instagram_uploaded_videos.json"
 DEFAULT_FACEBOOK_UPLOAD_LEDGER_FILE = ".facebook_uploaded_videos.json"
+
+# Suppress ffmpeg/ffprobe console window pop-ups on Windows.
+_WIN_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
 # Option 1: set this directly in code.
 # Leave empty ("") to auto-use sibling folder named "VALORANT"
@@ -660,6 +646,7 @@ def check_tool_available(bin_name: str) -> bool:
             stderr=subprocess.PIPE,
             text=True,
             check=False,
+            creationflags=_WIN_FLAGS,
         )
         return proc.returncode == 0
     except OSError:
@@ -708,6 +695,7 @@ def probe_video_info(file_path: Path, ffprobe_bin: str) -> Optional[Dict[str, fl
             stderr=subprocess.PIPE,
             text=True,
             check=False,
+            creationflags=_WIN_FLAGS,
         )
     except OSError:
         return None
@@ -863,6 +851,7 @@ def convert_to_shorts(
         stderr=subprocess.PIPE,
         text=True,
         check=False,
+        creationflags=_WIN_FLAGS,
     )
     if proc.returncode != 0:
         delete_file_if_exists(temp_output)
@@ -910,6 +899,7 @@ def video_has_audio_stream(file_path: Path, ffprobe_bin: str) -> bool:
             stderr=subprocess.PIPE,
             text=True,
             check=False,
+            creationflags=_WIN_FLAGS,
         )
     except OSError:
         return False
@@ -930,10 +920,14 @@ def build_mixed_music_path(
     music_path: Path,
     converted_dir: Path,
     bg_volume: float,
+    replace_audio: bool = False,
 ) -> Path:
     profile = "bgmixv1"
+    # Include replace_audio in the cache key — replace=True and replace=False
+    # produce different output streams and must not collide.
+    mode = "replace" if replace_audio else f"{bg_volume:.3f}"
     digest = hashlib.sha1(
-        f"{source.resolve()}|{music_path.resolve()}|{bg_volume:.3f}|{profile}".encode("utf-8")
+        f"{source.resolve()}|{music_path.resolve()}|{mode}|{profile}".encode("utf-8")
     ).hexdigest()[:10]
     safe_stem = re.sub(r"[^a-zA-Z0-9._-]", "_", source.stem)[:80]
     return converted_dir / f"{safe_stem}.{digest}.{profile}.mp4"
@@ -1028,6 +1022,7 @@ def mix_background_music(
         stderr=subprocess.PIPE,
         text=True,
         check=False,
+        creationflags=_WIN_FLAGS,
     )
     if proc.returncode != 0:
         delete_file_if_exists(temp_output)
@@ -1087,14 +1082,25 @@ def clean_text(value: str) -> str:
 
 
 def parse_json_response(raw: str) -> Dict[str, Any]:
+    """Parse JSON from an LLM response. Returns {} on unrecoverable failure
+    so the caller can fall back to the static metadata path instead of
+    crashing the run."""
     raw = raw.strip()
+    # Strip markdown code fences (```json ... ```), matching lib/text_utils.
+    if raw.startswith("```"):
+        lines = raw.splitlines()
+        if len(lines) >= 3:
+            raw = "\n".join(lines[1:-1]).strip()
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
         match = re.search(r"\{.*\}", raw, re.DOTALL)
         if match:
-            return json.loads(match.group(0))
-        raise
+            try:
+                return json.loads(match.group(0))
+            except json.JSONDecodeError:
+                return {}
+        return {}
 
 
 def normalize_hashtag(tag: str) -> str:
@@ -1303,104 +1309,27 @@ def generate_ai_metadata(
     recent_descriptions: List[str],
     clip_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    system_prompt = (
-        "You are a YouTube Shorts growth strategist for VALORANT content who specializes in FUNNY, VIRAL, HIGH-CTR metadata. "
-        "Your goal is to make viewers laugh, relate, or feel curious enough to instantly click. "
+    """Generate VALORANT-Shorts metadata via OpenAI.
 
-        "You ONLY produce funny, entertaining, or ironic content. No serious esports tone.\n\n"
-
-        "Your humor style includes:\n"
-        "- Relatable gamer pain\n"
-        "- Whiffs, fails, lucky shots\n"
-        "- Overconfidence gone wrong\n"
-        "- 'This should not have worked' moments\n"
-        "- Sarcasm, exaggeration, irony\n\n"
-        "- Make fun of gameplay\n\n"
-
-        "Titles must feel like memes or inside jokes gamers instantly understand.\n"
-        "Descriptions should feel like a human reacting, not describing.\n\n"
-
-        "Avoid robotic phrasing, templates, or generic wording.\n"
-        "Return ONLY strict JSON."
-    )
-    clip_context_text = (
-        json.dumps(clip_context, ensure_ascii=False) if clip_context else "none"
-    )
-    user_prompt = (
-        "Create FUNNY, HIGH-CTR metadata for a VALORANT short.\n\n"
-
-        f"Video file name: {file_path.name}\n"
-        f"Relative path: {rel_path}\n"
-        f"Channel name/style: {channel_name or 'not provided'}\n"
-        f"Language: {language}\n"
-        f"Extra keywords: {', '.join(extra_keywords) if extra_keywords else 'none'}\n\n"
-
-        f"Sibling sidecar JSON facts: {clip_context_text}\n\n"
-
-        "CORE GOAL:\n"
-        "- Make the viewer laugh OR say 'I need to see this'\n"
-        "- Focus on relatable or absurd moments\n"
-        "- Prioritize humor over skill\n\n"
-
-        "TITLE RULES:\n"
-        "- Max 100 characters\n"
-        "- Must be funny, ironic, or meme-like\n"
-        "- Create curiosity or confusion ('how did this happen?')\n"
-        "- Use VALORANT terms naturally (ace, clutch, jett, etc.)\n"
-        "- Avoid generic phrases completely\n\n"
-
-        "HUMOR STYLES (IMPORTANT):\n"
-        "- 'this should not have worked'\n"
-        "- 'enemy uninstalling after this'\n"
-        "- 'i did NOT deserve that'\n"
-        "- 'my aim finally clocked in'\n"
-        "- 'valorant logic makes no sense'\n\n"
-
-        "DESCRIPTION RULES:\n"
-        "- 2–4 short lines\n"
-        "- First line = funny hook\n"
-        "- Add reaction-style commentary\n"
-        "- Keep it casual and human\n\n"
-
-        "VARIETY RULE:\n"
-        "- Do NOT repeat phrasing from past outputs\n"
-        "- Each output should feel like a new joke\n\n"
-
-        f"Recent titles to avoid repeating:\n{json.dumps(recent_titles, ensure_ascii=False)}\n\n"
-        f"Recent descriptions to avoid repeating:\n{json.dumps(recent_descriptions, ensure_ascii=False)}\n\n"
-
-        "Output JSON schema:\n"
-        "{\n"
-        '  "title": "funny, high-CTR, <=100 chars",\n'
-        '  "description": "2-4 short funny lines",\n'
-        '  "tags": ["10-15 relevant tags"],\n'
-        '  "hashtags": ["3-5 hashtags"],\n'
-        '  "cta": "short playful call-to-action"\n'
-        "}\n\n"
-
-        "STRICT RULES:\n"
-        "- No emojis\n"
-        "- No serious tone\n"
-        "- No generic phrases\n"
-        "- Use clip context if available\n"
-        "- If kills = 0, treat as 1\n"
-        "- Do not mention unknown info\n"
-        "- Do not use round numbers\n"
-        "- No Agent Name\n"
-        "- No Weapon Name\n"
-        "- No Flick\n"
-    )
-    response = client.chat.completions.create(
+    The full prompt now lives in ``lib.ai_metadata.generate_ai_metadata`` —
+    this thin wrapper exists only so the surrounding script keeps its
+    historical call sites. Caller-side slicing of recent_titles /
+    recent_descriptions still happens upstream; the lib version applies an
+    additional defensive cap.
+    """
+    from lib.ai_metadata import generate_ai_metadata as _lib_generate_ai_metadata
+    return _lib_generate_ai_metadata(
+        client=client,
         model=model,
-        response_format={"type": "json_object"},
-        temperature=0.8,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
+        file_path=file_path,
+        rel_path=rel_path,
+        channel_name=channel_name,
+        extra_keywords=extra_keywords,
+        language=language,
+        recent_titles=recent_titles,
+        recent_descriptions=recent_descriptions,
+        clip_context=clip_context,
     )
-    raw = response.choices[0].message.content or "{}"
-    return parse_json_response(raw)
 
 
 def normalize_handle(value: str) -> str:
@@ -1529,22 +1458,6 @@ def build_meta_captions(
     return ig_caption[:2200].rstrip(), fb_description[:5000].rstrip(), title[:255].rstrip()
 
 
-def is_retryable_instagram_processing_error(exc: Exception) -> bool:
-    message = str(exc).lower()
-    markers = [
-        "processingfailederror",
-        "generic internal error",
-        "internal server error occurred",
-        "meta api error (500)",
-    ]
-    return any(marker in message for marker in markers)
-
-
-def is_facebook_rate_limited_error(exc: Exception) -> bool:
-    message = str(exc).lower()
-    return "code=368" in message and "subcode=1390008" in message
-
-
 def crosspost_meta_reel(
     *,
     args: argparse.Namespace,
@@ -1578,7 +1491,7 @@ def crosspost_meta_reel(
         do_facebook = False
     if not do_instagram and not do_facebook:
         print("[meta-crosspost] skipped: already uploaded on selected platform(s)")
-        return
+        return False
 
     ig_caption, fb_description, fb_title = build_meta_captions(
         metadata,
@@ -1622,13 +1535,19 @@ def crosspost_meta_reel(
                     interval_seconds=args.meta_poll_interval_seconds,
                     timeout=args.meta_request_timeout_seconds,
                 )
-                ig_media_id = ig_publish_reel(
-                    graph_version=args.meta_graph_version,
-                    ig_user_id=clean_text(args.meta_ig_user_id),
-                    container_id=container_id,
-                    access_token=clean_text(args.meta_access_token),
-                    timeout=args.meta_request_timeout_seconds,
-                )
+                # When scheduled_publish_time is set on the container, Meta
+                # auto-publishes at the scheduled time — calling media_publish
+                # would publish immediately and defeat the schedule.
+                if _ig_scheduled_ts is not None:
+                    ig_media_id = ""
+                else:
+                    ig_media_id = ig_publish_reel(
+                        graph_version=args.meta_graph_version,
+                        ig_user_id=clean_text(args.meta_ig_user_id),
+                        container_id=container_id,
+                        access_token=clean_text(args.meta_access_token),
+                        timeout=args.meta_request_timeout_seconds,
+                    )
                 instagram_status = "scheduled" if _ig_scheduled_ts is not None else "ok"
                 state_row["instagram"] = {
                     "status": instagram_status,
@@ -1850,6 +1769,7 @@ def prepare_trending_music(report_path: Path, cache_dir: Path, max_tracks: int) 
                     capture_output=True,
                     text=True,
                     timeout=120,
+                    creationflags=_WIN_FLAGS,
                 )
                 if result.returncode == 0:
                     downloaded += 1
@@ -1961,6 +1881,7 @@ def main() -> int:
 
     if target_platform not in required_missing_platforms:
         required_missing_platforms.append(target_platform)
+    required_missing_platforms = list(dict.fromkeys(required_missing_platforms))
 
     metadata_history = load_json_file(
         metadata_history_file,
@@ -2471,7 +2392,6 @@ def main() -> int:
                 break
         else:
             _meta_publish_at = _pub_seq[_pub_idx] if _pub_idx < len(_pub_seq) else None
-            _pub_idx += 1
             _meta_error = crosspost_meta_reel(
                 args=args,
                 reels_state=meta_reels_state,
@@ -2486,6 +2406,8 @@ def main() -> int:
                 facebook_blocked_for_run=facebook_blocked_for_run,
                 publish_at=_meta_publish_at,
             )
+            if not _meta_error:
+                _pub_idx += 1
             save_json_file(meta_reels_state_file, meta_reels_state)
             save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
             save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)

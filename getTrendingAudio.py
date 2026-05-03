@@ -127,17 +127,11 @@ def _build_youtube_track(rank: int, item: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def fetch_youtube_api_key(api_key: str, region: str, max_results: int) -> List[Dict[str, Any]]:
-    """Trending music via YouTube Data API v3 (API key — no OAuth)."""
+def _run_youtube_videos_list(youtube_client: Any, region: str, max_results: int) -> List[Dict[str, Any]]:
+    """Shared helper — call videos.list(chart=mostPopular, category=Music) and
+    map results into the standard track dict."""
     try:
-        from googleapiclient.discovery import build
-        youtube = build("youtube", "v3", developerKey=api_key)
-    except Exception as exc:
-        print(f"[error][youtube] Could not build API client: {exc}")
-        return []
-
-    try:
-        response = youtube.videos().list(
+        response = youtube_client.videos().list(
             part="snippet,statistics",
             chart="mostPopular",
             videoCategoryId="10",   # Music
@@ -147,11 +141,21 @@ def fetch_youtube_api_key(api_key: str, region: str, max_results: int) -> List[D
     except Exception as exc:
         print(f"[error][youtube] API request failed: {exc}")
         return []
-
     return [
         _build_youtube_track(i + 1, item)
         for i, item in enumerate(response.get("items", []))
     ]
+
+
+def fetch_youtube_api_key(api_key: str, region: str, max_results: int) -> List[Dict[str, Any]]:
+    """Trending music via YouTube Data API v3 (API key — no OAuth)."""
+    try:
+        from googleapiclient.discovery import build
+        youtube = build("youtube", "v3", developerKey=api_key)
+    except Exception as exc:
+        print(f"[error][youtube] Could not build API client: {exc}")
+        return []
+    return _run_youtube_videos_list(youtube, region, max_results)
 
 
 def fetch_youtube_oauth(
@@ -168,23 +172,7 @@ def fetch_youtube_oauth(
     except Exception as exc:
         print(f"[error][youtube] OAuth setup failed: {exc}")
         return []
-
-    try:
-        response = youtube.videos().list(
-            part="snippet,statistics",
-            chart="mostPopular",
-            videoCategoryId="10",
-            regionCode=region,
-            maxResults=min(max_results, 50),
-        ).execute()
-    except Exception as exc:
-        print(f"[error][youtube] API request failed: {exc}")
-        return []
-
-    return [
-        _build_youtube_track(i + 1, item)
-        for i, item in enumerate(response.get("items", []))
-    ]
+    return _run_youtube_videos_list(youtube, region, max_results)
 
 
 # ── Instagram ─────────────────────────────────────────────────────────────────

@@ -189,16 +189,6 @@ def os_env(name: str) -> str:
     return os.getenv(name, "").strip()
 
 
-def parse_iso_utc(value: str) -> datetime:
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-        if parsed.tzinfo is None:
-            return parsed.replace(tzinfo=timezone.utc)
-        return parsed
-    except ValueError:
-        return datetime.min.replace(tzinfo=timezone.utc)
-
-
 def now_utc_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -274,7 +264,6 @@ def load_source_entries(source_state_file: Path) -> List[Dict[str, Any]]:
                 "metadata_file": str(row.get("metadata_file", "")).strip(),
                 "title": str(row.get("title", "")).strip(),
                 "uploaded_at_utc": str(row.get("uploaded_at_utc", "")).strip(),
-                "sort_time": parse_iso_utc(str(row.get("uploaded_at_utc", "")).strip()),
             }
         )
     entries.sort(key=lambda item: item["relative_path"])  # alphabetical — matches UI queue order
@@ -481,13 +470,19 @@ def main() -> int:
                     interval_seconds=args.poll_interval_seconds,
                     timeout=args.request_timeout_seconds,
                 )
-                ig_media_id = ig_publish_reel(
-                    graph_version=args.graph_version,
-                    ig_user_id=ig_user_id,
-                    container_id=container_id,
-                    access_token=access_token,
-                    timeout=args.request_timeout_seconds,
-                )
+                # When scheduled_publish_time is set on the container, Meta
+                # auto-publishes at the scheduled time — calling media_publish
+                # would publish immediately and defeat the schedule.
+                if _ig_scheduled_ts is not None:
+                    ig_media_id = ""
+                else:
+                    ig_media_id = ig_publish_reel(
+                        graph_version=args.graph_version,
+                        ig_user_id=ig_user_id,
+                        container_id=container_id,
+                        access_token=access_token,
+                        timeout=args.request_timeout_seconds,
+                    )
                 instagram_status = "scheduled" if _ig_scheduled_ts is not None else "ok"
                 if instagram_status == "ok":
                     success_instagram += 1

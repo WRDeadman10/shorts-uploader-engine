@@ -5,6 +5,7 @@ Used by: youtubeBatchUpload, musicOverlaySample
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -15,21 +16,43 @@ _WIN_FLAGS = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
 
 def check_tool_available(bin_name: str) -> bool:
-    """Check if a binary is available on PATH or as an absolute path."""
-    if Path(bin_name).is_absolute():
-        return Path(bin_name).exists()
-    return shutil.which(bin_name) is not None
+    """Check if a binary is available and functional by running -version."""
+    if Path(bin_name).is_absolute() and not Path(bin_name).exists():
+        return False
+    try:
+        proc = subprocess.run(
+            [bin_name, "-version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+            creationflags=_WIN_FLAGS,
+        )
+        return proc.returncode == 0
+    except OSError:
+        return False
 
 
 def resolve_media_tool(bin_name: str) -> Optional[str]:
     """Resolve a media tool binary path. Returns None if not found."""
     if Path(bin_name).is_absolute():
         return str(bin_name) if Path(bin_name).exists() else None
+    if check_tool_available(bin_name):
+        return bin_name
     resolved = shutil.which(bin_name)
     if resolved:
         return resolved
     # Try common Windows locations
     if sys.platform == "win32":
+        exe_name = bin_name if bin_name.lower().endswith(".exe") else f"{bin_name}.exe"
+        # WinGet FFmpeg installation path
+        local_appdata = os.getenv("LOCALAPPDATA")
+        if local_appdata:
+            candidate_root = Path(local_appdata) / "Microsoft" / "WinGet" / "Packages"
+            if candidate_root.exists():
+                for match in candidate_root.rglob(exe_name):
+                    if match.is_file():
+                        return str(match)
         for candidate in [
             Path("C:/ffmpeg/bin") / bin_name,
             Path.home() / "ffmpeg" / "bin" / bin_name,
