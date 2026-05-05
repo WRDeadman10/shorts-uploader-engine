@@ -28,6 +28,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from dateutil import parser
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -458,6 +459,12 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=20.0,
         help="Seconds to wait between Instagram processing-failure retries.",
+    )
+    parser.add_argument(
+        "--use_trending_audio",
+        action="store_true",
+        default=False,
+        help="Whether to use trending audio for uploads.",
     )
     parser.add_argument('--schedule-plan', default=None, help='JSON schedule: [{"count": N, "publish_at": "ISO UTC datetime"}]')
     return parser.parse_args()
@@ -1899,7 +1906,7 @@ def main() -> int:
     music_dir = Path(args.music_dir).resolve() if args.music_dir.strip() else None
     music_inventory_file = Path(args.music_inventory_file).resolve()
 
-    if args.trending_audio_report.strip() or args.use_trending_audio:
+    if args.trending_audio_report.strip() and args.use_trending_audio:
         if args.use_trending_audio and not args.trending_audio_report.strip():
             print("[error] --use-trending-audio requires --trending-audio-report.")
             return 1
@@ -1914,8 +1921,9 @@ def main() -> int:
             max_tracks=args.trending_audio_max,
         )
         if trending_dir:
-            music_dir = trending_dir
-            print(f"[info] music_dir overridden → {music_dir}")
+            if target_platform == "youtube" and args.use_trending_audio:
+                music_dir = trending_dir
+                print(f"[info] music_dir overridden → {music_dir}")
         elif args.use_trending_audio:
             print(
                 "[error] Trending audio mode is enabled but no usable tracks were prepared. "
@@ -2200,54 +2208,56 @@ def main() -> int:
         # without music overlay regardless of whether YouTube gets music.
         pre_music_path = upload_path
 
-        if music_enabled and target_platform == "youtube":
-            _replace_audio = bool(args.use_trending_audio)
-            music_track_index = (index - 1) if args.use_trending_audio else random.randint(0, len(music_inventory) - 1)
-            mixed_upload_path, chosen_music_path, music_failures = video_try_mix_background_music(
-                source=upload_path,
-                music_tracks=music_inventory,
-                converted_dir=converted_dir,
-                ffmpeg_bin=ffmpeg_bin,
-                ffprobe_bin=ffprobe_bin,
-                bg_volume=args.music_bg_volume,
-                track_index=music_track_index,
-                replace_audio=_replace_audio,
-            )
-            if chosen_music_path:
-                upload_path = mixed_upload_path
-                if upload_path != video_path:
-                    cleanup_candidates.append(upload_path)
-                if _replace_audio:
-                    print(f"[audio] original audio replaced with trending track: {chosen_music_path.name}")
-                else:
+        
+        _replace_audio = bool(args.use_trending_audio)
+        if target_platform == "youtube" and args.use_trending_audio:
+            music_track_index = (index - 1)
+        else :
+            music_track_index = random.randint(0, len(music_inventory) - 1)
+            
+        mixed_upload_path, chosen_music_path, music_failures = video_try_mix_background_music(
+            source=upload_path,
+            music_tracks=music_inventory,
+            converted_dir=converted_dir,
+            ffmpeg_bin=ffmpeg_bin,
+            ffprobe_bin=ffprobe_bin,
+            bg_volume=args.music_bg_volume,
+            track_index=music_track_index,
+            replace_audio=_replace_audio,
+        )
+        if chosen_music_path:
+            upload_path = mixed_upload_path
+            if upload_path != video_path:
+                cleanup_candidates.append(upload_path)
+            if _replace_audio:
+                print(f"[audio] original audio replaced with trending track: {chosen_music_path.name}")
+            else:
+                print(
+                    f"[audio] background music mixed: {chosen_music_path.name} "
+                    f"(volume={args.music_bg_volume:.3f})"
+                )
+        else:
+            upload_path = pre_music_path
+            if music_failures:
+                print(
+                    "[warn] background music mix failed for all available tracks; "
+                    "uploading video without music."
+                )
+                for failure in music_failures[:3]:
+                    print(f"[warn] music attempt failed: {failure}")
+                if len(music_failures) > 3:
                     print(
-                        f"[audio] background music mixed: {chosen_music_path.name} "
-                        f"(volume={args.music_bg_volume:.3f})"
+                        f"[warn] additional music failures not shown: "
+                        f"{len(music_failures) - 3}"
                     )
             else:
-                upload_path = pre_music_path
-                if music_failures:
+                print("[warn] no usable background music tracks found; uploading video without music.")
+                if args.use_trending_audio:
                     print(
-                        "[warn] background music mix failed for all available tracks; "
-                        "uploading video without music."
+                        "[error] Trending audio mode requested a full audio replacement, "
+                        "but no track could be applied."
                     )
-                    for failure in music_failures[:3]:
-                        print(f"[warn] music attempt failed: {failure}")
-                    if len(music_failures) > 3:
-                        print(
-                            f"[warn] additional music failures not shown: "
-                            f"{len(music_failures) - 3}"
-                        )
-                else:
-                    print("[warn] no usable background music tracks found; uploading video without music.")
-                    if args.use_trending_audio:
-                        print(
-                            "[error] Trending audio mode requested a full audio replacement, "
-                            "but no track could be applied."
-                        )
-                        continue
-        elif music_enabled and target_platform != "youtube":
-            print("[info] music skipped — Meta platform upload uses original video audio")
+                    continue
 
         clip_context = load_clip_context(video_path)
         if clip_context:
