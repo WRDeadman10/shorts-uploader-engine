@@ -84,30 +84,110 @@ async function runUpload(payload)
         return errStatus;
     }
 
-    let commandSpec = null;
+    const basePayload = payload || {};
+    const uniqueQueueOnly = Boolean(basePayload.options && basePayload.options.uniqueQueueOnly);
+    const normalizedPayload = uniqueQueueOnly
+        ? Object.assign({}, basePayload, {
+            platforms: { youtube: true, instagram: true, facebook: true }
+        })
+        : basePayload;
+    const platforms = normalizedPayload.platforms || {};
+    const selectedPlatforms = ["youtube", "instagram", "facebook"].filter(function(name) { return Boolean(platforms[name]); });
 
-    try
-    {
-        commandSpec = buildUploadCommand(payload || {});
-    }
-    catch (error)
-    {
-        const sessionId = String(Date.now());
-        const errStatus = Object.assign(createIdleStatus(), {
-            sessionId: sessionId,
-            uploadId: sessionId,
-            success: false,
-            status: "error",
-            errorMessage: error.message,
-            startedAt: new Date().toISOString()
+    const launchPayloads = uniqueQueueOnly
+        ? [normalizedPayload]
+        : selectedPlatforms.length <= 1
+        ? [normalizedPayload]
+        : selectedPlatforms.map(function(name, index)
+        {
+            // Instagram uploads should never receive scheduled publishing.
+            const nextPayload = buildSinglePlatformPayload(normalizedPayload, name, name === "instagram");
+            if (!uniqueQueueOnly) return nextPayload;
+
+            const nextOptions = Object.assign({}, nextPayload.options || {});
+            if (index === 0)
+            {
+                nextOptions.requireUploadedOn = "";
+                nextOptions.requireMissingOn = selectedPlatforms.join(",");
+            }
+            else
+            {
+                const previous = selectedPlatforms[index - 1] || "";
+                nextOptions.requireUploadedOn = previous;
+                nextOptions.requireMissingOn = name;
+            }
+            nextPayload.options = nextOptions;
+            return nextPayload;
         });
-        sessions.set(sessionId, { process: null, logBuffer: [], stopRequested: false, status: errStatus });
-        pushLog(sessionId, "system", error.message);
-        broadcastStatuses();
-        return errStatus;
+
+    const launched = [];
+    const runSequentially = uniqueQueueOnly && selectedPlatforms.length > 1;
+    for (const launchPayload of launchPayloads)
+    {
+        try
+        {
+            const started = startUploadSession(pythonCommand, launchPayload);
+            launched.push(started);
+            if (runSequentially)
+            {
+                await waitForSessionExit(started.sessionId);
+            }
+        }
+        catch (error)
+        {
+            const sessionId = String(Date.now()) + "-" + String(Math.floor(Math.random() * 1000));
+            const errStatus = Object.assign(createIdleStatus(), {
+                sessionId: sessionId,
+                uploadId: sessionId,
+                success: false,
+                status: "error",
+                errorMessage: error.message,
+                startedAt: new Date().toISOString()
+            });
+            sessions.set(sessionId, { process: null, logBuffer: [], stopRequested: false, status: errStatus });
+            pushLog(sessionId, "system", error.message);
+            broadcastStatuses();
+            return errStatus;
+        }
     }
 
-    const sessionId = String(Date.now());
+    if (launched.length === 1) return launched[0];
+    return Object.assign({}, launched[0], {
+        startedSessions: launched.map(function(s) { return s.sessionId; }),
+        platform: selectedPlatforms.join("+")
+    });
+}
+
+function waitForSessionExit(sessionId)
+{
+    return new Promise(function(resolve)
+    {
+        const check = function()
+        {
+            const session = sessions.get(sessionId);
+            if (!session || !session.process) return resolve();
+            setTimeout(check, 500);
+        };
+        check();
+    });
+}
+
+function buildSinglePlatformPayload(payload, platformName, disableSchedule)
+{
+    const nextPlatforms = { youtube: false, instagram: false, facebook: false };
+    nextPlatforms[platformName] = true;
+    const nextSchedule = Object.assign({}, payload.schedule || {});
+    if (disableSchedule) nextSchedule.enabled = false;
+    return Object.assign({}, payload, {
+        platforms: nextPlatforms,
+        schedule: nextSchedule
+    });
+}
+
+function startUploadSession(pythonCommand, payload)
+{
+    const commandSpec = buildUploadCommand(payload || {});
+    const sessionId = String(Date.now()) + "-" + String(Math.floor(Math.random() * 100000));
     const scriptPath = path.join(getRepoRoot(), commandSpec.scriptName);
     const args = pythonCommand.prefixArgs.concat([scriptPath]).concat(commandSpec.scriptArgs);
     const commandStr = [pythonCommand.command].concat(args).join(" ");
@@ -254,21 +334,37 @@ function pushLog(sessionId, streamName, message)
 {
     const session = sessions.get(sessionId);
     const bufLen = session ? session.logBuffer.length : 0;
+    const progressMatch = String(message || "").match(/^\[progress\]\[([^\]]+)\]/);
+    const progressStep = progressMatch ? progressMatch[1] : "";
+    const isProgressUpdate = Boolean(progressStep);
+    const entryId = isProgressUpdate
+        ? "progress-" + sessionId + "-" + streamName + "-" + progressStep
+        : String(Date.now()) + "-" + String(bufLen + 1);
     const entry = {
-        id: String(Date.now()) + "-" + String(bufLen + 1),
+        id: entryId,
         sessionId: sessionId,
         sessionType: "upload",
         timestamp: new Date().toISOString(),
         stream: streamName,
-        message: message
+        message: message,
+        replaceIfExists: isProgressUpdate
     };
 
     if (session)
     {
-        session.logBuffer.push(entry);
-        if (session.logBuffer.length > 500)
+        if (isProgressUpdate)
         {
-            session.logBuffer = session.logBuffer.slice(session.logBuffer.length - 500);
+            const existingIndex = session.logBuffer.findIndex(function(item) { return item.id === entry.id; });
+            if (existingIndex >= 0) session.logBuffer[existingIndex] = entry;
+            else session.logBuffer.push(entry);
+        }
+        else
+        {
+            session.logBuffer.push(entry);
+            if (session.logBuffer.length > 500)
+            {
+                session.logBuffer = session.logBuffer.slice(session.logBuffer.length - 500);
+            }
         }
     }
 
@@ -357,6 +453,14 @@ function buildUploadCommand(payload)
     {
         args.push("--music-dir=");
     }
+    if (options.fullSizeVideo)
+    {
+        args.push("--full-size-video");
+    }
+    if (options.uniqueQueueOnly)
+    {
+        args.push("--continue-on-platform-error");
+    }
 
     if (youtubeEnabled && (instagramEnabled || facebookEnabled))
     {
@@ -387,6 +491,7 @@ function buildUploadCommand(payload)
     }
 
     if (options.videosRoot) { args.push("--root", options.videosRoot); }
+    if (options.appendMaxSeconds) { args.push("--shorts-max-seconds", String(options.appendMaxSeconds)); }
     if (options.privacy) { args.push("--privacy", options.privacy); }
     if (options.playlistName) { args.push("--playlist-name", options.playlistName); }
     if (options.dryRun) { args.push("--dry-run"); }
@@ -427,7 +532,8 @@ function buildUploadCommand(payload)
     if (!trendingAudioEnabled && options.musicVolume) args.push("--music-bg-volume", String(options.musicVolume));
     if (options.musicInventory && !trendingAudioEnabled) args.push("--music-inventory-file", options.musicInventory);
     var sch2 = payload.schedule || {};
-    if (sch2.enabled && sch2.date) {
+    const instagramDirectUpload = instagramEnabled && !youtubeEnabled;
+    if (!instagramDirectUpload && sch2.enabled && sch2.date) {
         var slots = pickScheduleSlots(sch2, platforms);
         if (slots) {
             args.push('--schedule-plan', buildSchedulePlan(slots, sch2.date));

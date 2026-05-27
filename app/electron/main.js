@@ -39,6 +39,8 @@ async function loadRenderer(windowInstance)
     await windowInstance.loadFile(getRendererEntryFile());
 }
 
+const { readSettings } = require("./services/pathService");
+
 app.whenReady().then(function onAppReady()
 {
     registerUploadHandlers(ipcMain, function getMainWindow()
@@ -55,6 +57,44 @@ app.whenReady().then(function onAppReady()
         if (BrowserWindow.getAllWindows().length === 0)
         {
             createMainWindow();
+        }
+    });
+
+    ipcMain.handle("refresh-meta-token", async (event, userToken, pageId, graphVersion) => {
+        try {
+            const result = await new Promise((resolve) => {
+                const https = require('https');
+                const url = `https://graph.facebook.com/${graphVersion}/me/accounts?fields=id,name,access_token,instagram_business_account%7Bid,username%7D&access_token=${userToken}`;
+                https.get(url, (res) => {
+                    let data = '';
+                    res.on('data', (chunk) => data += chunk);
+                    res.on('end', () => {
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed.error) {
+                                resolve({ success: false, errorMessage: parsed.error.message || "Meta API error" });
+                                return;
+                            }
+                            if (parsed.data) {
+                                for (const account of parsed.data) {
+                                    if (String(account.id) === String(pageId)) {
+                                        resolve({ success: true, pageToken: account.access_token, igUserId: account.instagram_business_account ? account.instagram_business_account.id : "" });
+                                        return;
+                                    }
+                                }
+                            }
+                            resolve({ success: false, errorMessage: "Could not find Page ID in the accounts returned." });
+                        } catch (e) {
+                            resolve({ success: false, errorMessage: "Failed to parse Meta API response" });
+                        }
+                    });
+                }).on('error', (err) => {
+                    resolve({ success: false, errorMessage: err.message });
+                });
+            });
+            return result;
+        } catch (e) {
+            return { success: false, errorMessage: e.message };
         }
     });
 });

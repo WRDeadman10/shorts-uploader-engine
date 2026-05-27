@@ -96,6 +96,12 @@ function deriveStatuses(queue, logEntries, uploadStatus)
 export function computeUploadQueue(videoList, options, platforms)
 {
     let filtered = videoList;
+    if (options.uniqueQueueOnly && platforms)
+    {
+        const selected = Object.keys(PLATFORM_KEY).filter(p => platforms[p]);
+        if (selected.length > 0)
+            filtered = filtered.filter(v => selected.every(p => !v[PLATFORM_KEY[p]]));
+    }
 
     const uploadedOn = (options.requireUploadedOn || '').trim().toLowerCase();
     const missingOn  = (options.requireMissingOn  || '').trim().toLowerCase();
@@ -107,7 +113,7 @@ export function computeUploadQueue(videoList, options, platforms)
     {
         filtered = filtered.filter(v => !v[PLATFORM_KEY[missingOn]]);
     }
-    else if (!missingOn && platforms)
+    else if (!missingOn && !options.uniqueQueueOnly && platforms)
     {
         // Auto-filter: exclude videos already uploaded on ALL selected platforms
         const selected = Object.keys(PLATFORM_KEY).filter(p => platforms[p]);

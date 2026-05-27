@@ -124,8 +124,10 @@ function Upload()
 
     const uploadQueue = useMemo(
         () => computeUploadQueue(videoList, options, platforms),
-        [videoList, options.requireUploadedOn, options.requireMissingOn, options.maxVideos, platforms.youtube, platforms.instagram, platforms.facebook]
+        [videoList, options.uniqueQueueOnly, options.requireUploadedOn, options.requireMissingOn, options.maxVideos, platforms.youtube, platforms.instagram, platforms.facebook]
     );
+    const instagramDirectUpload = platforms.instagram && !platforms.youtube;
+    const effectiveScheduleEnabled = !instagramDirectUpload && scheduleEnabled;
 
     const cliPreview = useMemo(function buildCliPreview()
     {
@@ -142,6 +144,8 @@ function Upload()
             "--max-videos " + String(options.maxVideos || 1),
             "--allow-fallback"
         ];
+        if (options.appendMaxSeconds) args.push("--shorts-max-seconds " + String(options.appendMaxSeconds));
+        if (options.fullSizeVideo) args.push("--full-size-video");
         if (options.videosRoot)    args.push("--root "          + options.videosRoot);
         if (options.privacy)       args.push("--privacy "       + options.privacy);
         if (options.playlistName)  args.push("--playlist-name " + options.playlistName);
@@ -244,6 +248,11 @@ function Upload()
                                     <ToggleSwitch key={p.id} label={p.label} checked={platforms[p.id]}
                                         onChange={v => setUploadPlatform(p.id, v)} />
                                 ))}
+                                <ToggleSwitch
+                                    label="Full size Video"
+                                    checked={!!options.fullSizeVideo}
+                                    onChange={v => setUploadOption('fullSizeVideo', v)}
+                                />
                             </div>
                         </SidebarSection>
 
@@ -263,6 +272,12 @@ function Upload()
                                         onChange={e => setUploadOption('maxVideos', Math.max(1, parseInt(e.target.value, 10) || 1))} />
                                 </div>
                                 <div style={sideRow}>
+                                    <span style={{ fontSize: 13 }}>Append Max (sec)</span>
+                                    <input type="number" min={11} max={3600} style={{ ...sideInput, width: 80 }}
+                                        value={options.appendMaxSeconds || 180}
+                                        onChange={e => setUploadOption('appendMaxSeconds', Math.max(11, parseInt(e.target.value, 10) || 180))} />
+                                </div>
+                                <div style={sideRow}>
                                     <span style={{ fontSize: 13 }}>Privacy</span>
                                     <select style={{ ...sideInput, width: 100 }} value={options.privacy || ''}
                                         onChange={e => setUploadOption('privacy', e.target.value)}>
@@ -272,12 +287,40 @@ function Upload()
                                         <option value="public">Public</option>
                                     </select>
                                 </div>
+                                <div style={{...sideRow, flexDirection: 'column', alignItems: 'stretch', gap: 6}}>
+                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                        <span style={{ fontSize: 13 }} title="Your long-lived Meta Master access token">Meta Master Token</span>
+                                        <button onClick={async () => {
+                                            if (!window.api || !window.api.refreshMetaToken) return;
+                                            if (!options.metaMasterToken || !options.fbPageId) {
+                                                useAppStore.getState().setErrorMessage("Please enter both Meta Master Token and FB Page ID (in Advanced).");
+                                                return;
+                                            }
+                                            const res = await window.api.refreshMetaToken(options.metaMasterToken, options.fbPageId, options.metaGraphVersion || 'v25.0');
+                                            if (res && res.success) {
+                                                setUploadOption('metaAccessToken', res.pageToken);
+                                                if (res.igUserId) setUploadOption('igUserId', res.igUserId);
+                                                useAppStore.getState().setErrorMessage("Token successfully updated!");
+                                            } else {
+                                                useAppStore.getState().setErrorMessage("Meta master token has expired or is invalid you need to update it. " + (res?.errorMessage || ""));
+                                            }
+                                        }} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: '#4f46e5', border: 'none', color: '#fff', cursor: 'pointer' }}>Get Token</button>
+                                    </div>
+                                    <input type="text" placeholder="EAA..." style={{ ...sideInput, width: '100%' }}
+                                        value={options.metaMasterToken || ''}
+                                        onChange={e => setUploadOption('metaMasterToken', e.target.value)} />
+                                </div>
                             </div>
                         </SidebarSection>
 
                         {/* Queue Filters */}
                         <SidebarSection title="Queue Filters" defaultOpen={true}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <ToggleSwitch
+                                    label="Unique"
+                                    checked={!!options.uniqueQueueOnly}
+                                    onChange={v => setUploadOption('uniqueQueueOnly', v)}
+                                />
                                 <div style={sideRow}>
                                     <span style={{ fontSize: 13 }}>Uploaded On</span>
                                     <input type="text" placeholder="youtube" style={sideInput}
@@ -355,14 +398,14 @@ function Upload()
                         <SidebarSection title="Scheduled Publishing" defaultOpen={true}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                                    <ToggleSwitch label="Enable Schedule" checked={scheduleEnabled} onChange={setScheduleEnabled} />
-                                    {scheduleEnabled && (
+                                    <ToggleSwitch label="Enable Schedule" checked={effectiveScheduleEnabled} onChange={setScheduleEnabled} disabled={instagramDirectUpload} />
+                                    {effectiveScheduleEnabled && (
                                         <input type="date" value={scheduleDate}
                                             onChange={e => setScheduleDate(e.target.value)}
                                             style={{ ...sideInput, width: 140 }} />
                                     )}
                                 </div>
-                                {scheduleEnabled && (
+                                {effectiveScheduleEnabled && (
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
                                         {platforms.youtube && (
                                             <div>

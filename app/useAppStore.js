@@ -262,7 +262,23 @@ export const useAppStore = create(function createAppStore(set, get)
             if (window.api && window.api.loadWorkflowSettings)
             {
                 const saved = await window.api.loadWorkflowSettings();
-                if (saved) get().loadAdvancedUploadSettings(saved);
+                if (saved) {
+                    get().loadAdvancedUploadSettings(saved);
+                    // Silent check on startup
+                    if (window.api.refreshMetaToken && saved.uploadOptions?.metaMasterToken && saved.uploadOptions?.fbPageId) {
+                        const res = await window.api.refreshMetaToken(
+                            saved.uploadOptions.metaMasterToken, 
+                            saved.uploadOptions.fbPageId, 
+                            saved.uploadOptions.metaGraphVersion || "v25.0"
+                        );
+                        if (res && res.success) {
+                            get().setUploadOption('metaAccessToken', res.pageToken);
+                            if (res.igUserId) get().setUploadOption('igUserId', res.igUserId);
+                        } else {
+                            get().setErrorMessage("Meta master token has expired or is invalid. You need to update it.");
+                        }
+                    }
+                }
             }
 
             // Subscribe to real-time session updates from the backend

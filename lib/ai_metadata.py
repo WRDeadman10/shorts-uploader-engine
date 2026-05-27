@@ -112,6 +112,47 @@ def build_clip_focus(context: Optional[Dict[str, Any]]) -> str:
     return clean_text(" ".join(parts))
 
 
+def build_aggregated_clip_context(source_paths: List[Path]) -> Optional[Dict[str, Any]]:
+    """Aggregate clip context from multiple source video paths."""
+    aggregated: Dict[str, Any] = {
+        "kills": 0,
+        "site_name": "",
+        "agent_name": "",
+        "weapon": "",
+        "headshots": 0,
+        "victim_agent": ""
+    }
+    found_any = False
+    sites = set()
+    agents = set()
+    weapons = set()
+    victims = set()
+
+    for sp in source_paths:
+        ctx = load_clip_context(sp)
+        if ctx:
+            found_any = True
+            if ctx.get("kills"): aggregated["kills"] += int(ctx["kills"])
+            if ctx.get("headshots"): aggregated["headshots"] += int(ctx["headshots"])
+            if ctx.get("site_name"): sites.add(ctx["site_name"])
+            if ctx.get("agent_name"): agents.add(ctx["agent_name"])
+            if ctx.get("weapon"): weapons.add(ctx["weapon"])
+            if ctx.get("victim_agent"): victims.add(ctx["victim_agent"])
+
+    if not found_any:
+        return None
+
+    aggregated["site_name"] = " / ".join(sorted(sites))
+    aggregated["agent_name"] = " / ".join(sorted(agents))
+    aggregated["weapon"] = " / ".join(sorted(weapons))
+    aggregated["victim_agent"] = " / ".join(sorted(victims))
+    
+    if aggregated["kills"] == 0: aggregated["kills"] = None
+    if aggregated["headshots"] == 0: aggregated["headshots"] = None
+
+    return aggregated
+
+
 def build_fallback_metadata(
     file_path: Path,
     extra_keywords: List[str],

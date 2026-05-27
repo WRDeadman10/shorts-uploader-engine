@@ -75,5 +75,8 @@ contextBridge.exposeInMainWorld("api", {
     showInFolder: function showInFolder(filePath)
     {
         return ipcRenderer.invoke("show-in-folder", filePath);
+    },
+    refreshMetaToken: function refreshMetaToken(userToken, pageId, graphVersion) {
+        return ipcRenderer.invoke("refresh-meta-token", userToken, pageId, graphVersion);
     }
 });

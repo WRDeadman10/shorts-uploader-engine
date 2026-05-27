@@ -242,11 +242,14 @@ def main(args) -> int:
         if target_platform in {"instagram", "facebook"}:
             effective_meta_platform = target_platform
         args.meta_platform = effective_meta_platform
+        if not clean_text(args.meta_facebook_page_id):
+            if meta_platform_enabled(args.meta_platform, "facebook"):
+                print("[error] Meta upload enabled for Facebook but page id is missing.")
+                return 2
+
+
         if meta_platform_enabled(args.meta_platform, "instagram") and not clean_text(args.meta_ig_user_id):
             print("[error] Meta upload enabled for Instagram but IG user id is missing.")
-            return 2
-        if meta_platform_enabled(args.meta_platform, "facebook") and not clean_text(args.meta_facebook_page_id):
-            print("[error] Meta upload enabled for Facebook but page id is missing.")
             return 2
         meta_reels_state = ensure_meta_state_shape(
             load_json_file(meta_reels_state_file, default={"entries": {}})

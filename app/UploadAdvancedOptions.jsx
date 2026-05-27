@@ -71,8 +71,8 @@ const UploadAdvancedOptions = ({ options, setUploadOption }) => {
             <div style={section}>
                 <span style={sectionLabel}>Meta Credentials</span>
                 <div style={row}>
-                    <span style={label}>Access Token</span>
-                    <input style={input} type="text" placeholder="EAA..." value={options.metaAccessToken || ''}
+                    <span style={label}>Meta Access Token</span>
+                    <input style={input} type="text" placeholder="Page token" value={options.metaAccessToken || ''}
                         onChange={(e) => setUploadOption('metaAccessToken', e.target.value)} />
                 </div>
                 <div style={row}>

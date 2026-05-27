@@ -8,6 +8,7 @@ import os
 import time
 from typing import Any, Dict, Optional, Tuple
 
+import json
 import requests
 
 
@@ -36,6 +37,19 @@ def extract_meta_error_message(payload: Any) -> str:
     return str(payload)[:200]
 
 
+def _extract_http_error_detail(response: requests.Response) -> str:
+    """Best-effort extraction of useful HTTP error details."""
+    try:
+        payload = response.json()
+        msg = extract_meta_error_message(payload)
+        if msg:
+            return msg
+        return str(payload)[:400]
+    except ValueError:
+        text = (response.text or "").strip()
+        return text[:400] if text else ""
+
+
 def request_json(
     method: str,
     url: str,
@@ -54,13 +68,9 @@ def request_json(
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as exc:
-        try:
-            error_payload = response.json()
-            error_msg = extract_meta_error_message(error_payload)
-            if error_msg:
-                raise RuntimeError(f"Meta API Error ({response.status_code}): {error_msg}") from exc
-        except (ValueError, KeyError):
-            pass
+        error_msg = _extract_http_error_detail(response)
+        if error_msg:
+            raise RuntimeError(f"Meta API Error ({response.status_code}): {error_msg}") from exc
         raise exc
     return response.json()
 
@@ -123,6 +133,129 @@ def ig_upload_reel_binary(
                 "Authorization": f"OAuth {access_token}",
                 "offset": "0",
                 "file_size": str(file_size),
+                "Content-Type": "application/octet-stream",
+                "Accept": "application/json",
+            },
+            data=f,
+            timeout=timeout,
+        )
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as exc:
+        error_msg = _extract_http_error_detail(response)
+        if error_msg:
+            raise RuntimeError(
+                f"Meta API Error ({response.status_code}) during IG binary upload: {error_msg}"
+            ) from exc
+        raise exc
+    result = response.json()
+    if not result.get("success"):
+        raise RuntimeError(f"IG binary upload failed: {result}")
+
+
+def ig_wait_until_ready(
+    container_id: str,
+    access_token: str,
+    graph_version: str = "v25.0",
+    attempts: int = 30,
+    interval_seconds: float = 10,
+    timeout: float = 120,
+) -> str:
+    """Poll Instagram until the container is ready for publishing."""
+    for attempt in range(1, max(attempts, 1) + 1):
+        result = request_json(
+            "GET",
+            f"https://graph.facebook.com/{graph_version}/{container_id}",
+            params={
+                "fields": "status_code,status",
+                "access_token": access_token,
+            },
+            timeout=timeout,
+        )
+        status = str(result.get("status_code", "")).upper()
+        if status == "FINISHED":
+            return "FINISHED"
+        if status in ("ERROR", "EXPIRED"):
+            raise RuntimeError(f"IG container {container_id} failed: {result}")
+        if attempt < attempts:
+            time.sleep(interval_seconds)
+    raise RuntimeError(
+        f"IG container {container_id} not ready after {attempts} attempts "
+        f"({attempts * interval_seconds:.0f}s)"
+    )
+
+
+def ig_publish_reel(
+    ig_user_id: str,
+    access_token: str,
+    container_id: str,
+    graph_version: str = "v25.0",
+    timeout: float = 120,
+) -> str:
+    """Publish a ready Instagram Reel. Returns the media ID.
+
+    For scheduled reels, scheduled_publish_time must be set on the container
+    (ig_create_reel_container) — not here. This call is always immediate-publish.
+    """
+    result = request_json(
+        "POST",
+        f"https://graph.facebook.com/{graph_version}/{ig_user_id}/media_publish",
+        data={
+            "creation_id": container_id,
+            "access_token": access_token,
+        },
+        timeout=timeout,
+    )
+    media_id = result.get("id")
+    if not media_id:
+        raise RuntimeError(f"IG publish failed: {result}")
+    return str(media_id)
+
+
+def fb_start_reel_session(
+    page_id: str,
+    access_token: str,
+    graph_version: str = "v25.0",
+    timeout: float = 120,
+) -> Tuple[str, str]:
+    """Start a Facebook Reel upload session. Returns (video_id, upload_url)."""
+    print(f"[fb_start_reel_session]")
+    result = request_json(
+        "POST",
+        f"https://graph.facebook.com/{graph_version}/{page_id}/video_reels",
+        data={
+            "upload_phase": "start",
+            "access_token": access_token,
+        },
+        timeout=timeout,
+    )
+    video_id = result.get("video_id")
+    upload_url = result.get("upload_url")
+    if not video_id or not upload_url:
+        raise RuntimeError(f"FB session start failed: {result}")
+    return str(video_id), str(upload_url)
+
+
+def fb_upload_reel_binary(
+    upload_url: str,
+    access_token: str,
+    file_path: str,
+    timeout: float = 300,
+) -> None:
+    """Upload the video binary to the Facebook Resumable Upload endpoint.
+
+    rupload.facebook.com requires raw binary with Authorization/offset/file_size
+    headers — NOT multipart form data.
+    """
+    print(f"[fb_upload_reel_binary]")
+    file_size = os.path.getsize(file_path)
+    with open(file_path, "rb") as f:
+        response = requests.post(
+            upload_url,
+            headers={
+                "Authorization": f"OAuth {access_token}",
+                "offset": "0",
+                "file_size": str(file_size),
             },
             data=f,
             timeout=timeout,
@@ -138,6 +271,55 @@ def ig_upload_reel_binary(
         except (ValueError, KeyError):
             pass
         raise exc
+    result = response.json()
+    if not result.get("success"):
+        raise RuntimeError(f"FB binary upload failed: {result}")
+
+
+def fb_finish_reel_publish(
+    page_id: str,
+    access_token: str,
+    video_id: str,
+    description: str,
+    title: str = "",
+    graph_version: str = "v25.0",
+    timeout: float = 120,
+    scheduled_publish_time: Optional[int] = None,
+) -> str:
+    """Finish and publish a Facebook Reel. Returns the post ID."""
+    print(f"[fb_finish_reel_publish]")
+    data: Dict[str, Any] = {
+        "upload_phase": "finish",
+        "video_id": video_id,
+        "video_state": "SCHEDULED" if scheduled_publish_time else "PUBLISHED",
+        "access_token": access_token,
+    }
+    if description:
+        data["description"] = description
+    if title:
+        data["title"] = title
+    if scheduled_publish_time is not None:
+        data["scheduled_publish_time"] = scheduled_publish_time
+
+    max_attempts = 3
+    for attempt in range(1, max_attempts + 1):
+        try:
+            result = request_json(
+                "POST",
+                f"https://graph.facebook.com/{graph_version}/{page_id}/video_reels",
+                data=data,
+                timeout=timeout,
+            )
+            post_id = result.get("id") or result.get("post_id")
+            if not post_id:
+                raise RuntimeError(f"FB publish failed: {result}")
+            return str(post_id)
+        except RuntimeError as exc:
+            msg = str(exc)
+            if "problem uploading your video file" in msg.lower() and attempt < max_attempts:
+                print(f"[warn][fb] Publish attempt {attempt} failed, waiting 10s to retry...")
+                time.sleep(10)
+                continue
     result = response.json()
     if not result.get("success"):
         raise RuntimeError(f"IG binary upload failed: {result}")
@@ -320,3 +502,70 @@ def platform_enabled(platform_choice: str, platform_name: str) -> bool:
     if platform_choice == "both":
         return True
     return platform_choice.lower() == platform_name.lower()
+
+def resolve_meta_credentials(
+    user_access_token: str,
+    target_page_id: str,
+    graph_version: str = "v25.0",
+    cache_file: str = ".meta_auth_cache.json"
+) -> Tuple[str, str]:
+    """Resolve and cache Page Access Token and IG User ID from a User Access Token.
+    Returns (page_access_token, instagram_user_id).
+    """
+    # 1. Check Cache
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, "r", encoding="utf-8") as f:
+                cache = json.load(f)
+            if target_page_id in cache:
+                page_data = cache[target_page_id]
+                return page_data["page_access_token"], page_data["ig_user_id"]
+        except Exception:
+            pass
+
+    print("[meta_api] Fetching fresh Page Access Token from Graph API...")
+    url = f"https://graph.facebook.com/{graph_version}/me/accounts"
+    params = {
+        "fields": "id,name,access_token,instagram_business_account{id,username}",
+        "access_token": user_access_token
+    }
+
+    try:
+        response = requests.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+    except Exception as exc:
+        raise RuntimeError(f"Failed to fetch Meta accounts (is your user access token expired?): {exc}")
+
+    accounts = data.get("data", [])
+    for account in accounts:
+        if str(account.get("id")) == str(target_page_id):
+            page_access_token = account.get("access_token")
+            ig_account = account.get("instagram_business_account", {})
+            ig_user_id = ig_account.get("id", "")
+            
+            if not page_access_token:
+                raise RuntimeError(f"Found page {target_page_id} but no access_token was returned.")
+                
+            # 4. Cache and Return
+            cache = {}
+            if os.path.exists(cache_file):
+                try:
+                    with open(cache_file, "r", encoding="utf-8") as f:
+                        cache = json.load(f)
+                except Exception:
+                    pass
+            cache[target_page_id] = {
+                "page_access_token": page_access_token,
+                "ig_user_id": ig_user_id,
+                "page_name": account.get("name", "")
+            }
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(cache, f, indent=2)
+                
+            return page_access_token, ig_user_id
+            
+    raise RuntimeError(
+        f"Could not find Page ID {target_page_id} in the accounts returned by Meta API. "
+        f"Found IDs: {[a.get('id') for a in accounts]}"
+    )
