@@ -451,14 +451,8 @@ def main() -> int:
 
         if do_instagram:
             try:
+                # Instagram should ignore scheduling logic
                 _ig_scheduled_ts: Optional[int] = None
-                if current_publish_at:
-                    try:
-                        _ig_scheduled_ts = int(
-                            _dt.datetime.fromisoformat(current_publish_at).timestamp()
-                        )
-                    except Exception:
-                        _ig_scheduled_ts = None
                 container_id, ig_upload_uri = ig_create_reel_container(
                     graph_version=args.graph_version,
                     ig_user_id=ig_user_id,
