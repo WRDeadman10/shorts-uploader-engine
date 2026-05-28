@@ -3,13 +3,9 @@ import { useEffect } from "react";
 import Dashboard from "./Dashboard.jsx";
 import Library from "./Library.jsx";
 import Upload from "./Upload.jsx";
-import Console from "./Console.jsx";
 import Audit from "./Audit.jsx";
-import Metadata from "./Metadata.jsx";
-import Sidebar from "./Sidebar.jsx";
 import Topbar from "./Topbar.jsx";
-import Setup from "./Setup.jsx"; // Added import for Setup page
-import Tools from "./Tools.jsx";
+import Setup from "./Setup.jsx";
 import { pageOrder, useAppStore } from "./useAppStore.js";
 import "./global.css";
 
@@ -17,11 +13,8 @@ const pageComponents = {
     dashboard: Dashboard,
     library: Library,
     upload: Upload,
-    console: Console,
     audit: Audit,
-    metadata: Metadata,
-    setup: Setup, // Added 'setup' to the pageComponents object
-    tools: Tools
+    setup: Setup
 };
 
 function App()
@@ -49,10 +42,6 @@ function App()
     const fetchVideoList = useAppStore(function selectFetchVideoList(state)
     {
         return state.fetchVideoList;
-    });
-    const currentPage = pageOrder.find(function findPage(page)
-    {
-        return page.id === activePage;
     });
     const CurrentPageComponent = pageComponents[activePage] || Dashboard;
 
@@ -92,10 +81,9 @@ function App()
 
     return (
         <div className="app-shell">
-            <Sidebar />
+            <Topbar />
             <div className="app-main">
-                <Topbar title={currentPage ? currentPage.label : "Dashboard"} />
-                <main className="page-shell">
+                <main className="page-shell" style={{ padding: "20px 28px" }}>
                     {errorMessage ? <div className="app-notice">{errorMessage}</div> : null}
                     <AnimatePresence mode="wait">
                         <motion.div

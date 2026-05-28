@@ -4,11 +4,8 @@ export const pageOrder = [
     { id: "dashboard", label: "Dashboard" },
     { id: "library", label: "Library" },
     { id: "upload", label: "Upload" },
-    { id: "console", label: "Console" },
     { id: "audit", label: "Audit" },
-    { id: "metadata", label: "Metadata" },
-    { id: "setup", label: "Setup" },
-    { id: "tools", label: "Tools" }
+    { id: "setup", label: "Setup" }
 ];
 
 function createInitialUploadStatus()
@@ -293,6 +290,9 @@ export const useAppStore = create(function createAppStore(set, get)
             facebook: false
         },
         toolsForm: {
+            // Valorant Metadata Generator
+            valorantRoot: '',
+            valorantPlayer: 'Ragnar Lothbrok#CR7',
             // Live Upload Audit
             auditRoot: '',
             auditMetaAccessToken: '',

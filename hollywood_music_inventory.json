@@ -1,126 +1,2858 @@
 {
-  "music_dir": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache",
-  "count": 30,
+  "music_dir": "E:\\Music\\Hollywood",
+  "count": 713,
   "tracks": [
     {
-      "name": "Ada_Bommale_-_Video_Song___Vaazha_2___Rz.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Ada_Bommale_-_Video_Song___Vaazha_2___Rz.mp3"
+      "name": "18.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\18.mp3"
     },
     {
-      "name": "Angel_Lizza_न__क_य____ख_स_र__ल_ल_क____कम.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Angel_Lizza_न__क_य____ख_स_र__ल_ल_क____कम.mp3"
+      "name": "Girl Almighty.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Girl Almighty.mp3"
     },
     {
-      "name": "Bangles__Official__Video__Sanju_Rathod_F.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Bangles__Official__Video__Sanju_Rathod_F.mp3"
+      "name": "Best Song Ever.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Best Song Ever.mp3"
     },
     {
-      "name": "Boom_Shaka__Official_Music_Video____KR_N.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Boom_Shaka__Official_Music_Video____KR_N.mp3"
+      "name": "Better Than Words.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Better Than Words.mp3"
     },
     {
-      "name": "Come_On_Kaali_Video_Song___KD_KANNADA.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Come_On_Kaali_Video_Song___KD_KANNADA.mp3"
+      "name": "Diana.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Diana.mp3"
     },
     {
-      "name": "Dil_Ko_Toda_Tune_Mujhko_Chhod_Diya___New.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Dil_Ko_Toda_Tune_Mujhko_Chhod_Diya___New.mp3"
+      "name": "Don't Forget Where You Belong.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Don't Forget Where You Belong.mp3"
     },
     {
-      "name": "EYES_ON_ME__MUSIC_VIDEO__SIDHU_MOOSE_WAL.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\EYES_ON_ME__MUSIC_VIDEO__SIDHU_MOOSE_WAL.mp3"
+      "name": "Half A Heart.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Half A Heart.mp3"
     },
     {
-      "name": "Eyes_On_Me__Teaser__Sidhu_Moose_Wala.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Eyes_On_Me__Teaser__Sidhu_Moose_Wala.mp3"
+      "name": "Happily.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Happily.mp3"
     },
     {
-      "name": "Karuppa_Kooda_Va_-_Lyric_Video___Karuppu.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Karuppa_Kooda_Va_-_Lyric_Video___Karuppu.mp3"
+      "name": "Little Black Dress.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Little Black Dress.mp3"
     },
     {
-      "name": "Kochu_Kunjintachanoru_Remix___Vaazha_2.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Kochu_Kunjintachanoru_Remix___Vaazha_2.mp3"
+      "name": "Midnight Memories.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Midnight Memories.mp3"
     },
     {
-      "name": "Kya_Mausum_Aaya_Hai___Anari_Movie_Song.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Kya_Mausum_Aaya_Hai___Anari_Movie_Song.mp3"
+      "name": "Right Now.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Right Now.mp3"
     },
     {
-      "name": "New_Song_2026___Dil_Ka_Dard___Rock_Star.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\New_Song_2026___Dil_Ka_Dard___Rock_Star.mp3"
+      "name": "Something Great.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Something Great.mp3"
     },
     {
-      "name": "Pardesi_Pardesi_Jana_Nahi_-_Lyrical___Aa.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Pardesi_Pardesi_Jana_Nahi_-_Lyrical___Aa.mp3"
+      "name": "Story Of My Life.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Story Of My Life.mp3"
     },
     {
-      "name": "Pardesiya_Ye_Sach_Hai_Piya___Reprise_son.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Pardesiya_Ye_Sach_Hai_Piya___Reprise_son.mp3"
+      "name": "Strong.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Strong.mp3"
     },
     {
-      "name": "Pardesiya_Yeh_Sech_Hai_Piya.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Pardesiya_Yeh_Sech_Hai_Piya.mp3"
+      "name": "Through The Dark.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Midnight Memories (The Ultimate Edition)\\Through The Dark.mp3"
     },
     {
-      "name": "Tere_Chehre_Mein_Wo_Jaadu_Hai.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Tere_Chehre_Mein_Wo_Jaadu_Hai.mp3"
+      "name": "Steal My Girl.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Steal My Girl.mp3"
     },
     {
-      "name": "Teri_Yaadon_Ki_Chadar_Odhe_Official_Vide.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Teri_Yaadon_Ki_Chadar_Odhe_Official_Vide.mp3"
+      "name": "Stockholm Syndrome.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Stockholm Syndrome.mp3"
     },
     {
-      "name": "Tujh_sang_preet_lagai_sajana__त_झ_स_ग_प.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Tujh_sang_preet_lagai_sajana__त_झ_स_ग_प.mp3"
+      "name": "Summer of 69 - One Direction.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Summer of 69 - One Direction.mp3"
     },
     {
-      "name": "VAARI_JAAVAN__Full_Video___Dhurandhar_Th.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\VAARI_JAAVAN__Full_Video___Dhurandhar_Th.mp3"
+      "name": "Cmon Cmon.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Take Me Home\\Cmon Cmon.mp3"
     },
     {
-      "name": "Video_-_च_र_प_क_म_र_क__-__Aashish_Yadav.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Video_-_च_र_प_क_म_र_क__-__Aashish_Yadav.mp3"
+      "name": "I Would.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Take Me Home\\I Would.mp3"
     },
     {
-      "name": "Video_-_न_च__अमरप_ल__-__Ashish_Yadav.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Video_-_न_च__अमरप_ल__-__Ashish_Yadav.mp3"
+      "name": "Irresistible.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Take Me Home\\Irresistible.mp3"
     },
     {
-      "name": "Video_-_न_च__अमरप_ल_____Ashish_Yadav.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Video_-_न_च__अमरप_ल_____Ashish_Yadav.mp3"
+      "name": "Last First Kiss.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Take Me Home\\Last First Kiss.mp3"
     },
     {
-      "name": "Video_-_म_त__घघर_य__क__-__Ashish_Yadav.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Video_-_म_त__घघर_य__क__-__Ashish_Yadav.mp3"
+      "name": "Little Things.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Take Me Home\\Little Things.mp3"
     },
     {
-      "name": "Video___Belanvo_Khaiba___Khesari_Lal_Ya.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Video___Belanvo_Khaiba___Khesari_Lal_Ya.mp3"
+      "name": "Live While We're Young .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Take Me Home\\Live While We're Young .mp3"
     },
     {
-      "name": "Video___Bigha_Ke_Bigha_Tahra_Name_Ka_De.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Video___Bigha_Ke_Bigha_Tahra_Name_Ka_De.mp3"
+      "name": "Over Again.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Take Me Home\\Over Again.mp3"
     },
     {
-      "name": "Video___ठ_मक__ठ_मक____Thumka_Thumka___K.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Video___ठ_मक__ठ_मक____Thumka_Thumka___K.mp3"
+      "name": "Summer Love.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Take Me Home\\Summer Love.mp3"
     },
     {
-      "name": "Video__छ_ल_द_ब__क____Power_Star_Pawan_S.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Video__छ_ल_द_ब__क____Power_Star_Pawan_S.mp3"
+      "name": "They Dont Know About Us.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Take Me Home\\They Dont Know About Us.mp3"
     },
     {
-      "name": "Woh_Tassavur_Ka_Aalam_-_Lyrical___Woh_Py.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\Woh_Tassavur_Ka_Aalam_-_Lyrical___Woh_Py.mp3"
+      "name": "Forever Young.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Up All Night\\Forever Young.mp3"
     },
     {
-      "name": "YENNENI_BADHALE_MANA_BATHUKULA_FULL_SONG.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\YENNENI_BADHALE_MANA_BATHUKULA_FULL_SONG.mp3"
+      "name": "Gotta Be You.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Up All Night\\Gotta Be You.mp3"
     },
     {
-      "name": "ग_प__च_प_ग_प__च_प___Gup_Chup_Gup_Chup.mp3",
-      "path": "C:\\Users\\winss\\Documents\\Projects\\shorts-uploader-engine\\.trending_music_cache\\ग_प__च_प_ग_प__च_प___Gup_Chup_Gup_Chup.mp3"
+      "name": "Moments.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Up All Night\\Moments.mp3"
+    },
+    {
+      "name": "More Than This.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Up All Night\\More Than This.mp3"
+    },
+    {
+      "name": "One Thing.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Up All Night\\One Thing.mp3"
+    },
+    {
+      "name": "Stole My Heart.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Up All Night\\Stole My Heart.mp3"
+    },
+    {
+      "name": "Up All Nights.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Up All Night\\Up All Nights.mp3"
+    },
+    {
+      "name": "What Makes You Beautiful.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\1D\\Up All Night\\What Makes You Beautiful.mp3"
+    },
+    {
+      "name": "Alan Walker - Alone .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Alan Walker\\Alan Walker - Alone .mp3"
+    },
+    {
+      "name": "Alan Walker feat. A$AP Rocky - Live Fast (PUBG Mobile .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Alan Walker\\Alan Walker feat. A$AP Rocky - Live Fast (PUBG Mobile .mp3"
+    },
+    {
+      "name": "All Falls Down.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Alan Walker\\All Falls Down.mp3"
+    },
+    {
+      "name": "Fade.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Alan Walker\\Fade.mp3"
+    },
+    {
+      "name": "Faded.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Alan Walker\\Faded.mp3"
+    },
+    {
+      "name": "On My Way.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Alan Walker\\On My Way.mp3"
+    },
+    {
+      "name": "The Spectre.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Alan Walker\\The Spectre.mp3"
+    },
+    {
+      "name": "Avril Lavigne - Here's to Never Growing Up my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Avril Lavigne\\Avril Lavigne - Here's to Never Growing Up my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "Avril Lavigne - Nobody's Home.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Avril Lavigne\\Avril Lavigne - Nobody's Home.mp3"
+    },
+    {
+      "name": "Avril lavigne - What the hell.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Avril Lavigne\\Avril lavigne - What the hell.mp3"
+    },
+    {
+      "name": "Avril Lavigne - When You're Gone.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Avril Lavigne\\Avril Lavigne - When You're Gone.mp3"
+    },
+    {
+      "name": "Cold War Kids - Can We Hang On.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Cold War Kids\\Cold War Kids - Can We Hang On.mp3"
+    },
+    {
+      "name": "Cold War Kids - Love Is Mystical.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Cold War Kids\\Cold War Kids - Love Is Mystical.mp3"
+    },
+    {
+      "name": "Cold War Kids - Restless.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Cold War Kids\\Cold War Kids - Restless.mp3"
+    },
+    {
+      "name": "Cold War Kids feat. Bishop Briggs - So Tied Up.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Cold War Kids\\Cold War Kids feat. Bishop Briggs - So Tied Up.mp3"
+    },
+    {
+      "name": "A Sky Full of Stars .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Coldplay\\A Sky Full of Stars .mp3"
+    },
+    {
+      "name": "Charlie Brown .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Coldplay\\Charlie Brown .mp3"
+    },
+    {
+      "name": "Every Teardrop Is a Waterfall .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Coldplay\\Every Teardrop Is a Waterfall .mp3"
+    },
+    {
+      "name": "Fix You .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Coldplay\\Fix You .mp3"
+    },
+    {
+      "name": "Hymn For The Weekend .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Coldplay\\Hymn For The Weekend .mp3"
+    },
+    {
+      "name": "Rihanna - Princess of China .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Coldplay\\Rihanna - Princess of China .mp3"
+    },
+    {
+      "name": "Up and Up.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Coldplay\\Up and Up.mp3"
+    },
+    {
+      "name": "Viva La Vida .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Coldplay\\Viva La Vida .mp3"
+    },
+    {
+      "name": "Dangerous.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\Dangerous.mp3"
+    },
+    {
+      "name": "Hey Mama - ft Nicki Minaj Afrojack.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\Hey Mama - ft Nicki Minaj Afrojack.mp3"
+    },
+    {
+      "name": "Just One Last Time.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\Just One Last Time.mp3"
+    },
+    {
+      "name": "Lovers on the Sun - Feat.Sam Martin.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\Lovers on the Sun - Feat.Sam Martin.mp3"
+    },
+    {
+      "name": "Out Of This World.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\Out Of This World.mp3"
+    },
+    {
+      "name": "Play Hard (feat. Ne-Yo & Akon).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\Play Hard (feat. Ne-Yo & Akon).mp3"
+    },
+    {
+      "name": "Play Hard.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\Play Hard.mp3"
+    },
+    {
+      "name": "Rise - David Guetta feat. Skylar Grey.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\Rise - David Guetta feat. Skylar Grey.mp3"
+    },
+    {
+      "name": "She Wolf (Falling To Pieces).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\She Wolf (Falling To Pieces).mp3"
+    },
+    {
+      "name": "Ten Feet Tall (Afrojack Ft. Wrabel).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\Ten Feet Tall (Afrojack Ft. Wrabel).mp3"
+    },
+    {
+      "name": "Titanium (Feat. Sia).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\Titanium (Feat. Sia).mp3"
+    },
+    {
+      "name": "Where Them Girls At.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\David Guetta\\Where Them Girls At.mp3"
+    },
+    {
+      "name": "01 Sing.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\01 Sing.mp3"
+    },
+    {
+      "name": "03 I See Fire.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\03 I See Fire.mp3"
+    },
+    {
+      "name": "06 Perfect.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\06 Perfect.mp3"
+    },
+    {
+      "name": "07 Lego House.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\07 Lego House.mp3"
+    },
+    {
+      "name": "08 One.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\08 One.mp3"
+    },
+    {
+      "name": "11 What Do I Know.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\11 What Do I Know.mp3"
+    },
+    {
+      "name": "13 Don't.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\13 Don't.mp3"
+    },
+    {
+      "name": "14 Shape of You.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\14 Shape of You.mp3"
+    },
+    {
+      "name": "15 Supermarket Flowers.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\15 Supermarket Flowers.mp3"
+    },
+    {
+      "name": "18 Galway Girl.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\18 Galway Girl.mp3"
+    },
+    {
+      "name": "19 Photograph.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\19 Photograph.mp3"
+    },
+    {
+      "name": "20 Thinking Out Loud.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\20 Thinking Out Loud.mp3"
+    },
+    {
+      "name": "Cross Me (feat. Chance the Rapper & PnB Rock).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\Cross Me (feat. Chance the Rapper & PnB Rock).mp3"
+    },
+    {
+      "name": "Ed Sheeran feat. Stormzy, Jaykae, Aitch - Take Me Back To London (Remix) [feat. Stormzy, Jaykae & Aitch].mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\Ed Sheeran feat. Stormzy, Jaykae, Aitch - Take Me Back To London (Remix) [feat. Stormzy, Jaykae & Aitch].mp3"
+    },
+    {
+      "name": "Give Me Love.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\Give Me Love.mp3"
+    },
+    {
+      "name": "Make It Rain From Sons Of Anarchy.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ed Sheeran\\Make It Rain From Sons Of Anarchy.mp3"
+    },
+    {
+      "name": "Burn.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ellie Goulding\\Burn.mp3"
+    },
+    {
+      "name": "Ellie Goulding - Love Me Like You Do.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ellie Goulding\\Ellie Goulding - Love Me Like You Do.mp3"
+    },
+    {
+      "name": "Ellie Goulding - Still Falling For You (From _Bridget Jones's Baby_) (From _Bridget Jones's Baby_) myfreemp3.vip .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ellie Goulding\\Ellie Goulding - Still Falling For You (From _Bridget Jones's Baby_) (From _Bridget Jones's Baby_) myfreemp3.vip .mp3"
+    },
+    {
+      "name": "Lights - Ellie Goulding.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Ellie Goulding\\Lights - Ellie Goulding.mp3"
+    },
+    {
+      "name": "01 - Sing For The Moment.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\01 - Sing For The Moment.mp3"
+    },
+    {
+      "name": "07 - Survival.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\07 - Survival.mp3"
+    },
+    {
+      "name": "12 - Just Lose It.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\12 - Just Lose It.mp3"
+    },
+    {
+      "name": "20 - Not Afraid.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\20 - Not Afraid.mp3"
+    },
+    {
+      "name": "Beautiful - Eminem.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Beautiful - Eminem.mp3"
+    },
+    {
+      "name": "Beautiful Pain (feat.Sia).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Beautiful Pain (feat.Sia).mp3"
+    },
+    {
+      "name": "Berzerk.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Berzerk.mp3"
+    },
+    {
+      "name": "14 - River (Ft. Ed Sheeran).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Eminem - Greatest Songs (2017)\\14 - River (Ft. Ed Sheeran).mp3"
+    },
+    {
+      "name": "16 - We Made You.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Eminem - Greatest Songs (2017)\\16 - We Made You.mp3"
+    },
+    {
+      "name": "Headlights - Ft. Nate Ruess.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Headlights - Ft. Nate Ruess.mp3"
+    },
+    {
+      "name": "02 Greatest.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Kamikeze\\02 Greatest.mp3"
+    },
+    {
+      "name": "03 Lucky You (feat. Joyner Lucas).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Kamikeze\\03 Lucky You (feat. Joyner Lucas).mp3"
+    },
+    {
+      "name": "13 Venom (Music From the Motion Pict.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Kamikeze\\13 Venom (Music From the Motion Pict.mp3"
+    },
+    {
+      "name": "Fall.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Kamikeze\\Fall.mp3"
+    },
+    {
+      "name": "Kamikaze.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Kamikeze\\Kamikaze.mp3"
+    },
+    {
+      "name": "Mockingbird.MP3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Mockingbird.MP3"
+    },
+    {
+      "name": "Rap God .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Rap God .mp3"
+    },
+    {
+      "name": "Space Bound.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Space Bound.mp3"
+    },
+    {
+      "name": "The Real Slim Shady.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\The Real Slim Shady.mp3"
+    },
+    {
+      "name": "Till I Collapse.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Till I Collapse.mp3"
+    },
+    {
+      "name": "When I'm Gone.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\When I'm Gone.mp3"
+    },
+    {
+      "name": "Wont Back Down - Eminem (feat pink).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\Wont Back Down - Eminem (feat pink).mp3"
+    },
+    {
+      "name": "You Don't Know.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Eminem\\You Don't Know.mp3"
+    },
+    {
+      "name": "Addicted.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Enrique Iglesias\\Addicted.mp3"
+    },
+    {
+      "name": "Bailando - ft.Sean Paul.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Enrique Iglesias\\Bailando - ft.Sean Paul.mp3"
+    },
+    {
+      "name": "Escape.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Enrique Iglesias\\Escape.mp3"
+    },
+    {
+      "name": "Heart Attack.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Enrique Iglesias\\Heart Attack.mp3"
+    },
+    {
+      "name": "Hero.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Enrique Iglesias\\Hero.mp3"
+    },
+    {
+      "name": "Somebody's Me.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Enrique Iglesias\\Somebody's Me.mp3"
+    },
+    {
+      "name": "Tonight I m Lovin  You.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Enrique Iglesias\\Tonight I m Lovin  You.mp3"
+    },
+    {
+      "name": "21 Guns - Green Day.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Green Day\\21 Guns - Green Day.mp3"
+    },
+    {
+      "name": "Boulevard Of Broken .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Green Day\\Boulevard Of Broken .mp3"
+    },
+    {
+      "name": "Wake Me Up When Spetember Ends.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Green Day\\Wake Me Up When Spetember Ends.mp3"
+    },
+    {
+      "name": "Bullet - Hollywood Undead.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Hollywood Undead\\Bullet - Hollywood Undead.mp3"
+    },
+    {
+      "name": "Everywhere I Go.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Hollywood Undead\\Everywhere I Go.mp3"
+    },
+    {
+      "name": "Gangsta Sexy.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Hollywood Undead\\Gangsta Sexy.mp3"
+    },
+    {
+      "name": "Hollywood Undead - City.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Hollywood Undead\\Hollywood Undead - City.mp3"
+    },
+    {
+      "name": "One More Bottle.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Hollywood Undead\\One More Bottle.mp3"
+    },
+    {
+      "name": "The Diary.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Hollywood Undead\\The Diary.mp3"
+    },
+    {
+      "name": "Amsterdam.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Amsterdam.mp3"
+    },
+    {
+      "name": "Bad Liar.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Bad Liar.mp3"
+    },
+    {
+      "name": "Battlecry.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Battlecry.mp3"
+    },
+    {
+      "name": "Bleeding Out.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Bleeding Out.mp3"
+    },
+    {
+      "name": "Demos.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Demos.mp3"
+    },
+    {
+      "name": "01. I Don’t Know Why.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Evolve (Deluxe Edition) (2017)\\01. I Don’t Know Why.mp3"
+    },
+    {
+      "name": "02. Whatever It Takes.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Evolve (Deluxe Edition) (2017)\\02. Whatever It Takes.mp3"
+    },
+    {
+      "name": "04. Walking The Wire.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Evolve (Deluxe Edition) (2017)\\04. Walking The Wire.mp3"
+    },
+    {
+      "name": "05. Rise Up.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Evolve (Deluxe Edition) (2017)\\05. Rise Up.mp3"
+    },
+    {
+      "name": "06. I’ll Make It Up To You.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Evolve (Deluxe Edition) (2017)\\06. I’ll Make It Up To You.mp3"
+    },
+    {
+      "name": "09. Thunder.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Evolve (Deluxe Edition) (2017)\\09. Thunder.mp3"
+    },
+    {
+      "name": "12. Levitate.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Evolve (Deluxe Edition) (2017)\\12. Levitate.mp3"
+    },
+    {
+      "name": "13. Not Today.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Evolve (Deluxe Edition) (2017)\\13. Not Today.mp3"
+    },
+    {
+      "name": "14. Believer (Kaskade Remix).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Evolve (Deluxe Edition) (2017)\\14. Believer (Kaskade Remix).mp3"
+    },
+    {
+      "name": "Believer.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Evolve (Deluxe Edition) (2017)\\Believer.mp3"
+    },
+    {
+      "name": "Its Time - Imagine Dragons.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Its Time - Imagine Dragons.mp3"
+    },
+    {
+      "name": "Legacy.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Legacy.mp3"
+    },
+    {
+      "name": "Monster - Imagine Dragon.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Monster - Imagine Dragon.mp3"
+    },
+    {
+      "name": "Natural.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Natural.mp3"
+    },
+    {
+      "name": "Not Today.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Not Today.mp3"
+    },
+    {
+      "name": "Paradise.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Paradise.mp3"
+    },
+    {
+      "name": "Radioactive.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Radioactive.mp3"
+    },
+    {
+      "name": "Round and Round Imagine Dragons.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Round and Round Imagine Dragons.mp3"
+    },
+    {
+      "name": "Dream.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Smoke + Mirrors\\Dream.mp3"
+    },
+    {
+      "name": "Friction.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Smoke + Mirrors\\Friction.mp3"
+    },
+    {
+      "name": "Polaroid.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Smoke + Mirrors\\Polaroid.mp3"
+    },
+    {
+      "name": "Second Chances.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Smoke + Mirrors\\Second Chances.mp3"
+    },
+    {
+      "name": "Smoke And Mirrors.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Smoke + Mirrors\\Smoke And Mirrors.mp3"
+    },
+    {
+      "name": "Thief.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Smoke + Mirrors\\Thief.mp3"
+    },
+    {
+      "name": "Tiptoe - Imagine Dragon.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Tiptoe - Imagine Dragon.mp3"
+    },
+    {
+      "name": "Warriors.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Warriors.mp3"
+    },
+    {
+      "name": "Working Man.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Imagine Dragon\\Working Man.mp3"
+    },
+    {
+      "name": "Dark Horse.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Katy Perry\\Dark Horse.mp3"
+    },
+    {
+      "name": "Firework.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Katy Perry\\Firework.mp3"
+    },
+    {
+      "name": "Roar.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Katy Perry\\Roar.mp3"
+    },
+    {
+      "name": "Teenage Dream.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Katy Perry\\Teenage Dream.mp3"
+    },
+    {
+      "name": "A Light That Never Comes.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\A Light That Never Comes.mp3"
+    },
+    {
+      "name": "Blackbirds.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Blackbirds.mp3"
+    },
+    {
+      "name": "Blackout.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Blackout.mp3"
+    },
+    {
+      "name": "Breaking The Habit.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Breaking The Habit.mp3"
+    },
+    {
+      "name": "Castle Of Glass.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Castle Of Glass.mp3"
+    },
+    {
+      "name": "In The End.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\In The End.mp3"
+    },
+    {
+      "name": "Iridescent.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Iridescent.mp3"
+    },
+    {
+      "name": "Leave Out All The Rest.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Leave Out All The Rest.mp3"
+    },
+    {
+      "name": "Linkin Park - I'LL BE GONE www.my-free-mp3.net .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Linkin Park - I'LL BE GONE www.my-free-mp3.net .mp3"
+    },
+    {
+      "name": "Linkin Park - Lies Greed Misery (www.SongsLover.pk).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Linkin Park - Lies Greed Misery (www.SongsLover.pk).mp3"
+    },
+    {
+      "name": "Linkin Park, Kiiara - Heavy www.my-free-mp3.net .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Linkin Park, Kiiara - Heavy www.my-free-mp3.net .mp3"
+    },
+    {
+      "name": "New Divide.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\New Divide.mp3"
+    },
+    {
+      "name": "Numb.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Numb.mp3"
+    },
+    {
+      "name": "Papercut.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Papercut.mp3"
+    },
+    {
+      "name": "Powerless.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Powerless.mp3"
+    },
+    {
+      "name": "Pushing Me Away.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Pushing Me Away.mp3"
+    },
+    {
+      "name": "Roads Untraveled.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Roads Untraveled.mp3"
+    },
+    {
+      "name": "Shadow of the day   Linkin park.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Shadow of the day   Linkin park.mp3"
+    },
+    {
+      "name": "Somewhere I Belong.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Somewhere I Belong.mp3"
+    },
+    {
+      "name": "Step Out.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Step Out.mp3"
+    },
+    {
+      "name": "The Messenger.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\The Messenger.mp3"
+    },
+    {
+      "name": "Valentine's Day.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Valentine's Day.mp3"
+    },
+    {
+      "name": "Waiting For The End.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Waiting For The End.mp3"
+    },
+    {
+      "name": "Wrectches And Kings.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Linkin Park\\Wrectches And Kings.mp3"
+    },
+    {
+      "name": "It Was Always You.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Maroon 5\\It Was Always You.mp3"
+    },
+    {
+      "name": "Just a Feeling.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Maroon 5\\Just a Feeling.mp3"
+    },
+    {
+      "name": "Maps.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Maroon 5\\Maps.mp3"
+    },
+    {
+      "name": "Maroon 5 feat. Cardi B - Girls Like You.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Maroon 5\\Maroon 5 feat. Cardi B - Girls Like You.mp3"
+    },
+    {
+      "name": "One More Night.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Maroon 5\\One More Night.mp3"
+    },
+    {
+      "name": "Sugar.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Maroon 5\\Sugar.mp3"
+    },
+    {
+      "name": "One In A Million.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One In A Million.mp3"
+    },
+    {
+      "name": "One Last Time.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Last Time.mp3"
+    },
+    {
+      "name": "03 Start Again (feat. Logic).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\03 Start Again (feat. Logic).mp3"
+    },
+    {
+      "name": "Connection.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\Connection.mp3"
+    },
+    {
+      "name": "Counting Stars.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\Counting Stars.mp3"
+    },
+    {
+      "name": "Feel Again.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\Feel Again.mp3"
+    },
+    {
+      "name": "Good Life.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\Good Life.mp3"
+    },
+    {
+      "name": "If I Lose Myself.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\If I Lose Myself.mp3"
+    },
+    {
+      "name": "Love Runs Out.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\Love Runs Out.mp3"
+    },
+    {
+      "name": "Marchin On - One Republic.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\Marchin On - One Republic.mp3"
+    },
+    {
+      "name": "Rich Love (OneRepublic And Seeb) 320 Kbps-(HiGana.Com).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\Rich Love (OneRepublic And Seeb) 320 Kbps-(HiGana.Com).mp3"
+    },
+    {
+      "name": "Secrets.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\Secrets.mp3"
+    },
+    {
+      "name": "Something I Need.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\Something I Need.mp3"
+    },
+    {
+      "name": "Stop and Stare.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\One Republic\\Stop and Stare.mp3"
+    },
+    {
+      "name": "07 - Great Big Storm - (Musicfire.in).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\07 - Great Big Storm - (Musicfire.in).mp3"
+    },
+    {
+      "name": "93 Million Miles.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\93 Million Miles.mp3"
+    },
+    {
+      "name": "Capital Cities - Safe + Sound.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Capital Cities - Safe + Sound.mp3"
+    },
+    {
+      "name": "Chances.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Chances.mp3"
+    },
+    {
+      "name": "Children Of The Sun.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Children Of The Sun.mp3"
+    },
+    {
+      "name": "Clouds.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Clouds.mp3"
+    },
+    {
+      "name": "Cooler Than Me.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Cooler Than Me.mp3"
+    },
+    {
+      "name": "Dare You To Move.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Dare You To Move.mp3"
+    },
+    {
+      "name": "Everything At Once.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Everything At Once.mp3"
+    },
+    {
+      "name": "Fancy - feat Charli XCX  Iggy Azalea.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Fancy - feat Charli XCX  Iggy Azalea.mp3"
+    },
+    {
+      "name": "Fly Away (5 Seconds of Summer).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Fly Away (5 Seconds of Summer).mp3"
+    },
+    {
+      "name": "Heartbreak Girl.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Heartbreak Girl.mp3"
+    },
+    {
+      "name": "Hey Brother - Avicii.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Hey Brother - Avicii.mp3"
+    },
+    {
+      "name": "I Love It.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\I Love It.mp3"
+    },
+    {
+      "name": "Impossible - James Arthur.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Impossible - James Arthur.mp3"
+    },
+    {
+      "name": "Just Give Me A Reason.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Just Give Me A Reason.mp3"
+    },
+    {
+      "name": "Letters From The Sky.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Letters From The Sky.mp3"
+    },
+    {
+      "name": "Lighters (Ft.Bruno Mars).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Lighters (Ft.Bruno Mars).mp3"
+    },
+    {
+      "name": "Live Like You Are Dying.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Live Like You Are Dying.mp3"
+    },
+    {
+      "name": "Mirrors.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Mirrors.mp3"
+    },
+    {
+      "name": "No promises.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\No promises.mp3"
+    },
+    {
+      "name": "One Love.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\One Love.mp3"
+    },
+    {
+      "name": "Royals.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Royals.mp3"
+    },
+    {
+      "name": "Sexy Can I.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Sexy Can I.mp3"
+    },
+    {
+      "name": "Somebody To Die For.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Somebody To Die For.mp3"
+    },
+    {
+      "name": "Somebody To You (Feat. Demi Lovato).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Somebody To You (Feat. Demi Lovato).mp3"
+    },
+    {
+      "name": "Team.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Team.mp3"
+    },
+    {
+      "name": "The First Cut Is The Deepest - Sheryl crow.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\The First Cut Is The Deepest - Sheryl crow.mp3"
+    },
+    {
+      "name": "This Is What It Feels Like - Armin van Buuren feat. Trevor Guthrie.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\This Is What It Feels Like - Armin van Buuren feat. Trevor Guthrie.mp3"
+    },
+    {
+      "name": "Wake Me Up.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Wake Me Up.mp3"
+    },
+    {
+      "name": "Wrecking Ball.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Other\\Wrecking Ball.mp3"
+    },
+    {
+      "name": "02 Shooting Star.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Owl City\\The Midsummer Station\\02 Shooting Star.mp3"
+    },
+    {
+      "name": "03 Gold.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Owl City\\The Midsummer Station\\03 Gold.mp3"
+    },
+    {
+      "name": "07 Good Time.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Owl City\\The Midsummer Station\\07 Good Time.mp3"
+    },
+    {
+      "name": "08 Embers.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Owl City\\The Midsummer Station\\08 Embers.mp3"
+    },
+    {
+      "name": "Feather On The Cycle - Passenger.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Passenger\\Feather On The Cycle - Passenger.mp3"
+    },
+    {
+      "name": "I See Love Passenger.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Passenger\\I See Love Passenger.mp3"
+    },
+    {
+      "name": "Let Her Go - Passenger.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Passenger\\Let Her Go - Passenger.mp3"
+    },
+    {
+      "name": "Baddest Girl in Town (feat. Mohom  Wisin).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\Baddest Girl in Town (feat. Mohom  Wisin).mp3"
+    },
+    {
+      "name": "Dammit Man (Remix) (Feat Lil Flip).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\Dammit Man (Remix) (Feat Lil Flip).mp3"
+    },
+    {
+      "name": "Dance Again ft.Pitbull.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\Dance Again ft.Pitbull.mp3"
+    },
+    {
+      "name": "DJ Got Us Fallin In Love - Usher  Feat Pitbull.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\DJ Got Us Fallin In Love - Usher  Feat Pitbull.mp3"
+    },
+    {
+      "name": "Give Me Everything.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\Give Me Everything.mp3"
+    },
+    {
+      "name": "Hotel Room Service - Pitbull.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\Hotel Room Service - Pitbull.mp3"
+    },
+    {
+      "name": "I Just Wanna Feel This Moment.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\I Just Wanna Feel This Moment.mp3"
+    },
+    {
+      "name": "Last Night.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\Last Night.mp3"
+    },
+    {
+      "name": "Outta Nowhere (feat. Danny Mercer  Jamie Drastik).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\Outta Nowhere (feat. Danny Mercer  Jamie Drastik).mp3"
+    },
+    {
+      "name": "Pitbull Feat Chris Brown - International Love.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\Pitbull Feat Chris Brown - International Love.mp3"
+    },
+    {
+      "name": "Rain Over Me.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\Rain Over Me.mp3"
+    },
+    {
+      "name": "Timber - Pitbull feat. Ke$ha.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\Timber - Pitbull feat. Ke$ha.mp3"
+    },
+    {
+      "name": "Time Of Our Lives (Pitbull Ft.Ne-Yo).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Pitbull\\Time Of Our Lives (Pitbull Ft.Ne-Yo).mp3"
+    },
+    {
+      "name": "Carnival Of Rust - Poets of the Fall.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Poets of the Fall\\Carnival Of Rust - Poets of the Fall.mp3"
+    },
+    {
+      "name": "Everything Fades Away - Poets of the Fall.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Poets of the Fall\\Everything Fades Away - Poets of the Fall.mp3"
+    },
+    {
+      "name": "Late Goodbye - Poets of Fall.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Poets of the Fall\\Late Goodbye - Poets of Fall.mp3"
+    },
+    {
+      "name": "Poets of the Fall - Dancing on Broken Glass myfreemp3.vip .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Poets of the Fall\\Poets of the Fall - Dancing on Broken Glass myfreemp3.vip .mp3"
+    },
+    {
+      "name": "Poets Of The Fall - Love Will Come To You myfreemp3.vip .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Poets of the Fall\\Poets Of The Fall - Love Will Come To You myfreemp3.vip .mp3"
+    },
+    {
+      "name": "Poets of the Fall - No End, No Beginning myfreemp3.vip .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Poets of the Fall\\Poets of the Fall - No End, No Beginning myfreemp3.vip .mp3"
+    },
+    {
+      "name": "Poets of the Fall - The Sweet Escape myfreemp3.vip .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Poets of the Fall\\Poets of the Fall - The Sweet Escape myfreemp3.vip .mp3"
+    },
+    {
+      "name": "Diamonds(Rihanna).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Rihanna\\Diamonds(Rihanna).mp3"
+    },
+    {
+      "name": "Love The Way You Lie Pt. 1.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Rihanna\\Love The Way You Lie Pt. 1.mp3"
+    },
+    {
+      "name": "Love The Way You Lie Pt. 2 (Feat. Eminem).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Rihanna\\Love The Way You Lie Pt. 2 (Feat. Eminem).mp3"
+    },
+    {
+      "name": "The Monster (feat. Rihanna)Eminem.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Rihanna\\The Monster (feat. Rihanna)Eminem.mp3"
+    },
+    {
+      "name": "What's My Name.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Rihanna\\What's My Name.mp3"
+    },
+    {
+      "name": "Sail.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Sail.mp3"
+    },
+    {
+      "name": "Come & Get It - Selena Gomez.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\Come & Get It - Selena Gomez.mp3"
+    },
+    {
+      "name": "Good For You - Selena Gomez Ft. ASAP Rocky.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\Good For You - Selena Gomez Ft. ASAP Rocky.mp3"
+    },
+    {
+      "name": "I Can't Get Enoughm.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\I Can't Get Enoughm.mp3"
+    },
+    {
+      "name": "It Aint Me (Selena Gomez) -320Kbps.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\It Aint Me (Selena Gomez) -320Kbps.mp3"
+    },
+    {
+      "name": "Revival.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\Revival.mp3"
+    },
+    {
+      "name": "Rise.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\Rise.mp3"
+    },
+    {
+      "name": "Same Old Love (Selena Gomez).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\Same Old Love (Selena Gomez).mp3"
+    },
+    {
+      "name": "Selena Gomez - Lose You To Love Me.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\Selena Gomez - Lose You To Love Me.mp3"
+    },
+    {
+      "name": "Slow Down.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\Slow Down.mp3"
+    },
+    {
+      "name": "Survivors.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\Survivors.mp3"
+    },
+    {
+      "name": "The Heart Wants What It Wants.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\The Heart Wants What It Wants.mp3"
+    },
+    {
+      "name": "We don't talk anymore.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\We don't talk anymore.mp3"
+    },
+    {
+      "name": "Who Says.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Selena Gomez\\Who Says.mp3"
+    },
+    {
+      "name": "Show Me the Meaning of Being Lonely.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Show Me the Meaning of Being Lonely.mp3"
+    },
+    {
+      "name": "Bad Blood.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\1989\\Bad Blood.mp3"
+    },
+    {
+      "name": "Blank Space.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\1989\\Blank Space.mp3"
+    },
+    {
+      "name": "Shake It Off.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\1989\\Shake It Off.mp3"
+    },
+    {
+      "name": "Style.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\1989\\Style.mp3"
+    },
+    {
+      "name": "Eyes Open.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Eyes Open.mp3"
+    },
+    {
+      "name": "Invisible(Taylor Swift).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Invisible(Taylor Swift).mp3"
+    },
+    {
+      "name": "Love Story.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Love Story.mp3"
+    },
+    {
+      "name": "Everything Has Changed (feat. Ed Sheeran).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Red\\Everything Has Changed (feat. Ed Sheeran).mp3"
+    },
+    {
+      "name": "I Knew You Were Trouble.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Red\\I Knew You Were Trouble.mp3"
+    },
+    {
+      "name": "Red (Final).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Red\\Red (Final).mp3"
+    },
+    {
+      "name": "Sad Beautiful Tragic   Taylor Swift   Red.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Red\\Sad Beautiful Tragic   Taylor Swift   Red.mp3"
+    },
+    {
+      "name": "State Of Grace.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Red\\State Of Grace.mp3"
+    },
+    {
+      "name": "The Last Time Radio Edit.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Red\\The Last Time Radio Edit.mp3"
+    },
+    {
+      "name": "We Are Never Ever Getting Back Together.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Red\\We Are Never Ever Getting Back Together.mp3"
+    },
+    {
+      "name": "1  ...Ready For It_.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Reputation (2017)\\1  ...Ready For It_.mp3"
+    },
+    {
+      "name": "13 This Is Why We Can't Have Nice Things.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Reputation (2017)\\13 This Is Why We Can't Have Nice Things.mp3"
+    },
+    {
+      "name": "14 Call It What You Want.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Reputation (2017)\\14 Call It What You Want.mp3"
+    },
+    {
+      "name": "2 End Game.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Reputation (2017)\\2 End Game.mp3"
+    },
+    {
+      "name": "3 I Did Something Bad.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Reputation (2017)\\3 I Did Something Bad.mp3"
+    },
+    {
+      "name": "4 Don't Blame Me.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Reputation (2017)\\4 Don't Blame Me.mp3"
+    },
+    {
+      "name": "5 Delicate.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Reputation (2017)\\5 Delicate.mp3"
+    },
+    {
+      "name": "6 Look What You Made Me Do.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Reputation (2017)\\6 Look What You Made Me Do.mp3"
+    },
+    {
+      "name": "7 So It Goes.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Reputation (2017)\\7 So It Goes.mp3"
+    },
+    {
+      "name": "8 Gorgeous.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Reputation (2017)\\8 Gorgeous.mp3"
+    },
+    {
+      "name": "Enchanted(Taylor Swift).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Speak Now\\Enchanted(Taylor Swift).mp3"
+    },
+    {
+      "name": "Mean(Taylor Swift).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Speak Now\\Mean(Taylor Swift).mp3"
+    },
+    {
+      "name": "Speak Now(Taylor Swift).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Speak Now\\Speak Now(Taylor Swift).mp3"
+    },
+    {
+      "name": "Taylor Swift - Only The Young (Featured in Miss Americana) (Featured in Miss Americana) myfreemp3.vip .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\Taylor Swift\\Taylor Swift - Only The Young (Featured in Miss Americana) (Featured in Miss Americana) myfreemp3.vip .mp3"
+    },
+    {
+      "name": "Glory.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Score\\Glory.mp3"
+    },
+    {
+      "name": "NEFFEX - Fight Back.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Score\\NEFFEX - Fight Back.mp3"
+    },
+    {
+      "name": "Nicholas Kingsley & Daniel Farrant - Rise Up (2017).mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Score\\Nicholas Kingsley & Daniel Farrant - Rise Up (2017).mp3"
+    },
+    {
+      "name": "Sam Tinnesz - Legends Are Made my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Score\\Sam Tinnesz - Legends Are Made my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "Tauren Wells feat. KB - Undefeated (feat. KB) my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Score\\Tauren Wells feat. KB - Undefeated (feat. KB) my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "The Fear.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Score\\The Fear.mp3"
+    },
+    {
+      "name": "Unstoppable.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Score\\Unstoppable.mp3"
+    },
+    {
+      "name": "Zayde Wølf - Hustler.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Score\\Zayde Wølf - Hustler.mp3"
+    },
+    {
+      "name": "Breakeven.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Script\\Breakeven.mp3"
+    },
+    {
+      "name": "For The First Time.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Script\\For The First Time.mp3"
+    },
+    {
+      "name": "Hall Of Fame.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Script\\Hall Of Fame.mp3"
+    },
+    {
+      "name": "If You Could See Me Now.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Script\\If You Could See Me Now.mp3"
+    },
+    {
+      "name": "If You Ever Come Back.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Script\\If You Ever Come Back.mp3"
+    },
+    {
+      "name": "Man on a wire.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Script\\Man on a wire.mp3"
+    },
+    {
+      "name": "Six Degrees of Separation.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Script\\Six Degrees of Separation.mp3"
+    },
+    {
+      "name": "Superheroes.mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Script\\Superheroes.mp3"
+    },
+    {
+      "name": "The Man Who Can't Be Moved .mp3",
+      "path": "E:\\Music\\Hollywood\\Artist\\The Script\\The Man Who Can't Be Moved .mp3"
+    },
+    {
+      "name": "Bebe.mp3",
+      "path": "E:\\Music\\Hollywood\\Bebe.mp3"
+    },
+    {
+      "name": "Big Z - This Place Unknown (feat. Jack Wilby) .mp3",
+      "path": "E:\\Music\\Hollywood\\Big Z - This Place Unknown (feat. Jack Wilby) .mp3"
+    },
+    {
+      "name": "Extreme Music - Shout It Out.mp3",
+      "path": "E:\\Music\\Hollywood\\Extreme Music - Shout It Out.mp3"
+    },
+    {
+      "name": "17 MAGIC! - Rude.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\17 MAGIC! - Rude.mp3"
+    },
+    {
+      "name": "20 Weeks - Leonell Cassio(ft. Ville Patrik).mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\20 Weeks - Leonell Cassio(ft. Ville Patrik).mp3"
+    },
+    {
+      "name": "30 Labrinth - Let It Be.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\30 Labrinth - Let It Be.mp3"
+    },
+    {
+      "name": "AJ Mitchell - All My Friends.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\AJ Mitchell - All My Friends.mp3"
+    },
+    {
+      "name": "AJ Mitchell - Girls.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\AJ Mitchell - Girls.mp3"
+    },
+    {
+      "name": "Alexandra Porat - A Million Dreams my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Alexandra Porat - A Million Dreams my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "Alexandra Porat - You Are The Reason - Calum Scott (Cover) my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Alexandra Porat - You Are The Reason - Calum Scott (Cover) my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "Alive.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Alive.mp3"
+    },
+    {
+      "name": "All Of Me - John Legend.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\All Of Me - John Legend.mp3"
+    },
+    {
+      "name": "American Dream.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\American Dream.mp3"
+    },
+    {
+      "name": "Andy Grammer - Don't Give Up On Me.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Andy Grammer - Don't Give Up On Me.mp3"
+    },
+    {
+      "name": "Attention.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Attention.mp3"
+    },
+    {
+      "name": "Ava Max - Salt.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Ava Max - Salt.mp3"
+    },
+    {
+      "name": "Back to Life - Hailee Steinfeld.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Back to Life - Hailee Steinfeld.mp3"
+    },
+    {
+      "name": "Bang La Decks - Utopia.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Bang La Decks - Utopia.mp3"
+    },
+    {
+      "name": "Bartholomew - The Silent Comedy.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Bartholomew - The Silent Comedy.mp3"
+    },
+    {
+      "name": "Bazzi - Beautiful.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Bazzi - Beautiful.mp3"
+    },
+    {
+      "name": "Beach House - Take Care myfreemp3.vip .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Beach House - Take Care myfreemp3.vip .mp3"
+    },
+    {
+      "name": "Ben Rector - I Will Always Be Yours.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Ben Rector - I Will Always Be Yours.mp3"
+    },
+    {
+      "name": "Bishop Briggs - CHAMPION.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Bishop Briggs - CHAMPION.mp3"
+    },
+    {
+      "name": "Black And Yellow.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Black And Yellow.mp3"
+    },
+    {
+      "name": "Black Rebel Motorcycle Club - Beat The Devil's Tattoo.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Black Rebel Motorcycle Club - Beat The Devil's Tattoo.mp3"
+    },
+    {
+      "name": "Blackbird Song.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Blackbird Song.mp3"
+    },
+    {
+      "name": "Boxinlion feat. Vyel - Something Just Like This (Cover Remix).mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Boxinlion feat. Vyel - Something Just Like This (Cover Remix).mp3"
+    },
+    {
+      "name": "Bullets.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Bullets.mp3"
+    },
+    {
+      "name": "C.Henry - Legend myfreemp3.vip .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\C.Henry - Legend myfreemp3.vip .mp3"
+    },
+    {
+      "name": "California - OAR.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\California - OAR.mp3"
+    },
+    {
+      "name": "Cannonball.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Cannonball.mp3"
+    },
+    {
+      "name": "Cheap Thrills.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Cheap Thrills.mp3"
+    },
+    {
+      "name": "Closer - The Chainsmokers Ft.Halsey.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Closer - The Chainsmokers Ft.Halsey.mp3"
+    },
+    {
+      "name": "Conner Youngblood - The Warpath ( 256kbps cbr ).mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Conner Youngblood - The Warpath ( 256kbps cbr ).mp3"
+    },
+    {
+      "name": "Conor Maynard - Crash.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Conor Maynard - Crash.mp3"
+    },
+    {
+      "name": "Dancing In the Dark(AnyMaza.Com).mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Dancing In the Dark(AnyMaza.Com).mp3"
+    },
+    {
+      "name": "Darkness Within by Michael Logen - featured in Suits S6E1.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Darkness Within by Michael Logen - featured in Suits S6E1.mp3"
+    },
+    {
+      "name": "David Rawlings - Cumberland Gap myfreemp3.vip .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\David Rawlings - Cumberland Gap myfreemp3.vip .mp3"
+    },
+    {
+      "name": "Dirty South - Tunnel Vision ft. SomeKindaWonderful.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Dirty South - Tunnel Vision ft. SomeKindaWonderful.mp3"
+    },
+    {
+      "name": "Disappear.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Disappear.mp3"
+    },
+    {
+      "name": "Don t You Need Somebody(mp3rule.com).mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Don t You Need Somebody(mp3rule.com).mp3"
+    },
+    {
+      "name": "Dont You Worry Child - Swidish House Mafia.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Dont You Worry Child - Swidish House Mafia.mp3"
+    },
+    {
+      "name": "Echo (feat. Jonathan Mendelsohn) .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Echo (feat. Jonathan Mendelsohn) .mp3"
+    },
+    {
+      "name": "Feeling At Moment- Feeder.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Feeling At Moment- Feeder.mp3"
+    },
+    {
+      "name": "Fight Song.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Fight Song.mp3"
+    },
+    {
+      "name": "Fire With Fire.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Fire With Fire.mp3"
+    },
+    {
+      "name": "Follow Me - Hardwell.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Follow Me - Hardwell.mp3"
+    },
+    {
+      "name": "Forever Hearts (NCS).mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Forever Hearts (NCS).mp3"
+    },
+    {
+      "name": "Freya Ridings - Still Have You.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Freya Ridings - Still Have You.mp3"
+    },
+    {
+      "name": "Gone Gone Gone - Philip Phililp.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Gone Gone Gone - Philip Phililp.mp3"
+    },
+    {
+      "name": "Goodbye.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Goodbye.mp3"
+    },
+    {
+      "name": "Happy.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Happy.mp3"
+    },
+    {
+      "name": "Haunted - Matty Noyes.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Haunted - Matty Noyes.mp3"
+    },
+    {
+      "name": "Havana - Camila Cabello feat. Young Thug.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Havana - Camila Cabello feat. Young Thug.mp3"
+    },
+    {
+      "name": "Here Comes the Hotstepper.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Here Comes the Hotstepper.mp3"
+    },
+    {
+      "name": "Him & I.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Him & I.mp3"
+    },
+    {
+      "name": "Ho Hey - The Lumineers.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Ho Hey - The Lumineers.mp3"
+    },
+    {
+      "name": "Hooked On Feeling.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Hooked On Feeling.mp3"
+    },
+    {
+      "name": "Howlin For You - The Black Keys.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Howlin For You - The Black Keys.mp3"
+    },
+    {
+      "name": "Hurt.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Hurt.mp3"
+    },
+    {
+      "name": "I Don’t Wanna Live Forever.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\I Don’t Wanna Live Forever.mp3"
+    },
+    {
+      "name": "I Took A Pill In Ibiza (Seeb Remix) - Mike Posner.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\I Took A Pill In Ibiza (Seeb Remix) - Mike Posner.mp3"
+    },
+    {
+      "name": "Icona Pop - Its My Party.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Icona Pop - Its My Party.mp3"
+    },
+    {
+      "name": "Iris.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Iris.mp3"
+    },
+    {
+      "name": "Irresistable - Fall Out Boys.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Irresistable - Fall Out Boys.mp3"
+    },
+    {
+      "name": "James Arthur - Say You Won't Let Go.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\James Arthur - Say You Won't Let Go.mp3"
+    },
+    {
+      "name": "James Arthur feat. Anne-Marie - Rewrite The Stars.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\James Arthur feat. Anne-Marie - Rewrite The Stars.mp3"
+    },
+    {
+      "name": "Jetta - I'd Love To Change The World.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Jetta - I'd Love To Change The World.mp3"
+    },
+    {
+      "name": "John Mayer - Say my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\John Mayer - Say my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "JRND & VMK - Make Dem .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\JRND & VMK - Make Dem .mp3"
+    },
+    {
+      "name": "Khalid - Young Dumb & Broke.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Khalid - Young Dumb & Broke.mp3"
+    },
+    {
+      "name": "Kick Out The Epic Motherfucker.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Kick Out The Epic Motherfucker.mp3"
+    },
+    {
+      "name": "LA Story - Sammy Adams (feat Mike Posner).mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\LA Story - Sammy Adams (feat Mike Posner).mp3"
+    },
+    {
+      "name": "Lady Gaga - Poker Face.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Lady Gaga - Poker Face.mp3"
+    },
+    {
+      "name": "Lewis Capaldi - Someone You Loved.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Lewis Capaldi - Someone You Loved.mp3"
+    },
+    {
+      "name": "Liar Liar.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Liar Liar.mp3"
+    },
+    {
+      "name": "Lies In The Dark.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Lies In The Dark.mp3"
+    },
+    {
+      "name": "Like Me.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Like Me.mp3"
+    },
+    {
+      "name": "Little Braver - New Empire .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Little Braver - New Empire .mp3"
+    },
+    {
+      "name": "Live A Lie - Rival, Egzod, Andreas Stone.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Live A Lie - Rival, Egzod, Andreas Stone.mp3"
+    },
+    {
+      "name": "Looking Too Closely - Fink.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Looking Too Closely - Fink.mp3"
+    },
+    {
+      "name": "Lord Huron - Brother (Last Ride).mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Lord Huron - Brother (Last Ride).mp3"
+    },
+    {
+      "name": "Lord Huron - Love Like Ghosts.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Lord Huron - Love Like Ghosts.mp3"
+    },
+    {
+      "name": "Love Myself - Hailee Steinfeld.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Love Myself - Hailee Steinfeld.mp3"
+    },
+    {
+      "name": "Love Yourself -Justin Bieber.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Love Yourself -Justin Bieber.mp3"
+    },
+    {
+      "name": "M83 - Wait.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\M83 - Wait.mp3"
+    },
+    {
+      "name": "MARINA - To Be Human my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\MARINA - To Be Human my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "Milky Chance - Down by the River.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Milky Chance - Down by the River.mp3"
+    },
+    {
+      "name": "My House - Flo Rida.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\My House - Flo Rida.mp3"
+    },
+    {
+      "name": "Nada Surf - Inside Of Love .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Nada Surf - Inside Of Love .mp3"
+    },
+    {
+      "name": "Nico Collins - Honest.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Nico Collins - Honest.mp3"
+    },
+    {
+      "name": "Nocturnal Me - Echo & The Bunnymen.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Nocturnal Me - Echo & The Bunnymen.mp3"
+    },
+    {
+      "name": "Noija - Rebirth.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Noija - Rebirth.mp3"
+    },
+    {
+      "name": "Of Monsters And Men - Little Talks [pleer.com].mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Of Monsters And Men - Little Talks [pleer.com].mp3"
+    },
+    {
+      "name": "Og Kid Frost - Like A Boss .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Og Kid Frost - Like A Boss .mp3"
+    },
+    {
+      "name": "OK Go-The Writings On The Wall www.mp3c.cc .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\OK Go-The Writings On The Wall www.mp3c.cc .mp3"
+    },
+    {
+      "name": "Old Town Road (Remix) - Lil Nas X feat. Billy Ray Cyrus.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Old Town Road (Remix) - Lil Nas X feat. Billy Ray Cyrus.mp3"
+    },
+    {
+      "name": "On & On - Cartoon.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\On & On - Cartoon.mp3"
+    },
+    {
+      "name": "Options (Pitbull Ft. Stephen Marley) 320Kbps-(ProMp3.In).mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Options (Pitbull Ft. Stephen Marley) 320Kbps-(ProMp3.In).mp3"
+    },
+    {
+      "name": "Panda.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Panda.mp3"
+    },
+    {
+      "name": "Peace - OAR.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Peace - OAR.mp3"
+    },
+    {
+      "name": "Pictures Of You - The Cure.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Pictures Of You - The Cure.mp3"
+    },
+    {
+      "name": "Pompeii - Bastille.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Pompeii - Bastille.mp3"
+    },
+    {
+      "name": "Post Malone - Rockstar.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Post Malone - Rockstar.mp3"
+    },
+    {
+      "name": "R. City - Locked Away.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\R. City - Locked Away.mp3"
+    },
+    {
+      "name": "Regina Spektor - The Call.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Regina Spektor - The Call.mp3"
+    },
+    {
+      "name": "Rhinestone Eyes - Gorillaz.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Rhinestone Eyes - Gorillaz.mp3"
+    },
+    {
+      "name": "Richard Marx - Right Here Waiting.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Richard Marx - Right Here Waiting.mp3"
+    },
+    {
+      "name": "Riverdale Cast - God Rest Ye Merry Gentlemen _ Riverdale 2x09 Music _HD_ ( 160kbps ).mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Riverdale Cast - God Rest Ye Merry Gentlemen _ Riverdale 2x09 Music _HD_ ( 160kbps ).mp3"
+    },
+    {
+      "name": "Savage, Timmy Trumpet - Freaks.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Savage, Timmy Trumpet - Freaks.mp3"
+    },
+    {
+      "name": "Sensitive.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Sensitive.mp3"
+    },
+    {
+      "name": "Shoot Me Down - David Guetta ft. Skylar Grey.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Shoot Me Down - David Guetta ft. Skylar Grey.mp3"
+    },
+    {
+      "name": "Shut Up And Dance - Walk The Moon.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Shut Up And Dance - Walk The Moon.mp3"
+    },
+    {
+      "name": "Silent Partner - To the Top.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Silent Partner - To the Top.mp3"
+    },
+    {
+      "name": "Somebody That I Used To Know.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Somebody That I Used To Know.mp3"
+    },
+    {
+      "name": "Something Just Like This.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Something Just Like This.mp3"
+    },
+    {
+      "name": "Spirits - The Strumbellas.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Spirits - The Strumbellas.mp3"
+    },
+    {
+      "name": "Stars - Dead Hearts.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Stars - Dead Hearts.mp3"
+    },
+    {
+      "name": "Starship - Nothing's Gonna Stop Us Now.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Starship - Nothing's Gonna Stop Us Now.mp3"
+    },
+    {
+      "name": "Stranger Things.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Stranger Things.mp3"
+    },
+    {
+      "name": "Streets of Gold - Needtobreath.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Streets of Gold - Needtobreath.mp3"
+    },
+    {
+      "name": "Sub Urban - Cradles .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Sub Urban - Cradles .mp3"
+    },
+    {
+      "name": "Sun Is Shining - Axwell  Ingrosso.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Sun Is Shining - Axwell  Ingrosso.mp3"
+    },
+    {
+      "name": "Take Me Home, Country Roads - John Denver.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Take Me Home, Country Roads - John Denver.mp3"
+    },
+    {
+      "name": "The Naked And Famous - Hearts Like Ours.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\The Naked And Famous - Hearts Like Ours.mp3"
+    },
+    {
+      "name": "The Nights.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\The Nights.mp3"
+    },
+    {
+      "name": "The Red Jumpsuit Apparatus - Your Guardian Angel.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\The Red Jumpsuit Apparatus - Your Guardian Angel.mp3"
+    },
+    {
+      "name": "The Score - Who I Am www.my-free-mp3.net .mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\The Score - Who I Am www.my-free-mp3.net .mp3"
+    },
+    {
+      "name": "The World - BASSJAMMERS.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\The World - BASSJAMMERS.mp3"
+    },
+    {
+      "name": "Timecop1983 feat. SEAWAVES - Girl.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Timecop1983 feat. SEAWAVES - Girl.mp3"
+    },
+    {
+      "name": "To The Top.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\To The Top.mp3"
+    },
+    {
+      "name": "Trumpets - Jason Derulo.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Trumpets - Jason Derulo.mp3"
+    },
+    {
+      "name": "TULE - Fearless.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\TULE - Fearless.mp3"
+    },
+    {
+      "name": "Used To Love You Sober - Kane Brown.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Used To Love You Sober - Kane Brown.mp3"
+    },
+    {
+      "name": "VNV Nation - Illusion.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\VNV Nation - Illusion.mp3"
+    },
+    {
+      "name": "We Own The Night.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\We Own The Night.mp3"
+    },
+    {
+      "name": "Westlife - Beautiful In White.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Westlife - Beautiful In White.mp3"
+    },
+    {
+      "name": "When I'm With You - Ben Rector.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\When I'm With You - Ben Rector.mp3"
+    },
+    {
+      "name": "Wherever you will go.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Wherever you will go.mp3"
+    },
+    {
+      "name": "Work from Home - Fifth Harmony.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Work from Home - Fifth Harmony.mp3"
+    },
+    {
+      "name": "Y2K, bbno$ - Lalala.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Y2K, bbno$ - Lalala.mp3"
+    },
+    {
+      "name": "You Are The Reason - Calum Scott.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\You Are The Reason - Calum Scott.mp3"
+    },
+    {
+      "name": "You Make Me.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\You Make Me.mp3"
+    },
+    {
+      "name": "Zombie - The Cranberries.mp3",
+      "path": "E:\\Music\\Hollywood\\Favorite\\Zombie - The Cranberries.mp3"
+    },
+    {
+      "name": "Baio - Sister of Pearl.mp3",
+      "path": "E:\\Music\\Hollywood\\Football\\Baio - Sister of Pearl.mp3"
+    },
+    {
+      "name": "Monster - Cierra Rose.mp3",
+      "path": "E:\\Music\\Hollywood\\Football\\Monster - Cierra Rose.mp3"
+    },
+    {
+      "name": "UEFA Champions League Anthem -  Official Stadium Version ( 160kbps ).mp3",
+      "path": "E:\\Music\\Hollywood\\Football\\UEFA Champions League Anthem -  Official Stadium Version ( 160kbps ).mp3"
+    },
+    {
+      "name": "Waka Waka (This Time For Africa) - Shakira.mp3",
+      "path": "E:\\Music\\Hollywood\\Football\\Waka Waka (This Time For Africa) - Shakira.mp3"
+    },
+    {
+      "name": "Wavin Flag.mp3",
+      "path": "E:\\Music\\Hollywood\\Football\\Wavin Flag.mp3"
+    },
+    {
+      "name": "We Are One (Ole Ola) [The Official 2014 FIFA World.mp3",
+      "path": "E:\\Music\\Hollywood\\Football\\We Are One (Ole Ola) [The Official 2014 FIFA World.mp3"
+    },
+    {
+      "name": "Franke - Home Alon - [youtube-mp3.info].mp3",
+      "path": "E:\\Music\\Hollywood\\Franke - Home Alon - [youtube-mp3.info].mp3"
+    },
+    {
+      "name": "Friends - Marshmallow.mp3",
+      "path": "E:\\Music\\Hollywood\\Friends - Marshmallow.mp3"
+    },
+    {
+      "name": "Keane_Somewhere_Only_We_Know.mp3",
+      "path": "E:\\Music\\Hollywood\\Keane_Somewhere_Only_We_Know.mp3"
+    },
+    {
+      "name": "Lauv, Troye Sivan - i'm so tired.mp3",
+      "path": "E:\\Music\\Hollywood\\Lauv, Troye Sivan - i'm so tired.mp3"
+    },
+    {
+      "name": "League of Legends - Legends Never Die (feat. Against the Current).mp3",
+      "path": "E:\\Music\\Hollywood\\League of Legends - Legends Never Die (feat. Against the Current).mp3"
+    },
+    {
+      "name": "Light It Up.mp3",
+      "path": "E:\\Music\\Hollywood\\Light It Up.mp3"
+    },
+    {
+      "name": "Make it Bun Dem.mp3",
+      "path": "E:\\Music\\Hollywood\\Make it Bun Dem.mp3"
+    },
+    {
+      "name": "Miguel Natalia Lafourcade - Remember Me Do.mp3",
+      "path": "E:\\Music\\Hollywood\\Miguel Natalia Lafourcade - Remember Me Do.mp3"
+    },
+    {
+      "name": "01 Back to You.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\13 Reasons Why(Soundtrack)\\01 Back to You.mp3"
+    },
+    {
+      "name": "02 lovely.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\13 Reasons Why(Soundtrack)\\02 lovely.mp3"
+    },
+    {
+      "name": "Kill Em With Kindness - Acoustic.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\13 Reasons Why(Soundtrack)\\Kill Em With Kindness - Acoustic.mp3"
+    },
+    {
+      "name": "Only You.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\13 Reasons Why(Soundtrack)\\Only You.mp3"
+    },
+    {
+      "name": "The Night We Met.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\13 Reasons Why(Soundtrack)\\The Night We Met.mp3"
+    },
+    {
+      "name": "A Thousand Years Pt- 2 Feat- Steve Kazee.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\A Thousand Years Pt- 2 Feat- Steve Kazee.mp3"
+    },
+    {
+      "name": "A Thousand Years(Christina Perri).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\A Thousand Years(Christina Perri).mp3"
+    },
+    {
+      "name": "Adele - Skyfall.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Adele - Skyfall.mp3"
+    },
+    {
+      "name": "All That You Are.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\All That You Are.mp3"
+    },
+    {
+      "name": "Anna Calvi - You’re Not God (From ‘Peaky Blinders’ Original Soundtrack) my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Anna Calvi - You’re Not God (From ‘Peaky Blinders’ Original Soundtrack) my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "Batman Dark Knight Rises Intro.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Batman\\Batman Dark Knight Rises Intro.mp3"
+    },
+    {
+      "name": "Rision From Darkness.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Batman\\Rision From Darkness.mp3"
+    },
+    {
+      "name": "The Dark Knight.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Batman\\The Dark Knight.mp3"
+    },
+    {
+      "name": "Why Do We Fall.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Batman\\Why Do We Fall.mp3"
+    },
+    {
+      "name": "01. Logic, Rag'n'Bone Man - Broken People.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Bright The Album [OST] (2017)\\01. Logic, Rag'n'Bone Man - Broken People.mp3"
+    },
+    {
+      "name": "02. Bastille - World Gone Mad.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Bright The Album [OST] (2017)\\02. Bastille - World Gone Mad.mp3"
+    },
+    {
+      "name": "03. Machine Gun Kelly, X Ambassadors, Bebe Rexha - Home.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Bright The Album [OST] (2017)\\03. Machine Gun Kelly, X Ambassadors, Bebe Rexha - Home.mp3"
+    },
+    {
+      "name": "05. Ty Dolla $ign, Future - Darkside (feat. Kiiara).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Bright The Album [OST] (2017)\\05. Ty Dolla $ign, Future - Darkside (feat. Kiiara).mp3"
+    },
+    {
+      "name": "07. Meek Mill, YG, Snoop Dogg - That's My N----.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Bright The Album [OST] (2017)\\07. Meek Mill, YG, Snoop Dogg - That's My N----.mp3"
+    },
+    {
+      "name": "08. Steve Aoki & Lil Uzi Vert - Smoke My Dope.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Bright The Album [OST] (2017)\\08. Steve Aoki & Lil Uzi Vert - Smoke My Dope.mp3"
+    },
+    {
+      "name": "12. Dram, Neil Young - Campfire.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Bright The Album [OST] (2017)\\12. Dram, Neil Young - Campfire.mp3"
+    },
+    {
+      "name": "13. Sam Hunt - This Land Is Your Land.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Bright The Album [OST] (2017)\\13. Sam Hunt - This Land Is Your Land.mp3"
+    },
+    {
+      "name": "Clab Cant Handle Me.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Clab Cant Handle Me.mp3"
+    },
+    {
+      "name": "Come and Get Your Love-Redbone.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Come and Get Your Love-Redbone.mp3"
+    },
+    {
+      "name": "Despicable Me - Pharrell Williams.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Despicable Me - Pharrell Williams.mp3"
+    },
+    {
+      "name": "El Michels Affair - Shimmy Shimmy Ya (Instrumental) myfreemp3.vip .mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\El Michels Affair - Shimmy Shimmy Ya (Instrumental) myfreemp3.vip .mp3"
+    },
+    {
+      "name": "Extreme Ways.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Extreme Ways.mp3"
+    },
+    {
+      "name": "Blast Off.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\7\\Blast Off.mp3"
+    },
+    {
+      "name": "Get Low.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\7\\Get Low.mp3"
+    },
+    {
+      "name": "Go Hard Or Go Home.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\7\\Go Hard Or Go Home.mp3"
+    },
+    {
+      "name": "How Bad Do You Want It (Oh Yeah).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\7\\How Bad Do You Want It (Oh Yeah).mp3"
+    },
+    {
+      "name": "My Angel.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\7\\My Angel.mp3"
+    },
+    {
+      "name": "Off-Set.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\7\\Off-Set.mp3"
+    },
+    {
+      "name": "Payback.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\7\\Payback.mp3"
+    },
+    {
+      "name": "Ride Out.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\7\\Ride Out.mp3"
+    },
+    {
+      "name": "See You Again (feat. Charlie Puth).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\7\\See You Again (feat. Charlie Puth).mp3"
+    },
+    {
+      "name": "Turn Down For What.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\7\\Turn Down For What.mp3"
+    },
+    {
+      "name": "Danza Kuduro - Don Omar feat. Lucenzo (Album Version).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\Danza Kuduro - Don Omar feat. Lucenzo (Album Version).mp3"
+    },
+    {
+      "name": "Rest of My Life.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\Rest of My Life.mp3"
+    },
+    {
+      "name": "Six Days.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\Six Days.mp3"
+    },
+    {
+      "name": "We Own It.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Fast & Furious\\We Own It.mp3"
+    },
+    {
+      "name": "Feel the Light (Jennifer Lopez).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Feel the Light (Jennifer Lopez).mp3"
+    },
+    {
+      "name": "A Lannister Always Pays His Debts.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Game of Thrones\\A Lannister Always Pays His Debts.mp3"
+    },
+    {
+      "name": "For the Realm.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Game of Thrones\\For the Realm.mp3"
+    },
+    {
+      "name": "Games of thrones-Theme song.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Game of Thrones\\Games of thrones-Theme song.mp3"
+    },
+    {
+      "name": "It's Always Summer Under the Sea (Shireen's Song).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Game of Thrones\\It's Always Summer Under the Sea (Shireen's Song).mp3"
+    },
+    {
+      "name": "Light of the Seven.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Game of Thrones\\Light of the Seven.mp3"
+    },
+    {
+      "name": "Main Title (Game of Thrones- Season 3).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Game of Thrones\\Main Title (Game of Thrones- Season 3).mp3"
+    },
+    {
+      "name": "Mhysa.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Game of Thrones\\Mhysa.mp3"
+    },
+    {
+      "name": "Needle.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Game of Thrones\\Needle.mp3"
+    },
+    {
+      "name": "Reign.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Game of Thrones\\Reign.mp3"
+    },
+    {
+      "name": "The Rains Of Castomere.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Game of Thrones\\The Rains Of Castomere.mp3"
+    },
+    {
+      "name": "Valar Morghulis.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Game of Thrones\\Valar Morghulis.mp3"
+    },
+    {
+      "name": "Hello Andheron.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Hello Andheron.mp3"
+    },
+    {
+      "name": "01. Task Force X.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\01. Task Force X.mp3"
+    },
+    {
+      "name": "Full Tilt - Prophecy.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Full Tilt - Prophecy.mp3"
+    },
+    {
+      "name": "Hans Zimmer - Flight my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Hans Zimmer - Flight my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "Hans Zimmer - Terraforming my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Hans Zimmer - Terraforming my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "Hans Zimmer - The Red Capes Are Coming my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Hans Zimmer - The Red Capes Are Coming my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "Hans Zimmer and Junkie XL — Is She With You.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Hans Zimmer and Junkie XL — Is She With You.mp3"
+    },
+    {
+      "name": "Hans Zimmer and Junkie XL — Must There Be a Superman.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Hans Zimmer and Junkie XL — Must There Be a Superman.mp3"
+    },
+    {
+      "name": "Heart of Courage.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Heart of Courage.mp3"
+    },
+    {
+      "name": "Interstellar Main Theme OST - Hans Zimmer.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Interstellar Main Theme OST - Hans Zimmer.mp3"
+    },
+    {
+      "name": "Jed Kurzel - The Mutiny.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Jed Kurzel - The Mutiny.mp3"
+    },
+    {
+      "name": "Jed Kurzel - You're Not Alone.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Jed Kurzel - You're Not Alone.mp3"
+    },
+    {
+      "name": "Niklas Johansson - Highlander Droid.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Niklas Johansson - Highlander Droid.mp3"
+    },
+    {
+      "name": "Ship Wreck & Zookeepers - Ark.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\Ship Wreck & Zookeepers - Ark.mp3"
+    },
+    {
+      "name": "tumblr_nuen89c25n1r11ilro1.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Instrumental\\tumblr_nuen89c25n1r11ilro1.mp3"
+    },
+    {
+      "name": "Lady Gaga - Always Remember Us This Way .mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lady Gaga - Always Remember Us This Way .mp3"
+    },
+    {
+      "name": "Lady Gaga, Bradley Cooper - Shallow.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lady Gaga, Bradley Cooper - Shallow.mp3"
+    },
+    {
+      "name": "Breath Of Life (Featuring Sheila Chandra).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\Breath Of Life (Featuring Sheila Chandra).mp3"
+    },
+    {
+      "name": "Concerning Hobbits - Howard Shore.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\Concerning Hobbits - Howard Shore.mp3"
+    },
+    {
+      "name": "Into The West.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\Into The West.mp3"
+    },
+    {
+      "name": "Lord of the ring.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\Lord of the ring.mp3"
+    },
+    {
+      "name": "Lord_Of_The_Rings__Main_Title_Theme.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\Lord_Of_The_Rings__Main_Title_Theme.mp3"
+    },
+    {
+      "name": "lotr~main.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\lotr~main.mp3"
+    },
+    {
+      "name": "lotr~main2.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\lotr~main2.mp3"
+    },
+    {
+      "name": "Main Them.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\Main Them.mp3"
+    },
+    {
+      "name": "May it be.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\May it be.mp3"
+    },
+    {
+      "name": "Minas Tirith.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\Minas Tirith.mp3"
+    },
+    {
+      "name": "Misty Mountain Main Theme.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\Misty Mountain Main Theme.mp3"
+    },
+    {
+      "name": "Misty Mountains Cold.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\Misty Mountains Cold.mp3"
+    },
+    {
+      "name": "Peter Hollens feat. Tim Foust - Misty Mountains www.my-free-mp3.net .mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\Peter Hollens feat. Tim Foust - Misty Mountains www.my-free-mp3.net .mp3"
+    },
+    {
+      "name": "The Last Goodbye.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\The Last Goodbye.mp3"
+    },
+    {
+      "name": "The Return Of The King Hope And Memory.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\The Return Of The King Hope And Memory.mp3"
+    },
+    {
+      "name": "The Riders Of Rohan.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\The Riders Of Rohan.mp3"
+    },
+    {
+      "name": "The Steward of Gondor.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Lord Of The Rings\\The Steward of Gondor.mp3"
+    },
+    {
+      "name": "Nick Cave & The Bad Seeds - Red Right Hand (2011 Remastered Version) (2011 Remastered Version) my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Nick Cave & The Bad Seeds - Red Right Hand (2011 Remastered Version) (2011 Remastered Version) my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "02. Post Malone & Swae Lee - Sunflower (Spider-Man_ Into the Spider-Verse).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Spider-Man Into the Spider-Verse OST\\02. Post Malone & Swae Lee - Sunflower (Spider-Man_ Into the Spider-Verse).mp3"
+    },
+    {
+      "name": "03. Jaden Smith - Way Up.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Spider-Man Into the Spider-Verse OST\\03. Jaden Smith - Way Up.mp3"
+    },
+    {
+      "name": "04. Nicki Minaj, Anuel Aa & Bantu - Familia (Spider-Man_ Into the Spider-Verse).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Spider-Man Into the Spider-Verse OST\\04. Nicki Minaj, Anuel Aa & Bantu - Familia (Spider-Man_ Into the Spider-Verse).mp3"
+    },
+    {
+      "name": "06. DUCKWRTH & Shaboozey - Start a Riot.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Spider-Man Into the Spider-Verse OST\\06. DUCKWRTH & Shaboozey - Start a Riot.mp3"
+    },
+    {
+      "name": "07. Juice WRLD & Seezyn - Hide.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Spider-Man Into the Spider-Verse OST\\07. Juice WRLD & Seezyn - Hide.mp3"
+    },
+    {
+      "name": "08. Thutmose - Memories.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Spider-Man Into the Spider-Verse OST\\08. Thutmose - Memories.mp3"
+    },
+    {
+      "name": "10. Beau Young Prince - Let Go.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Spider-Man Into the Spider-Verse OST\\10. Beau Young Prince - Let Go.mp3"
+    },
+    {
+      "name": "11. Lil Wayne, Ty Dolla $ign & XXXTentacion - Scared of the Dark.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Spider-Man Into the Spider-Verse OST\\11. Lil Wayne, Ty Dolla $ign & XXXTentacion - Scared of the Dark.mp3"
+    },
+    {
+      "name": "12. DJ Khalil, Denzel Curry, YBN Cordae, Swavay & Trevor Rich - Elevate.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Spider-Man Into the Spider-Verse OST\\12. DJ Khalil, Denzel Curry, YBN Cordae, Swavay & Trevor Rich - Elevate.mp3"
+    },
+    {
+      "name": "13. Vince Staples - Home.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Spider-Man Into the Spider-Verse OST\\13. Vince Staples - Home.mp3"
+    },
+    {
+      "name": "Teriyaki Boyz - Tokyo Drift (Fast & Furious).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Teriyaki Boyz - Tokyo Drift (Fast & Furious).mp3"
+    },
+    {
+      "name": "The High Kings - The Rocky Road to Dublin.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The High Kings - The Rocky Road to Dublin.mp3"
+    },
+    {
+      "name": "The Maccabees - Grew Up At Midnight.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Maccabees - Grew Up At Midnight.mp3"
+    },
+    {
+      "name": "A Walk In The Rain - PASSENGER.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\A Walk In The Rain - PASSENGER.mp3"
+    },
+    {
+      "name": "All I Want - Kodaline.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\All I Want - Kodaline.mp3"
+    },
+    {
+      "name": "All We Are - Matt Nathanson.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\All We Are - Matt Nathanson.mp3"
+    },
+    {
+      "name": "Between The Night Between The Day - Rosi Golan (Feat Tim Myers).mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Between The Night Between The Day - Rosi Golan (Feat Tim Myers).mp3"
+    },
+    {
+      "name": "Come Back When You Can - Barcelona.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Come Back When You Can - Barcelona.mp3"
+    },
+    {
+      "name": "Down - Jason Walker.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Down - Jason Walker.mp3"
+    },
+    {
+      "name": "Echo - John Walker.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Echo - John Walker.mp3"
+    },
+    {
+      "name": "Here We Go - Mat Kearney.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Here We Go - Mat Kearney.mp3"
+    },
+    {
+      "name": "Love Like This - RY X.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Love Like This - RY X.mp3"
+    },
+    {
+      "name": "Never Say Never.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Never Say Never.mp3"
+    },
+    {
+      "name": "Only One - Alex Band.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Only One - Alex Band.mp3"
+    },
+    {
+      "name": "Say Anything - Ashly Nite.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Say Anything - Ashly Nite.mp3"
+    },
+    {
+      "name": "Scars - Michael Malarkey.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Scars - Michael Malarkey.mp3"
+    },
+    {
+      "name": "Somewhere Only We Know - Keane.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Somewhere Only We Know - Keane.mp3"
+    },
+    {
+      "name": "Terrible Love - Birdy.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Terrible Love - Birdy.mp3"
+    },
+    {
+      "name": "Wait It Out - Imogen Heap.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Wait It Out - Imogen Heap.mp3"
+    },
+    {
+      "name": "Wheres My Love - SYML.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\The Vampire Diaries\\Wheres My Love - SYML.mp3"
+    },
+    {
+      "name": "Way Down We Go - Kaleo.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Way Down We Go - Kaleo.mp3"
+    },
+    {
+      "name": "We are in This Thing Together - The Layover Movie Song.mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\We are in This Thing Together - The Layover Movie Song.mp3"
+    },
+    {
+      "name": "Witcher - Toss A Coin To Your Witcher my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\Witcher - Toss A Coin To Your Witcher my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "XTC - Dear Madam Barnum (2001 Remaster) (2001 Remaster) myfreemp3.vip .mp3",
+      "path": "E:\\Music\\Hollywood\\Movies\\XTC - Dear Madam Barnum (2001 Remaster) (2001 Remaster) myfreemp3.vip .mp3"
+    },
+    {
+      "name": "13 LuvBug - Resonance (Feat. Talay Riley).mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\13 LuvBug - Resonance (Feat. Talay Riley).mp3"
+    },
+    {
+      "name": "17 Lil Wayne Feat Bruno Mars - Mirror (Explicit Edit).mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\17 Lil Wayne Feat Bruno Mars - Mirror (Explicit Edit).mp3"
+    },
+    {
+      "name": "24 Iggy Azalea - Black Widow (Feat.Rita Ora).mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\24 Iggy Azalea - Black Widow (Feat.Rita Ora).mp3"
+    },
+    {
+      "name": "25 Professor Green - Lullaby (Feat. Tori Kelly).mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\25 Professor Green - Lullaby (Feat. Tori Kelly).mp3"
+    },
+    {
+      "name": "28 Nico & Vinz - Am I Wrong.mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\28 Nico & Vinz - Am I Wrong.mp3"
+    },
+    {
+      "name": "Addicted To You.mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\Addicted To You.mp3"
+    },
+    {
+      "name": "Beyonce-Halo.mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\Beyonce-Halo.mp3"
+    },
+    {
+      "name": "Seasons In the Sun.mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\Seasons In the Sun.mp3"
+    },
+    {
+      "name": "The Mountain Goats - Up The Wolves.mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\The Mountain Goats - Up The Wolves.mp3"
+    },
+    {
+      "name": "Troye Sivan - YOUTH.mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\Troye Sivan - YOUTH.mp3"
+    },
+    {
+      "name": "You Said Everything.mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\You Said Everything.mp3"
+    },
+    {
+      "name": "ZAYN - Dusk Till Dawn (feat. Sia).mp3",
+      "path": "E:\\Music\\Hollywood\\Music\\ZAYN - Dusk Till Dawn (feat. Sia).mp3"
+    },
+    {
+      "name": "Akon - Bitch.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Akon - Bitch.mp3"
+    },
+    {
+      "name": "AXE Music Star.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\AXE Music Star.mp3"
+    },
+    {
+      "name": "Beast- Rob Bailey & The Hustle Standard.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Beast- Rob Bailey & The Hustle Standard.mp3"
+    },
+    {
+      "name": "Can't Hold Us ft. Ryan Dalton.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Can't Hold Us ft. Ryan Dalton.mp3"
+    },
+    {
+      "name": "Addicted to a Memory (feat. Bahari).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Folder\\Addicted to a Memory (feat. Bahari).mp3"
+    },
+    {
+      "name": "Dimitri Vegas & Like Mike feat. Ne-Yo - Higher Place (Original Mix).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Folder\\Dimitri Vegas & Like Mike feat. Ne-Yo - Higher Place (Original Mix).mp3"
+    },
+    {
+      "name": "Dracula Untold - Main Theme - Soundtrack OST By Ramin Djawadi Official.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Folder\\Dracula Untold - Main Theme - Soundtrack OST By Ramin Djawadi Official.mp3"
+    },
+    {
+      "name": "Fortress.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Folder\\Fortress.mp3"
+    },
+    {
+      "name": "In The Name of Love.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Folder\\In The Name of Love.mp3"
+    },
+    {
+      "name": "Who We Are - Switchfoot(Michael Calfan Radio Edit).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Folder\\Who We Are - Switchfoot(Michael Calfan Radio Edit).mp3"
+    },
+    {
+      "name": "Gimme That.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Gimme That.mp3"
+    },
+    {
+      "name": "Heartbreak Warfare John Mayer.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Heartbreak Warfare John Mayer.mp3"
+    },
+    {
+      "name": "I Will Never Let You Down - Rita Ora.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\I Will Never Let You Down - Rita Ora.mp3"
+    },
+    {
+      "name": "Let It Go.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Let It Go.mp3"
+    },
+    {
+      "name": "Lolipop-Lil Wayne.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Lolipop-Lil Wayne.mp3"
+    },
+    {
+      "name": "Louder.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Louder.mp3"
+    },
+    {
+      "name": "Mama We Will Rock You.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Mama We Will Rock You.mp3"
+    },
+    {
+      "name": "Opposite of Adults.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Opposite of Adults.mp3"
+    },
+    {
+      "name": "Remember The Name.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Remember The Name.mp3"
+    },
+    {
+      "name": "Right Now.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Right Now.mp3"
+    },
+    {
+      "name": "Shell Shocked.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Shell Shocked.mp3"
+    },
+    {
+      "name": "Surrender - The Collective.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Surrender - The Collective.mp3"
+    },
+    {
+      "name": "Total Overdose Song Theme1.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Total Overdose Song Theme1.mp3"
+    },
+    {
+      "name": "01. Justin Bieber - What Do You Mean.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\01. Justin Bieber - What Do You Mean.mp3"
+    },
+    {
+      "name": "03. Aurora - Half a World Away.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\03. Aurora - Half a World Away.mp3"
+    },
+    {
+      "name": "03. Jess Glynne - My Love.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\03. Jess Glynne - My Love.mp3"
+    },
+    {
+      "name": "04. James Bay - Let It Go (Live from Spotify, London, 2015).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\04. James Bay - Let It Go (Live from Spotify, London, 2015).mp3"
+    },
+    {
+      "name": "04. Jamie Lawson - Wasn't Expecting That.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\04. Jamie Lawson - Wasn't Expecting That.mp3"
+    },
+    {
+      "name": "07. Sigma & Rita Ora - Coming Home.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\07. Sigma & Rita Ora - Coming Home.mp3"
+    },
+    {
+      "name": "08. Emeli Sandé - Read All About It (Pt. III).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\08. Emeli Sandé - Read All About It (Pt. III).mp3"
+    },
+    {
+      "name": "08. Swedish House Mafia - Don't You Worry Child (Feat. John Martin).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\08. Swedish House Mafia - Don't You Worry Child (Feat. John Martin).mp3"
+    },
+    {
+      "name": "09. Katy Perry - Thinking of You (Live at MTV Unplugged New York, 2009).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\09. Katy Perry - Thinking of You (Live at MTV Unplugged New York, 2009).mp3"
+    },
+    {
+      "name": "11. Hozier - Cherry Wine (Live from Greystones, Ireland, 2014).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\11. Hozier - Cherry Wine (Live from Greystones, Ireland, 2014).mp3"
+    },
+    {
+      "name": "12. Hozier - Someone New (Live from Spotify, London, 2014).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\12. Hozier - Someone New (Live from Spotify, London, 2014).mp3"
+    },
+    {
+      "name": "13. Jessie Ware - Running.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\13. Jessie Ware - Running.mp3"
+    },
+    {
+      "name": "13. Maroon 5 - Misery.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\13. Maroon 5 - Misery.mp3"
+    },
+    {
+      "name": "14. Bastille - Bad Blood (Piano Version - Live from Unit 24, London, 2012).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\14. Bastille - Bad Blood (Piano Version - Live from Unit 24, London, 2012).mp3"
+    },
+    {
+      "name": "15. Ben Howard - Old Pine.mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\15. Ben Howard - Old Pine.mp3"
+    },
+    {
+      "name": "16. Lost Frequencies - Are You With Me (Harold Van Lennep Piano Edit).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\16. Lost Frequencies - Are You With Me (Harold Van Lennep Piano Edit).mp3"
+    },
+    {
+      "name": "18. Keane - With Or Without You (Jo Whiley BBC Session).mp3",
+      "path": "E:\\Music\\Hollywood\\New\\Various Artists - Acoustic (2016) 2CD @ MP3\\18. Keane - With Or Without You (Jo Whiley BBC Session).mp3"
+    },
+    {
+      "name": "Nicky Jam & J Balvin - X .mp3",
+      "path": "E:\\Music\\Hollywood\\Nicky Jam & J Balvin - X .mp3"
+    },
+    {
+      "name": "Nicky Jam, Will Smith, Era Istrefi - Live It Up .mp3",
+      "path": "E:\\Music\\Hollywood\\Nicky Jam, Will Smith, Era Istrefi - Live It Up .mp3"
+    },
+    {
+      "name": "A Stutter - Ólafur Arnalds feat. Arnor Dan.mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\A Stutter - Ólafur Arnalds feat. Arnor Dan.mp3"
+    },
+    {
+      "name": "Bring Me To Life - Evanescence.mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\Bring Me To Life - Evanescence.mp3"
+    },
+    {
+      "name": "Cant Help Falling In Love - Elvis Presley.mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\Cant Help Falling In Love - Elvis Presley.mp3"
+    },
+    {
+      "name": "Cheerleader - OMI.mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\Cheerleader - OMI.mp3"
+    },
+    {
+      "name": "Five Hundred Miles.mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\Five Hundred Miles.mp3"
+    },
+    {
+      "name": "Four Five Seconds - Feat. Paul McCartney Kanye West.mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\Four Five Seconds - Feat. Paul McCartney Kanye West.mp3"
+    },
+    {
+      "name": "Games.mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\Games.mp3"
+    },
+    {
+      "name": "Raging Fire - Phillip Phillips.mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\Raging Fire - Phillip Phillips.mp3"
+    },
+    {
+      "name": "Summer of 69.mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\Summer of 69.mp3"
+    },
+    {
+      "name": "The Little Things You Do - Mikey McCleary - MTV Unplugged Season 4(jatt.cc).mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\The Little Things You Do - Mikey McCleary - MTV Unplugged Season 4(jatt.cc).mp3"
+    },
+    {
+      "name": "The World Is Our Playground - Mikey McCleary - MTV Unplugged Season 4(jatt.cc).mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\The World Is Our Playground - Mikey McCleary - MTV Unplugged Season 4(jatt.cc).mp3"
+    },
+    {
+      "name": "Want To Want Me - Jason DeRulo.mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\Want To Want Me - Jason DeRulo.mp3"
+    },
+    {
+      "name": "Writings on the Wall (Sam Smith).mp3",
+      "path": "E:\\Music\\Hollywood\\Old\\Writings on the Wall (Sam Smith).mp3"
+    },
+    {
+      "name": "On The Flor.mp3",
+      "path": "E:\\Music\\Hollywood\\On The Flor.mp3"
+    },
+    {
+      "name": "Psycho .mp3",
+      "path": "E:\\Music\\Hollywood\\Psycho .mp3"
+    },
+    {
+      "name": "Ride.mp3",
+      "path": "E:\\Music\\Hollywood\\Ride.mp3"
+    },
+    {
+      "name": "Hell Broke Lose.mp3",
+      "path": "E:\\Music\\Hollywood\\Rock\\Hell Broke Lose.mp3"
+    },
+    {
+      "name": "Highway to hell.mp3",
+      "path": "E:\\Music\\Hollywood\\Rock\\Highway to hell.mp3"
+    },
+    {
+      "name": "Immigrant Song.mp3",
+      "path": "E:\\Music\\Hollywood\\Rock\\Immigrant Song.mp3"
+    },
+    {
+      "name": "Martika - Toy Soldiers.mp3",
+      "path": "E:\\Music\\Hollywood\\Rock\\Martika - Toy Soldiers.mp3"
+    },
+    {
+      "name": "Sabotage.mp3",
+      "path": "E:\\Music\\Hollywood\\Rock\\Sabotage.mp3"
+    },
+    {
+      "name": "Seven Nation Army - The White Stripes.mp3",
+      "path": "E:\\Music\\Hollywood\\Rock\\Seven Nation Army - The White Stripes.mp3"
+    },
+    {
+      "name": "Soundgarden - Live to Rise.mp3",
+      "path": "E:\\Music\\Hollywood\\Rock\\Soundgarden - Live to Rise.mp3"
+    },
+    {
+      "name": "Thunderstruck - AC_DC.mp3",
+      "path": "E:\\Music\\Hollywood\\Rock\\Thunderstruck - AC_DC.mp3"
+    },
+    {
+      "name": "Scared To Be Lonely.mp3",
+      "path": "E:\\Music\\Hollywood\\Scared To Be Lonely.mp3"
+    },
+    {
+      "name": "Sigrid - Everybody Knows my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\Sigrid - Everybody Knows my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "Sky on fire.mp3",
+      "path": "E:\\Music\\Hollywood\\Sky on fire.mp3"
+    },
+    {
+      "name": "Solo - Clean Bandit feat. Demi Lovato.mp3",
+      "path": "E:\\Music\\Hollywood\\Solo - Clean Bandit feat. Demi Lovato.mp3"
+    },
+    {
+      "name": "The Cinematic Orchestra feat. Patrick Watson - To Build A Home my-free-mp3s.com .mp3",
+      "path": "E:\\Music\\Hollywood\\The Cinematic Orchestra feat. Patrick Watson - To Build A Home my-free-mp3s.com .mp3"
+    },
+    {
+      "name": "The Royal Concept - On Our Way.mp3",
+      "path": "E:\\Music\\Hollywood\\The Royal Concept - On Our Way.mp3"
+    },
+    {
+      "name": "Unknown Brain feat. Chris Linton - Superhero.mp3",
+      "path": "E:\\Music\\Hollywood\\Unknown Brain feat. Chris Linton - Superhero.mp3"
+    },
+    {
+      "name": "Waves - Dean Lewis .mp3",
+      "path": "E:\\Music\\Hollywood\\Waves - Dean Lewis .mp3"
+    },
+    {
+      "name": "Born to Run - Seven Lions.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\Born to Run - Seven Lions.mp3"
+    },
+    {
+      "name": "Breaks (Wiz Khalifa  John Cena).mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\Breaks (Wiz Khalifa  John Cena).mp3"
+    },
+    {
+      "name": "Edge Of A Revolution - Nickelback.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\Edge Of A Revolution - Nickelback.mp3"
+    },
+    {
+      "name": "Good Feeling.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\Good Feeling.mp3"
+    },
+    {
+      "name": "I Made It.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\I Made It.mp3"
+    },
+    {
+      "name": "I'm Coming Home.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\I'm Coming Home.mp3"
+    },
+    {
+      "name": "jungle-extended-remix-jamie-n-commons-ft-jay-z-x-ambassadors.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\jungle-extended-remix-jamie-n-commons-ft-jay-z-x-ambassadors.mp3"
+    },
+    {
+      "name": "Kid Ink - Money and the Power.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\Kid Ink - Money and the Power.mp3"
+    },
+    {
+      "name": "New Day Coming.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\New Day Coming.mp3"
+    },
+    {
+      "name": "No I Will Not Surrender.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\No I Will Not Surrender.mp3"
+    },
+    {
+      "name": "One More Time - 7Lions.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\One More Time - 7Lions.mp3"
+    },
+    {
+      "name": "This Life (SmackDown Theme).mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\This Life (SmackDown Theme).mp3"
+    },
+    {
+      "name": "Tonight Is The Night - Outasight.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\Tonight Is The Night - Outasight.mp3"
+    },
+    {
+      "name": "Voices (Randy Ortan).mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\Voices (Randy Ortan).mp3"
+    },
+    {
+      "name": "We Are Young.mp3",
+      "path": "E:\\Music\\Hollywood\\WWE\\We Are Young.mp3"
     }
   ]
 }

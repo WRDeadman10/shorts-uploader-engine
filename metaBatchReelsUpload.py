@@ -304,7 +304,8 @@ def should_skip_platform(
     platform_row = row.get(platform_name, {})
     if not isinstance(platform_row, dict):
         return False
-    return clean_one_line(str(platform_row.get("status", ""))).lower() in {"ok", "scheduled"}
+    status = clean_one_line(str(platform_row.get("status", ""))).lower()
+    return status in {"ok", "scheduled", "skipped_horizontal"}
 
 
 def main() -> int:
@@ -448,6 +449,45 @@ def main() -> int:
             if do_facebook:
                 print("[dry-run][facebook] would upload + publish reel")
             continue
+
+        if do_instagram:
+            ffprobe_path = getattr(args, "ffprobe_bin", None)
+            if not ffprobe_path:
+                from lib.media_tools import resolve_media_tool
+                ffprobe_path = resolve_media_tool("ffprobe") or "ffprobe"
+            from lib.media_tools import probe_video_info
+            is_horizontal = False
+            try:
+                info = probe_video_info(source_file, ffprobe_path)
+                if info:
+                    is_horizontal = info.get("width", 0) > info.get("height", 0)
+            except Exception as e:
+                print(f"[warn][instagram] failed to probe video {source_file}: {e}")
+
+            if is_horizontal:
+                print(f"[skip][instagram] Skipping horizontal video upload to Instagram Reels: {source_file}")
+                state_row["instagram"] = {
+                    "status": "skipped_horizontal",
+                    "reason": "Horizontal video detected",
+                    "updated_at_utc": now_utc_iso(),
+                    "source_file": str(source_file),
+                }
+                update_platform_upload_ledger(
+                    instagram_upload_ledger,
+                    state_key=state_key,
+                    status="skipped_horizontal",
+                    relative_path=str(entry.get("relative_path", "")).strip(),
+                    source_file=source_file,
+                    metadata_file=str(entry.get("metadata_file", "")).strip(),
+                    title=str(entry.get("title", "")).strip(),
+                    platform_id_key="media_id",
+                    platform_id_value="",
+                    extra_fields={
+                        "youtube_video_id": str(entry.get("video_id", "")).strip(),
+                        "error": "Horizontal video detected",
+                    },
+                )
+                do_instagram = False
 
         if do_instagram:
             try:

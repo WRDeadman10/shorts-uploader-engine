@@ -76,6 +76,46 @@ def crosspost_meta_reel(
         save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
 
     if do_instagram:
+        ffprobe_path = getattr(args, "ffprobe_bin", None)
+        if not ffprobe_path:
+            from lib.media_tools import resolve_media_tool
+            ffprobe_path = resolve_media_tool("ffprobe") or "ffprobe"
+        from lib.media_tools import probe_video_info
+        is_horizontal = False
+        try:
+            info = probe_video_info(source_file, ffprobe_path)
+            if info:
+                is_horizontal = info.get("width", 0) > info.get("height", 0)
+        except Exception as e:
+            print(f"[warn][instagram] failed to probe source video {source_file}: {e}")
+
+        if is_horizontal:
+            print(f"[skip][instagram] Skipping horizontal video upload to Instagram Reels: {source_file}")
+            state_row["instagram"] = {
+                "status": "skipped_horizontal",
+                "reason": "Horizontal video detected",
+                "updated_at_utc": meta_now_utc_iso(),
+                "source_file": str(source_file),
+            }
+            update_platform_upload_ledger(
+                instagram_upload_ledger,
+                state_key=state_key,
+                status="skipped_horizontal",
+                relative_path=rel_path,
+                source_file=source_file,
+                metadata_file=metadata_path,
+                title=str(metadata.get("title", "")),
+                platform_id_key="media_id",
+                platform_id_value="",
+                extra_fields={
+                    "youtube_video_id": youtube_video_id,
+                    "error": "Horizontal video detected",
+                },
+            )
+            save_meta_progress()
+            do_instagram = False
+
+    if do_instagram:
         for attempt in range(1, max(args.meta_instagram_retries, 1) + 1):
             try:
                 _ig_scheduled_ts: Optional[int] = None
@@ -144,11 +184,28 @@ def crosspost_meta_reel(
                         "youtube_video_id": youtube_video_id,
                     },
                 )
+                fs_is_horizontal = False
                 if (
                     args.full_size_video
                     and full_size_source_file
                     and full_size_source_file.exists()
                     and full_size_source_file != source_file
+                ):
+                    try:
+                        fs_info = probe_video_info(full_size_source_file, ffprobe_path)
+                        if fs_info:
+                            fs_is_horizontal = fs_info.get("width", 0) > fs_info.get("height", 0)
+                    except Exception as e:
+                        print(f"[warn][instagram][full-size] failed to probe full-size video {full_size_source_file}: {e}")
+                    if fs_is_horizontal:
+                        print(f"[skip][instagram][full-size] Skipping horizontal full-size video upload: {full_size_source_file}")
+
+                if (
+                    args.full_size_video
+                    and full_size_source_file
+                    and full_size_source_file.exists()
+                    and full_size_source_file != source_file
+                    and not fs_is_horizontal
                 ):
                     try:
                         fs_container_id, fs_upload_uri = ig_create_reel_container(

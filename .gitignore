@@ -15,6 +15,7 @@ __pycache__/youtubeBatchUpload.cpython-313.pyc
 .metadata_history.json
 .youtube_upload_state.json
 .youtube_uploaded_videos.json
+.schedule_upload_progress.json
 live_upload_audit/
 .metadata_history.json
 
@@ -38,3 +39,4 @@ logs/bridge-app.log
 .aider.input.history
 .aider.chat.history.md
 client_secret_294354856377-s0e7elinaaj6n7nujnlfv47nsicftnlh.apps.googleusercontent.com.json
+.trending_music_cache/

@@ -3,7 +3,7 @@
         "includeShorts": true,
         "includeMusic": true,
         "includeMetadata": true,
-        "maxVideos": 1,
+        "maxVideos": 10,
         "videosRoot": "E:\\New folder\\Valorant Tracker\\VALORANT",
         "privacy": "public",
         "playlistName": "Valorant",
@@ -17,34 +17,35 @@
         "requireMissingOn": "",
         "clientSecretsPath": "C:\\Users\\winss\\Documents\\Projects\\old\\shorts-uploader-engine\\shorts-uploader-engine\\client_secret.json",
         "tokenFilePath": "C:\\Users\\winss\\Documents\\Projects\\old\\shorts-uploader-engine\\shorts-uploader-engine\\token.json",
-        "useTrendingAudio": true,
+        "useTrendingAudio": false,
         "trendingAudioReportPath": "trending_audio_report.json",
         "trendingAudioCacheDir": ".trending_music_cache",
         "trendingAudioMaxTracks": 30,
+        "uniqueQueueOnly": false,
+        "fullSizeVideo": false,
+        "appendMaxSeconds": 180,
         "openaiModel": "gpt-4.1-mini",
-        "musicVolume": 0.3,
+        "musicVolume": 0.05,
         "metaSkipUploaded": true,
-        "metaAccessToken": "EAARoVBi60SUBRbFcoGZBfTXh0PZARg9AfOVDa0z5ZBV91WuxkwGJ0Q451sMeZCnN5KZBN1YmbZB5QeveRPEc4ZByqZAUqYtTZBGWLJyBBN0ADPttue7r2ZAdWenP1eFhC6prsJkDILSIhrHZC7ZBVlN5IkI1NAlEI9xNmyDGWhCYDK9ZCytC8l9dObfDh7eFlsZCAz3vVXk7pT4kR9zkDSFSuxX2mjLwM4hJJo8A80iomSxbYZD",
+        "metaAccessToken": "EAARoVBi60SUBRvSKfqRgOothf0OBdHvAIb2JbZAyEYqdDoBZB4RgiYgQv26N1utnvjaF4iQkjmBnCQnhAYQaXQnFQDt45dCEOUedGnZBokjtrQObvL1lsoure53YFCzoqO8dSJj5n6T95VDZAUTEsjrMGGPCjUpYc6jcsCn4gXfNFVA6USZCpU2gVgS9DUsn9P8cF",
         "metaGraphVersion": "v25.0",
         "igUserId": "17841442647474097",
         "fbPageId": "1064411090088218",
         "channelName": "GanpatiGamerBoi",
         "musicInventory": "hollywood_music_inventory.json",
-        "musicDir": "E:/Music/Hollywood"
+        "musicDir": "E:/Music/Hollywood",
+        "metaDeleteConverted": true,
+        "metaMasterToken": "EAARoVBi60SUBRn9EWeHBZAIEPoQN5wC20lFljyZAtNZA4055bklubpInCFISWfWZAuUQb6xAxS5MK9qYvQZCIsDIge5nUCaaaZBVDlBbILOZAuwYlfO3JLn19ngCNPOOBGycP8KFaXwzfdkvfpVbxZCTkAWSpr8W45QPWoZCPc4kzbpglCZANGpC2DWDQMvLaf"
     },
     "uploadPlatforms": {
         "youtube": false,
-        "instagram": true,
-        "facebook": false
+        "instagram": false,
+        "facebook": true
     },
     "schedule": {
-        "enabled": true,
-        "date": "2026-05-02",
+        "enabled": false,
+        "date": "2026-05-28",
         "youtubeSlots": [
-            {
-                "time": "16:00",
-                "count": 10
-            },
             {
                 "time": "17:00",
                 "count": 10
@@ -66,13 +67,29 @@
                 "count": 10
             },
             {
-                "time": "20:30",
-                "count": 10
+                "time": "15:00",
+                "count": 1
+            },
+            {
+                "time": "16:00",
+                "count": 1
+            },
+            {
+                "time": "16:30",
+                "count": 1
+            },
+            {
+                "time": "17:45",
+                "count": 1
+            },
+            {
+                "time": "02:00",
+                "count": 1
             }
         ],
         "facebookSlots": [
             {
-                "time": "16:00",
+                "time": "18:00",
                 "count": 10
             },
             {
@@ -80,15 +97,7 @@
                 "count": 10
             },
             {
-                "time": "14:00",
-                "count": 10
-            },
-            {
-                "time": "17:00",
-                "count": 10
-            },
-            {
-                "time": "18:00",
+                "time": "19:00",
                 "count": 10
             },
             {
@@ -100,11 +109,18 @@
                 "count": 10
             }
         ],
-        "instagramDraft": true
+        "instagramSlots": [
+            {
+                "time": "10:00",
+                "count": 10
+            }
+        ]
     },
     "toolsForm": {
+        "valorantRoot": "E:\\New folder\\Valorant Tracker\\VALORANT",
+        "valorantPlayer": "Ragnar Lothbrok#CR7",
         "auditRoot": "E:\\New folder\\Valorant Tracker\\VALORANT",
-        "auditMetaAccessToken": "EAARoVBi60SUBRXlnknuhZBcDGhVr6gsgEXV1bA0OaeOmDHY8qeVPs9WLtPE7I92Yya8HvHFWgMNZC29pqfBpmD0JctPy8NLNdNb9Rlhbn4xWSyfLNVXI0bSJjIzIje3tYHmlEukdiAuvKrEIB7oPedwFxuB0vuOVxi4PDfRJBbyGi6zWbFcLTyJPGIBO1EO8Y9ojFXXeVZA2iUhu9h0vMaNMfXCObkrVne5BFQZD",
+        "auditMetaAccessToken": "EAARoVBi60SUBRtGgFfchcA4xwoNmu17F5lZCljPOLXoFsgcBbSf0IUvT9Vnnaa05rkPoYZCZCaOIq0xDxH1rdhQ53j2gxm1BLzhO6cp4jOoZAYdI9PjAdXdZARu4vJ8a8ajk33FGVBzUptvQZAAbzAWm0MTRPb0TPxMaccHFZATC9Ay26F0PHQAnN6OhPjqYiUL1HzN9Rea",
         "auditIgUserId": "17841442647474097",
         "auditFacebookPageId": "1064411090088218",
         "auditGraphVersion": "v25.0",
@@ -115,7 +131,7 @@
         "deleteYoutube": true,
         "deleteInstagram": true,
         "deleteFacebook": true,
-        "deleteDryRun": true,
+        "deleteDryRun": false,
         "metaMode": "all",
         "metaMaxUpdates": 25,
         "metaDryRun": false,
@@ -129,7 +145,7 @@
         "musicFfmpegBin": "",
         "musicFfprobeBin": "",
         "trendingYoutube": true,
-        "trendingInstagram": true,
+        "trendingInstagram": false,
         "trendingYoutubeApiKey": "",
         "trendingClientSecrets": "client_secret.json",
         "trendingTokenFile": "token.json",

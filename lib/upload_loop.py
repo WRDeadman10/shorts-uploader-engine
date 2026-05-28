@@ -483,6 +483,7 @@ def main(args) -> int:
         upload_path = video_path
         cleanup_candidates: List[Path] = []
         chosen_music_path: Optional[Path] = None
+        full_size_upload_path: Optional[Path] = None
         metadata_source_path = video_path
         metadata_rel_path = rel_path
 
@@ -642,6 +643,9 @@ def main(args) -> int:
                 if temp_path_str in seen_cleanup:
                     continue
                 seen_cleanup.add(temp_path_str)
+                # Protect full-size video file from deletion if full-size option is enabled
+                if args.full_size_video and full_size_upload_path and temp_path.resolve() == full_size_upload_path.resolve():
+                    continue
                 try:
                     is_converted_temp = False
                     try:
@@ -665,69 +669,18 @@ def main(args) -> int:
         else:
             print("[warn] could not inspect video dimensions/duration with ffprobe.")
 
-        # Track pre-music path as a fallback when music mixing is unavailable.
-        pre_music_path = upload_path
-
-        
-        _replace_audio = bool(args.use_trending_audio)
-        if target_platform == "youtube" and args.use_trending_audio:
-            music_track_index = (index - 1)
-        else :
-            music_track_index = random.randint(0, len(music_inventory) - 1)
-            
-        mixed_upload_path, chosen_music_path, music_failures = try_mix_background_music(
-            source=upload_path,
-            music_tracks=music_inventory,
-            converted_dir=converted_dir,
-            ffmpeg_bin=ffmpeg_bin,
-            ffprobe_bin=ffprobe_bin,
-            bg_volume=args.music_bg_volume,
-            track_index=music_track_index,
-            replace_audio=_replace_audio,
-        )
-        if chosen_music_path:
-            upload_path = mixed_upload_path
-            if upload_path != video_path:
-                cleanup_candidates.append(upload_path)
-            if _replace_audio:
-                print(f"[audio] original audio replaced with trending track: {chosen_music_path.name}")
-            else:
-                print(
-                    f"[audio] background music mixed: {chosen_music_path.name} "
-                    f"(volume={args.music_bg_volume:.3f})"
-                )
-        else:
-            upload_path = pre_music_path
-            if music_failures:
-                print(
-                    "[warn] background music mix failed for all available tracks; "
-                    "uploading video without music."
-                )
-                for failure in music_failures[:3]:
-                    print(f"[warn] music attempt failed: {failure}")
-                if len(music_failures) > 3:
-                    print(
-                        f"[warn] additional music failures not shown: "
-                        f"{len(music_failures) - 3}"
-                    )
-            else:
-                print("[warn] no usable background music tracks found; uploading video without music.")
-                if args.use_trending_audio:
-                    print(
-                        "[error] Trending audio mode requested a full audio replacement, "
-                        "but no track could be applied."
-                    )
-                    continue
-
+        # Track the original full-size non-music video path first
         full_size_upload_path = upload_path
+
+        # Step 3: Shorts Policy Crop / Formatting
         if args.shorts_policy != "off":
-            post_music_info = probe_video_info(upload_path, ffprobe_bin)
-            if not post_music_info:
+            pre_crop_info = probe_video_info(upload_path, ffprobe_bin)
+            if not pre_crop_info:
                 print("[warn] skipping because Shorts policy requires valid media info.")
                 skipped_not_shorts += 1
                 continue
 
-            eligible, reasons = is_shorts_eligible(post_music_info, args.shorts_max_seconds)
+            eligible, reasons = is_shorts_eligible(pre_crop_info, args.shorts_max_seconds)
             if not eligible:
                 reason_text = "; ".join(reasons)
                 if args.shorts_policy == "strict":
@@ -760,6 +713,77 @@ def main(args) -> int:
                     print(f"[error] conversion failed; skipping file: {exc}")
                     skipped_not_shorts += 1
                     continue
+
+        # Step 4: Mix background music ONLY to cropped (vertical) video
+        is_vertical = False
+        info = probe_video_info(upload_path, ffprobe_bin)
+        if info:
+            is_vertical = info.get("width", 0) <= info.get("height", 0)
+
+        if is_vertical and music_inventory and target_platform != "youtube":
+            _replace_audio = bool(args.use_trending_audio)
+            if target_platform == "youtube" and args.use_trending_audio:
+                music_track_index = (index - 1)
+            else:
+                music_track_index = random.randint(0, len(music_inventory) - 1)
+
+            pre_music_path = upload_path
+            mixed_upload_path, chosen_music_path, music_failures = try_mix_background_music(
+                source=upload_path,
+                music_tracks=music_inventory,
+                converted_dir=converted_dir,
+                ffmpeg_bin=ffmpeg_bin,
+                ffprobe_bin=ffprobe_bin,
+                bg_volume=args.music_bg_volume,
+                track_index=music_track_index,
+                replace_audio=_replace_audio,
+            )
+            if chosen_music_path:
+                upload_path = mixed_upload_path
+                if upload_path != video_path:
+                    cleanup_candidates.append(upload_path)
+                if _replace_audio:
+                    print(f"[audio] original audio replaced with trending track: {chosen_music_path.name}")
+                else:
+                    print(
+                        f"[audio] background music mixed: {chosen_music_path.name} "
+                        f"(volume={args.music_bg_volume:.3f})"
+                    )
+            else:
+                upload_path = pre_music_path
+                if music_failures:
+                    print(
+                        "[warn] background music mix failed for all available tracks; "
+                        "uploading video without music."
+                    )
+                    for failure in music_failures[:3]:
+                        print(f"[warn] music attempt failed: {failure}")
+                    if len(music_failures) > 3:
+                        print(
+                            f"[warn] additional music failures not shown: "
+                            f"{len(music_failures) - 3}"
+                        )
+                else:
+                    print("[warn] no usable background music tracks found; uploading video without music.")
+                    if args.use_trending_audio:
+                        print(
+                            "[error] Trending audio mode requested a full audio replacement, "
+                            "but no track could be applied."
+                        )
+                        continue
+        elif is_vertical and target_platform == "youtube":
+            print("[audio] skipping background music mix for YouTube platform to prevent copyright blocks.")
+        elif is_vertical:
+            print("[warn] music inventory is empty; uploading vertical video without background music.")
+            if args.use_trending_audio:
+                print(
+                    "[error] Trending audio mode requested a full audio replacement, "
+                    "but no tracks are available in the inventory."
+                )
+                continue
+        else:
+            print("[audio] skipping background music mix: video is horizontal/full-size.")
+
         if args.full_size_video and full_size_upload_path != upload_path:
             print(f"[video] full-size mode enabled: additional upload source kept: {full_size_upload_path.name}")
 

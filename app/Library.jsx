@@ -145,7 +145,6 @@ function Library()
                         <span style={{ fontSize: 12, color: selectedVideo.ig ? '#4ade80' : '#6b7280' }}>{selectedVideo.ig ? 'IG: Yes' : 'IG: No'}</span>
                         <span style={{ fontSize: 12, color: selectedVideo.fb ? '#4ade80' : '#6b7280' }}>{selectedVideo.fb ? 'FB: Yes' : 'FB: No'}</span>
                     </div>
-                    <button onClick={function() { setActivePage('metadata'); }} style={{ padding: '7px 16px', borderRadius: 6, border: 'none', background: '#4f46e5', color: '#fff', cursor: 'pointer', fontSize: 13 }}>Edit Metadata</button>
                 </div>
             )}
         </section>

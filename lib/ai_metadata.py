@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+import copy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -80,6 +81,15 @@ def load_clip_context(file_path: Path) -> Optional[Dict[str, Any]]:
     if kills is None and not site_name and not agent_name and not weapon and headshots is None and not victim_agent:
         return None
 
+    # Scrub Riot IDs from raw payload
+    safe_payload = copy.deepcopy(payload)
+    if "round_details" in safe_payload and isinstance(safe_payload["round_details"], dict):
+        kb = safe_payload["round_details"].get("kills_breakdown", [])
+        if isinstance(kb, list):
+            for kill in kb:
+                if isinstance(kill, dict) and "victim" in kill:
+                    del kill["victim"]
+
     return {
         "sidecar_path": str(sidecar_path),
         "kills": kills,
@@ -88,6 +98,7 @@ def load_clip_context(file_path: Path) -> Optional[Dict[str, Any]]:
         "weapon": weapon,
         "headshots": headshots,
         "victim_agent": victim_agent,
+        "raw_data": safe_payload,
     }
 
 
@@ -120,7 +131,8 @@ def build_aggregated_clip_context(source_paths: List[Path]) -> Optional[Dict[str
         "agent_name": "",
         "weapon": "",
         "headshots": 0,
-        "victim_agent": ""
+        "victim_agent": "",
+        "raw_data": []
     }
     found_any = False
     sites = set()
@@ -138,6 +150,7 @@ def build_aggregated_clip_context(source_paths: List[Path]) -> Optional[Dict[str
             if ctx.get("agent_name"): agents.add(ctx["agent_name"])
             if ctx.get("weapon"): weapons.add(ctx["weapon"])
             if ctx.get("victim_agent"): victims.add(ctx["victim_agent"])
+            if ctx.get("raw_data"): aggregated["raw_data"].append(ctx["raw_data"])
 
     if not found_any:
         return None
