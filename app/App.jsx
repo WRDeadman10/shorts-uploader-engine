@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect } from "react";
 import Dashboard from "./Dashboard.jsx";
 import Library from "./Library.jsx";
+import BatchEditor from "./BatchEditor.jsx";
 import Upload from "./Upload.jsx";
 import Audit from "./Audit.jsx";
 import Topbar from "./Topbar.jsx";
@@ -12,6 +13,7 @@ import "./global.css";
 const pageComponents = {
     dashboard: Dashboard,
     library: Library,
+    editor: BatchEditor,
     upload: Upload,
     audit: Audit,
     setup: Setup

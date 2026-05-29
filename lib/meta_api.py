@@ -19,10 +19,26 @@ def is_facebook_rate_limited_error(exc: Exception) -> bool:
 
 
 def is_retryable_instagram_processing_error(exc: Exception) -> bool:
-    """Return True for transient Instagram processing errors worth retrying."""
+    """Return True for transient Instagram processing errors worth retrying.
+
+    Meta's API may return {'retriable': False} in the error payload, but for 
+    ProcessingFailedError and 500 errors, their backend is so flaky that 
+    retrying often succeeds regardless. We force retries for known transient issues.
+    """
     msg = str(exc).lower()
+    
+    # Always retry these notorious transient errors
+    if "processingfailederror" in msg or "request processing failed" in msg or "unknown error" in msg:
+        return True
+        
+    # If Meta explicitly says non-retryable for other errors, trust it
+    if "'retriable': false" in msg or '"retriable": false' in msg or "retriable\': false" in msg:
+        return False
+        
+    if "processing" in msg or "timeout" in msg:
+        return True
     return any(phrase in msg for phrase in [
-        "in_progress", "in progress", "processing", "media not found",
+        "in_progress", "in progress", "media not found",
         "try again", "temporarily", "transient",
     ])
 
@@ -33,6 +49,10 @@ def extract_meta_error_message(payload: Any) -> str:
         err = payload.get("error", {})
         if isinstance(err, dict):
             return str(err.get("message", err.get("error_user_msg", "")))
+        # Also check for debug_info (used by Instagram binary upload errors)
+        debug = payload.get("debug_info", {})
+        if isinstance(debug, dict) and debug.get("message"):
+            return f"{debug.get('type', 'Error')}: {debug['message']} (retriable={debug.get('retriable', '?')})"
         return str(err)
     return str(payload)[:200]
 
@@ -120,37 +140,59 @@ def ig_upload_reel_binary(
     file_path: str,
     timeout: float = 300,
 ) -> None:
-    """Upload the video binary to the Instagram resumable upload URI.
-
-    Uses the same raw-binary approach as Facebook's rupload endpoint:
-    Authorization header + offset/file_size headers + raw binary body.
+    """Upload the video binary to the Instagram resumable upload URI in chunks.
+    
+    Using exact logic from test script to bypass Meta processing failures.
     """
     file_size = os.path.getsize(file_path)
+    chunk_size = 10 * 1024 * 1024  # 10MB chunks
+    
+    print(f"\n[instagram] Starting raw binary upload to {upload_uri[:50]}... (Size: {file_size})")
+    
     with open(file_path, "rb") as f:
-        response = requests.post(
-            upload_uri,
-            headers={
+        offset = 0
+        while offset < file_size:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+                
+            print(f"[instagram] Uploading chunk offset {offset} size {len(chunk)}...")
+            
+            headers = {
                 "Authorization": f"OAuth {access_token}",
-                "offset": "0",
+                "offset": str(offset),
                 "file_size": str(file_size),
                 "Content-Type": "application/octet-stream",
                 "Accept": "application/json",
-            },
-            data=f,
-            timeout=timeout,
-        )
-    try:
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as exc:
-        error_msg = _extract_http_error_detail(response)
-        if error_msg:
-            raise RuntimeError(
-                f"Meta API Error ({response.status_code}) during IG binary upload: {error_msg}"
-            ) from exc
-        raise exc
-    result = response.json()
-    if not result.get("success"):
-        raise RuntimeError(f"IG binary upload failed: {result}")
+            }
+            
+            # Intentionally ignoring timeout here to perfectly match test script
+            response = requests.post(
+                upload_uri,
+                headers=headers,
+                data=chunk,
+            )
+            
+            print(f"[instagram] Chunk Response: {response.status_code} {response.text}")
+            
+            try:
+                # 206 Partial Content is expected for all but the last chunk
+                if response.status_code not in (200, 206):
+                    response.raise_for_status()
+            except requests.exceptions.HTTPError as exc:
+                error_msg = _extract_http_error_detail(response)
+                if error_msg:
+                    raise RuntimeError(
+                        f"Meta API Error ({response.status_code}) during IG binary upload: {error_msg}"
+                    ) from exc
+                raise exc
+                
+            offset += len(chunk)
+            
+            if offset >= file_size:
+                result = response.json()
+                if not result.get("success"):
+                    raise RuntimeError(f"IG binary upload failed: {result}")
 
 
 def ig_wait_until_ready(
@@ -242,35 +284,47 @@ def fb_upload_reel_binary(
     file_path: str,
     timeout: float = 300,
 ) -> None:
-    """Upload the video binary to the Facebook Resumable Upload endpoint.
+    """Upload the video binary to the Facebook Resumable Upload endpoint in chunks.
 
     rupload.facebook.com requires raw binary with Authorization/offset/file_size
     headers — NOT multipart form data.
     """
     print(f"[fb_upload_reel_binary]")
     file_size = os.path.getsize(file_path)
+    chunk_size = 10 * 1024 * 1024  # 10MB chunks
+    
     with open(file_path, "rb") as f:
-        response = requests.post(
-            upload_url,
-            headers={
-                "Authorization": f"OAuth {access_token}",
-                "offset": "0",
-                "file_size": str(file_size),
-            },
-            data=f,
-            timeout=timeout,
-        )
-    try:
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as exc:
-        try:
-            error_payload = response.json()
-            error_msg = extract_meta_error_message(error_payload)
-            if error_msg:
-                raise RuntimeError(f"Meta API Error ({response.status_code}): {error_msg}") from exc
-        except (ValueError, KeyError):
-            pass
-        raise exc
+        offset = 0
+        while offset < file_size:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+                
+            response = requests.post(
+                upload_url,
+                headers={
+                    "Authorization": f"OAuth {access_token}",
+                    "offset": str(offset),
+                    "file_size": str(file_size),
+                },
+                data=chunk,
+                timeout=timeout,
+            )
+            
+            try:
+                if response.status_code not in (200, 206):
+                    response.raise_for_status()
+            except requests.exceptions.HTTPError as exc:
+                try:
+                    error_payload = response.json()
+                    error_msg = extract_meta_error_message(error_payload)
+                    if error_msg:
+                        raise RuntimeError(f"Meta API Error ({response.status_code}): {error_msg}") from exc
+                except (ValueError, KeyError):
+                    pass
+                raise exc
+                
+            offset += len(chunk)
     result = response.json()
     if not result.get("success"):
         raise RuntimeError(f"FB binary upload failed: {result}")

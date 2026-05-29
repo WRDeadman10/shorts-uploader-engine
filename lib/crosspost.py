@@ -82,25 +82,28 @@ def crosspost_meta_reel(
             ffprobe_path = resolve_media_tool("ffprobe") or "ffprobe"
         from lib.media_tools import probe_video_info
         is_horizontal = False
+        duration = 0.0
         try:
             info = probe_video_info(source_file, ffprobe_path)
             if info:
                 is_horizontal = info.get("width", 0) > info.get("height", 0)
+                duration = float(info.get("duration", 0.0))
         except Exception as e:
             print(f"[warn][instagram] failed to probe source video {source_file}: {e}")
 
-        if is_horizontal:
-            print(f"[skip][instagram] Skipping horizontal video upload to Instagram Reels: {source_file}")
+        if is_horizontal or duration > 90.5:
+            reason = "Horizontal video detected" if is_horizontal else f"Duration ({duration:.1f}s) exceeds Instagram Reels 90s API limit"
+            print(f"[skip][instagram] Skipping video upload to Instagram Reels: {reason} - {source_file}")
             state_row["instagram"] = {
-                "status": "skipped_horizontal",
-                "reason": "Horizontal video detected",
+                "status": "skipped",
+                "reason": reason,
                 "updated_at_utc": meta_now_utc_iso(),
                 "source_file": str(source_file),
             }
             update_platform_upload_ledger(
                 instagram_upload_ledger,
                 state_key=state_key,
-                status="skipped_horizontal",
+                status="skipped",
                 relative_path=rel_path,
                 source_file=source_file,
                 metadata_file=metadata_path,
@@ -109,7 +112,7 @@ def crosspost_meta_reel(
                 platform_id_value="",
                 extra_fields={
                     "youtube_video_id": youtube_video_id,
-                    "error": "Horizontal video detected",
+                    "error": reason,
                 },
             )
             save_meta_progress()

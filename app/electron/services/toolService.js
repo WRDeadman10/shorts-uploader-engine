@@ -1,5 +1,6 @@
 const path = require('path');
 const { spawn } = require('child_process');
+const { Notification } = require('electron');
 const { getRepoRoot } = require('./pathService');
 const { resolvePythonCommand } = require('./pythonService');
 
@@ -113,6 +114,13 @@ async function runTool(payload) {
         });
         pushLog(sessionId, 'system', '[tool] ' + toolName + ' finished with code ' + code);
         broadcastStatuses();
+        
+        if (Notification.isSupported()) {
+            new Notification({
+                title: "Tool " + (code === 0 ? "Completed" : "Failed"),
+                body: toolName + " finished with code " + code
+            }).show();
+        }
     });
     return session.status;
 }

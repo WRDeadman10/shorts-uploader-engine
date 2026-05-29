@@ -98,7 +98,12 @@ def mix_background_music(
             "-map", "0:v",
             "-map", "[out]",
             "-c:v", "copy",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-ar", "44100",
+            "-ac", "2",
             "-shortest",
+            "-movflags", "+faststart",
             str(tmp_output),
         ]
     else:
@@ -110,7 +115,12 @@ def mix_background_music(
             "-map", "0:v",
             "-map", "1:a",
             "-c:v", "copy",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-ar", "44100",
+            "-ac", "2",
             "-shortest",
+            "-movflags", "+faststart",
             str(tmp_output),
         ]
 

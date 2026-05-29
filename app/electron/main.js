@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, Notification, protocol, net } = require("electron");
 const path = require("path");
 const { registerUploadHandlers } = require("./ipc/uploadHandlers");
 const { registerSystemHandlers } = require("./ipc/systemHandlers");
@@ -41,8 +41,25 @@ async function loadRenderer(windowInstance)
 
 const { readSettings } = require("./services/pathService");
 
+protocol.registerSchemesAsPrivileged([
+    { scheme: 'local-video', privileges: { bypassCSP: true, stream: true, standard: true, supportFetchAPI: true, secure: true } }
+]);
+
 app.whenReady().then(function onAppReady()
 {
+    // Register custom protocol for local video preview
+    protocol.handle("local-video", (request) => {
+        try {
+            const urlObj = new URL(request.url);
+            // The path is encoded in the pathname after the first slash
+            const filePath = decodeURIComponent(urlObj.pathname.substring(1));
+            return net.fetch("file:///" + filePath);
+        } catch (err) {
+            console.error("local-video protocol error:", err);
+            return new Response("Not found", { status: 404 });
+        }
+    });
+
     registerUploadHandlers(ipcMain, function getMainWindow()
     {
         return mainWindow;

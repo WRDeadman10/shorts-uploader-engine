@@ -78,5 +78,22 @@ contextBridge.exposeInMainWorld("api", {
     },
     refreshMetaToken: function refreshMetaToken(userToken, pageId, graphVersion) {
         return ipcRenderer.invoke("refresh-meta-token", userToken, pageId, graphVersion);
+    },
+    getTokenHealth: function getTokenHealth() {
+        return ipcRenderer.invoke("get-token-health");
+    },
+    getDiskUsage: function getDiskUsage() {
+        return ipcRenderer.invoke("get-disk-usage");
+    },
+    backupState: function backupState() {
+        return ipcRenderer.invoke("backup-state");
+    },
+    restoreState: function restoreState() {
+        return ipcRenderer.invoke("restore-state");
+    },
+    getVideoFileUrl: function getVideoFileUrl(filePath) {
+        if (!filePath) return "";
+        // Safely pass the path as a URI component
+        return "local-video://local/" + encodeURIComponent(filePath.replace(/\\/g, '/'));
     }
 });

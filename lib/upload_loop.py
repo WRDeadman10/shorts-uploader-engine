@@ -132,8 +132,6 @@ def main(args) -> int:
     import os, sys
     
     target_platform = args.upload_platform
-    if target_platform == "instagram":
-        args.shorts_max_seconds = 85
     root = Path(args.root).resolve()
     client_secrets = Path(args.client_secrets).resolve()
     token_file = Path(args.token_file).resolve()
@@ -177,7 +175,7 @@ def main(args) -> int:
     if not root.exists():
         print(f"[error] root path not found: {root}")
         return 1
-    if target_platform == "youtube" and not args.dry_run and not client_secrets.exists():
+    if target_platform == "youtube" and not args.dry_run and not args.edit_only and not client_secrets.exists():
         print(f"[error] client secrets file not found: {client_secrets}")
         return 1
 
@@ -226,7 +224,7 @@ def main(args) -> int:
         if isinstance(x, str) and x.strip()
     ]
     meta_crosspost_enabled = bool(args.crosspost_meta and target_platform == "youtube")
-    meta_upload_enabled = meta_crosspost_enabled or target_platform in {"instagram", "facebook"}
+    meta_upload_enabled = (meta_crosspost_enabled or target_platform in {"instagram", "facebook"}) and not args.edit_only
     meta_reels_state = ensure_meta_state_shape({"entries": {}})
     facebook_blocked_for_run = {"blocked": False}
     music_inventory: List[Dict[str, str]] = []
@@ -345,7 +343,7 @@ def main(args) -> int:
 
     youtube = None
     playlist_id: Optional[str] = None
-    if target_platform == "youtube" and not args.dry_run:
+    if target_platform == "youtube" and not args.dry_run and not args.edit_only:
         youtube = build_youtube_client(client_secrets, token_file, args.auth_port)
         if args.playlist_name.strip():
             try:
@@ -440,6 +438,8 @@ def main(args) -> int:
         target_seconds = float(args.shorts_max_seconds)
         i = 0
         while i < len(pending):
+            if args.max_videos > 0 and len(upload_batches) >= args.max_videos:
+                break
             first = pending[i]
             first_info = probe_video_info(first[0], ffprobe_bin)
             first_duration = float(first_info["duration"]) if first_info else 0.0
@@ -497,19 +497,40 @@ def main(args) -> int:
             )
 
         fallback = build_fallback_metadata(metadata_source_path, extra_keywords, clip_context)
-        metadata: Dict[str, Any] = finalize_metadata(
-            fallback,
-            fallback,
-            instagram_username=args.instagram_username,
-        )
-        metadata_generated_by_ai = False
-
         recent_titles_pool = (history_titles + session_titles)[-max(args.ai_uniqueness_window, 1):]
         recent_descriptions_pool = (
             history_descriptions + session_descriptions
         )[-max(args.ai_uniqueness_window, 1):]
 
-        if openai_client:
+        # Check for pre-existing or custom metadata
+        pre_existing_metadata = None
+        for meta_candidate in [
+            converted_dir / Path(metadata_rel_path).with_suffix(".json"),
+            converted_dir / Path(metadata_rel_path).with_name(metadata_source_path.stem + ".metadata.json"),
+            metadata_source_path.with_suffix(".json"),
+            metadata_source_path.with_name(metadata_source_path.stem + ".metadata.json"),
+            metadata_dir / (metadata_source_path.stem + ".metadata.json"),
+        ]:
+            if meta_candidate.exists():
+                try:
+                    loaded_data = load_json_file(meta_candidate)
+                    if isinstance(loaded_data, dict):
+                        inner_meta = loaded_data.get("metadata") if "metadata" in loaded_data else loaded_data
+                        if isinstance(inner_meta, dict) and inner_meta.get("title") and inner_meta.get("description"):
+                            pre_existing_metadata = inner_meta
+                            break
+                except Exception:
+                    pass
+
+        metadata_source = "fallback"
+        if pre_existing_metadata:
+            metadata = finalize_metadata(
+                pre_existing_metadata,
+                fallback,
+                instagram_username=args.instagram_username,
+            )
+            metadata_source = f"pre-existing ({meta_candidate.name})"
+        elif openai_client:
             ai_success = False
             for attempt in range(1, max(args.ai_metadata_retries, 1) + 1):
                 try:
@@ -539,7 +560,7 @@ def main(args) -> int:
                     if unique_ok:
                         metadata = candidate
                         ai_success = True
-                        metadata_generated_by_ai = True
+                        metadata_source = "OpenAI"
                         break
                     print(
                         f"[warn] AI metadata attempt {attempt} not unique enough "
@@ -564,228 +585,255 @@ def main(args) -> int:
 
         print(f"[meta] title: {metadata['title']}")
         print(f"[meta] tags: {', '.join(metadata['tags'][:8])}{' ...' if len(metadata['tags']) > 8 else ''}")
-        if metadata_generated_by_ai:
-            print("[meta] source: OpenAI")
-        else:
-            print("[meta] source: fallback")
+        print(f"[meta] source: {metadata_source}")
 
         session_titles.append(metadata["title"])
         session_descriptions.append(metadata["description"])
         session_titles = session_titles[-max(args.ai_uniqueness_window, 1):]
         session_descriptions = session_descriptions[-max(args.ai_uniqueness_window, 1):]
 
-        trimmed_batch_entries: List[Tuple[Path, str, str, float]] = []
-        for original_path, original_rel_path, original_key, original_mtime in batch_entries:
-            original_info = probe_video_info(original_path, ffprobe_bin)
-            original_duration = float(original_info["duration"]) if original_info else 0.0
-            if original_duration <= trim_head_seconds:
-                print(
-                    f"[skip] clip too short after trimming {trim_head_seconds:.0f}s: "
-                    f"{original_rel_path} ({original_duration:.1f}s)"
-                )
-                continue
-            trim_digest = hashlib.sha1(
-                f"{original_path.resolve()}|trim{int(trim_head_seconds)}".encode("utf-8")
-            ).hexdigest()[:10]
-            safe_trim_stem = re.sub(r"[^a-zA-Z0-9._-]", "_", original_path.stem)[:80]
-            trimmed_path = converted_dir / f"{safe_trim_stem}.{trim_digest}.trim{int(trim_head_seconds)}.mp4"
-            try:
-                trimmed_video = trim_video_head(
-                    source=original_path,
-                    output=trimmed_path,
-                    ffmpeg_bin=ffmpeg_bin,
-                    ffprobe_bin=ffprobe_bin,
-                    trim_seconds=trim_head_seconds,
-                )
-                cleanup_candidates.append(trimmed_video)
-                trimmed_batch_entries.append((trimmed_video, original_rel_path, original_key, original_mtime))
-            except Exception as exc:  # noqa: BLE001
-                print(f"[error] trim failed; skipping clip {original_rel_path}: {exc}")
+        # Check if pre-edited video exists in converted_shorts
+        pre_edited_path = None
+        for edit_candidate in [
+            converted_dir / rel_path,
+            converted_dir / Path(rel_path).with_name(f"{video_path.stem}_shorts.mp4"),
+            converted_dir / Path(rel_path).with_suffix(".mp4"),
+            converted_dir / f"{video_path.stem}_shorts.mp4",
+            converted_dir / f"{video_path.name}",
+        ]:
+            if edit_candidate.exists() and edit_candidate.stat().st_size > 1024:
+                pre_edited_path = edit_candidate
+                break
 
-        if not trimmed_batch_entries:
-            print("[warn] no usable clips remained in batch after trimming; skipping batch.")
-            continue
+        skip_editing = False
+        if pre_edited_path:
+            print(f"[cache-hit][pre-edited] Found pre-edited video: {pre_edited_path.name}. Skipping all editing steps.")
+            upload_path = pre_edited_path
+            full_size_upload_path = pre_edited_path
+            skip_editing = True
 
-        batch_entries = trimmed_batch_entries
-        video_path, rel_path, key, _ = batch_entries[0]
-        upload_path = video_path
-
-        if len(batch_entries) > 1:
-            batch_rel_paths = [entry[1] for entry in batch_entries]
-            batch_sources = [entry[0] for entry in batch_entries]
-            combined_name = f"{batch_entries[0][0].stem}.batch{len(batch_entries)}.combined.mp4"
-            combined_output = converted_dir / combined_name
-            try:
-                upload_path = combine_videos_up_to_target(
-                    sources=batch_sources,
-                    output=combined_output,
-                    ffmpeg_bin=ffmpeg_bin,
-                    ffprobe_bin=ffprobe_bin,
-                )
-                cleanup_candidates.append(upload_path)
-                video_path = upload_path
-                rel_path = f"{batch_rel_paths[0]} (+{len(batch_entries)-1} appended)"
-                key = batch_entries[0][2]
-                print(
-                    f"[combine] merged {len(batch_entries)} clips "
-                    f"into {upload_path.name} (target <= {int(args.shorts_max_seconds)}s)"
-                )
-            except Exception as exc:  # noqa: BLE001
-                print(f"[error] combine failed; skipping batch starting at {batch_rel_paths[0]}: {exc}")
-                continue
-
-        def cleanup_converted_outputs() -> None:
-            if not args.delete_converted_after_upload:
-                return
-            seen_cleanup = set()
-            for temp_path in cleanup_candidates:
-                temp_path_str = str(temp_path.resolve())
-                if temp_path_str in seen_cleanup:
+        if not skip_editing:
+            trimmed_batch_entries: List[Tuple[Path, str, str, float]] = []
+            for original_path, original_rel_path, original_key, original_mtime in batch_entries:
+                original_info = probe_video_info(original_path, ffprobe_bin)
+                original_duration = float(original_info["duration"]) if original_info else 0.0
+                if original_duration <= trim_head_seconds:
+                    print(
+                        f"[skip] clip too short after trimming {trim_head_seconds:.0f}s: "
+                        f"{original_rel_path} ({original_duration:.1f}s)"
+                    )
                     continue
-                seen_cleanup.add(temp_path_str)
-                # Protect full-size video file from deletion if full-size option is enabled
-                if args.full_size_video and full_size_upload_path and temp_path.resolve() == full_size_upload_path.resolve():
-                    continue
+                trim_digest = hashlib.sha1(
+                    f"{original_path.resolve()}|trim{int(trim_head_seconds)}".encode("utf-8")
+                ).hexdigest()[:10]
+                safe_trim_stem = re.sub(r"[^a-zA-Z0-9._-]", "_", original_path.stem)[:80]
+                trimmed_path = converted_dir / f"{safe_trim_stem}.{trim_digest}.trim{int(trim_head_seconds)}.mp4"
                 try:
-                    is_converted_temp = False
-                    try:
-                        temp_path.resolve().relative_to(converted_dir.resolve())
-                        is_converted_temp = True
-                    except ValueError:
-                        is_converted_temp = False
-
-                    if is_converted_temp and temp_path.exists():
-                        temp_path.unlink()
-                        print(f"[cleanup] deleted converted file: {temp_path.name}")
-                except Exception as exc:  # noqa: BLE001
-                    print(f"[warn] uploaded but failed to delete converted file: {exc}")
-
-        source_info = probe_video_info(video_path, ffprobe_bin)
-        if source_info:
-            src_w = int(source_info["width"])
-            src_h = int(source_info["height"])
-            src_dur = source_info["duration"]
-            print(f"[video] source: {src_w}x{src_h}, {src_dur:.1f}s")
-        else:
-            print("[warn] could not inspect video dimensions/duration with ffprobe.")
-
-        # Track the original full-size non-music video path first
-        full_size_upload_path = upload_path
-
-        # Step 3: Shorts Policy Crop / Formatting
-        if args.shorts_policy != "off":
-            pre_crop_info = probe_video_info(upload_path, ffprobe_bin)
-            if not pre_crop_info:
-                print("[warn] skipping because Shorts policy requires valid media info.")
-                skipped_not_shorts += 1
-                continue
-
-            eligible, reasons = is_shorts_eligible(pre_crop_info, args.shorts_max_seconds)
-            if not eligible:
-                reason_text = "; ".join(reasons)
-                if args.shorts_policy == "strict":
-                    print(f"[skip] not Shorts-eligible: {reason_text}")
-                    skipped_not_shorts += 1
-                    continue
-                try:
-                    converted_source = upload_path
-                    upload_path = convert_to_shorts(
-                        source=converted_source,
-                        converted_dir=converted_dir,
+                    trimmed_video = trim_video_head(
+                        source=original_path,
+                        output=trimmed_path,
                         ffmpeg_bin=ffmpeg_bin,
                         ffprobe_bin=ffprobe_bin,
-                        shorts_max_seconds=args.shorts_max_seconds,
+                        trim_seconds=trim_head_seconds,
+                        target_platform=target_platform,
                     )
-                    if upload_path != converted_source:
-                        cleanup_candidates.append(upload_path)
-                    converted_info = probe_video_info(upload_path, ffprobe_bin)
-                    if converted_info:
-                        c_w = int(converted_info["width"])
-                        c_h = int(converted_info["height"])
-                        c_dur = converted_info["duration"]
-                        print(
-                            f"[video] converted for Shorts: {upload_path.name} "
-                            f"({c_w}x{c_h}, {c_dur:.1f}s)"
-                        )
-                    else:
-                        print(f"[video] converted for Shorts: {upload_path.name}")
+                    cleanup_candidates.append(trimmed_video)
+                    trimmed_batch_entries.append((trimmed_video, original_rel_path, original_key, original_mtime))
                 except Exception as exc:  # noqa: BLE001
-                    print(f"[error] conversion failed; skipping file: {exc}")
+                    print(f"[error] trim failed; skipping clip {original_rel_path}: {exc}")
+
+            if not trimmed_batch_entries:
+                print("[warn] no usable clips remained in batch after trimming; skipping batch.")
+                continue
+
+            batch_entries = trimmed_batch_entries
+            video_path, rel_path, key, _ = batch_entries[0]
+            upload_path = video_path
+
+            if len(batch_entries) > 1:
+                batch_rel_paths = [entry[1] for entry in batch_entries]
+                batch_sources = [entry[0] for entry in batch_entries]
+                combined_name = f"{batch_entries[0][0].stem}.batch{len(batch_entries)}.combined.mp4"
+                combined_output = converted_dir / combined_name
+                try:
+                    upload_path = combine_videos_up_to_target(
+                        sources=batch_sources,
+                        output=combined_output,
+                        ffmpeg_bin=ffmpeg_bin,
+                        ffprobe_bin=ffprobe_bin,
+                        target_platform=target_platform,
+                    )
+                    cleanup_candidates.append(upload_path)
+                    video_path = upload_path
+                    rel_path = f"{batch_rel_paths[0]} (+{len(batch_entries)-1} appended)"
+                    key = batch_entries[0][2]
+                    print(
+                        f"[combine] merged {len(batch_entries)} clips "
+                        f"into {upload_path.name} (target <= {int(args.shorts_max_seconds)}s)"
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    print(f"[error] combine failed; skipping batch starting at {batch_rel_paths[0]}: {exc}")
+                    continue
+
+            def cleanup_converted_outputs() -> None:
+                if not args.delete_converted_after_upload:
+                    return
+                seen_cleanup = set()
+                for temp_path in cleanup_candidates:
+                    temp_path_str = str(temp_path.resolve())
+                    if temp_path_str in seen_cleanup:
+                        continue
+                    seen_cleanup.add(temp_path_str)
+                    # Protect full-size video file from deletion if full-size option is enabled
+                    if args.full_size_video and full_size_upload_path and temp_path.resolve() == full_size_upload_path.resolve():
+                        continue
+                    try:
+                        is_converted_temp = False
+                        try:
+                            temp_path.resolve().relative_to(converted_dir.resolve())
+                            is_converted_temp = True
+                        except ValueError:
+                            is_converted_temp = False
+
+                        if is_converted_temp and temp_path.exists():
+                            temp_path.unlink()
+                            print(f"[cleanup] deleted converted file: {temp_path.name}")
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"[warn] uploaded but failed to delete converted file: {exc}")
+
+            source_info = probe_video_info(video_path, ffprobe_bin)
+            if source_info:
+                src_w = int(source_info["width"])
+                src_h = int(source_info["height"])
+                src_dur = source_info["duration"]
+                print(f"[video] source: {src_w}x{src_h}, {src_dur:.1f}s")
+            else:
+                print("[warn] could not inspect video dimensions/duration with ffprobe.")
+
+            # Track the original full-size non-music video path first
+            full_size_upload_path = upload_path
+
+            # Step 3: Shorts Policy Crop / Formatting
+            if args.shorts_policy != "off":
+                pre_crop_info = probe_video_info(upload_path, ffprobe_bin)
+                if not pre_crop_info:
+                    print("[warn] skipping because Shorts policy requires valid media info.")
                     skipped_not_shorts += 1
                     continue
 
-        # Step 4: Mix background music ONLY to cropped (vertical) video
-        is_vertical = False
-        info = probe_video_info(upload_path, ffprobe_bin)
-        if info:
-            is_vertical = info.get("width", 0) <= info.get("height", 0)
-
-        if is_vertical and music_inventory and target_platform != "youtube":
-            _replace_audio = bool(args.use_trending_audio)
-            if target_platform == "youtube" and args.use_trending_audio:
-                music_track_index = (index - 1)
-            else:
-                music_track_index = random.randint(0, len(music_inventory) - 1)
-
-            pre_music_path = upload_path
-            mixed_upload_path, chosen_music_path, music_failures = try_mix_background_music(
-                source=upload_path,
-                music_tracks=music_inventory,
-                converted_dir=converted_dir,
-                ffmpeg_bin=ffmpeg_bin,
-                ffprobe_bin=ffprobe_bin,
-                bg_volume=args.music_bg_volume,
-                track_index=music_track_index,
-                replace_audio=_replace_audio,
-            )
-            if chosen_music_path:
-                upload_path = mixed_upload_path
-                if upload_path != video_path:
-                    cleanup_candidates.append(upload_path)
-                if _replace_audio:
-                    print(f"[audio] original audio replaced with trending track: {chosen_music_path.name}")
-                else:
-                    print(
-                        f"[audio] background music mixed: {chosen_music_path.name} "
-                        f"(volume={args.music_bg_volume:.3f})"
-                    )
-            else:
-                upload_path = pre_music_path
-                if music_failures:
-                    print(
-                        "[warn] background music mix failed for all available tracks; "
-                        "uploading video without music."
-                    )
-                    for failure in music_failures[:3]:
-                        print(f"[warn] music attempt failed: {failure}")
-                    if len(music_failures) > 3:
-                        print(
-                            f"[warn] additional music failures not shown: "
-                            f"{len(music_failures) - 3}"
-                        )
-                else:
-                    print("[warn] no usable background music tracks found; uploading video without music.")
-                    if args.use_trending_audio:
-                        print(
-                            "[error] Trending audio mode requested a full audio replacement, "
-                            "but no track could be applied."
-                        )
+                eligible, reasons = is_shorts_eligible(pre_crop_info, args.shorts_max_seconds)
+                if not eligible:
+                    reason_text = "; ".join(reasons)
+                    if args.shorts_policy == "strict":
+                        print(f"[skip] not Shorts-eligible: {reason_text}")
+                        skipped_not_shorts += 1
                         continue
-        elif is_vertical and target_platform == "youtube":
-            print("[audio] skipping background music mix for YouTube platform to prevent copyright blocks.")
-        elif is_vertical:
-            print("[warn] music inventory is empty; uploading vertical video without background music.")
-            if args.use_trending_audio:
-                print(
-                    "[error] Trending audio mode requested a full audio replacement, "
-                    "but no tracks are available in the inventory."
+                    try:
+                        converted_source = upload_path
+                        upload_path = convert_to_shorts(
+                            source=converted_source,
+                            converted_dir=converted_dir,
+                            ffmpeg_bin=ffmpeg_bin,
+                            ffprobe_bin=ffprobe_bin,
+                            shorts_max_seconds=args.shorts_max_seconds,
+                            target_platform=target_platform,
+                        )
+                        if upload_path != converted_source:
+                            cleanup_candidates.append(upload_path)
+                        converted_info = probe_video_info(upload_path, ffprobe_bin)
+                        if converted_info:
+                            c_w = int(converted_info["width"])
+                            c_h = int(converted_info["height"])
+                            c_dur = converted_info["duration"]
+                            print(
+                                f"[video] converted for Shorts: {upload_path.name} "
+                                f"({c_w}x{c_h}, {c_dur:.1f}s)"
+                            )
+                        else:
+                            print(f"[video] converted for Shorts: {upload_path.name}")
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"[error] conversion failed; skipping file: {exc}")
+                        skipped_not_shorts += 1
+                        continue
+
+            # Step 4: Mix background music ONLY to cropped (vertical) video
+            is_vertical = False
+            info = probe_video_info(upload_path, ffprobe_bin)
+            if info:
+                is_vertical = info.get("width", 0) <= info.get("height", 0)
+
+            if args.edit_only:
+                pass
+            elif is_vertical and music_inventory and target_platform != "youtube":
+                _replace_audio = bool(args.use_trending_audio)
+                if target_platform == "youtube" and args.use_trending_audio:
+                    music_track_index = (index - 1)
+                else:
+                    music_track_index = random.randint(0, len(music_inventory) - 1)
+
+                pre_music_path = upload_path
+                mixed_upload_path, chosen_music_path, music_failures = try_mix_background_music(
+                    source=upload_path,
+                    music_tracks=music_inventory,
+                    converted_dir=converted_dir,
+                    ffmpeg_bin=ffmpeg_bin,
+                    ffprobe_bin=ffprobe_bin,
+                    bg_volume=args.music_bg_volume,
+                    track_index=music_track_index,
+                    replace_audio=_replace_audio,
                 )
-                continue
-        else:
-            print("[audio] skipping background music mix: video is horizontal/full-size.")
+                if chosen_music_path:
+                    upload_path = mixed_upload_path
+                    if upload_path != video_path:
+                        cleanup_candidates.append(upload_path)
+                    if _replace_audio:
+                        print(f"[audio] original audio replaced with trending track: {chosen_music_path.name}")
+                    else:
+                        print(
+                            f"[audio] background music mixed: {chosen_music_path.name} "
+                            f"(volume={args.music_bg_volume:.3f})"
+                        )
+                else:
+                    upload_path = pre_music_path
+                    if music_failures:
+                        print(
+                            "[warn] background music mix failed for all available tracks; "
+                            "uploading video without music."
+                        )
+                        for failure in music_failures[:3]:
+                            print(f"[warn] music attempt failed: {failure}")
+                        if len(music_failures) > 3:
+                            print(
+                                f"[warn] additional music failures not shown: "
+                                f"{len(music_failures) - 3}"
+                            )
+                    else:
+                        print("[warn] no usable background music tracks found; uploading video without music.")
+                        if args.use_trending_audio:
+                            print(
+                                "[error] Trending audio mode requested a full audio replacement, "
+                                "but no track could be applied."
+                            )
+                            continue
+            elif is_vertical and target_platform == "youtube":
+                print("[audio] skipping background music mix for YouTube platform to prevent copyright blocks.")
+            elif is_vertical:
+                print("[warn] music inventory is empty; uploading vertical video without background music.")
+                if args.use_trending_audio:
+                    print(
+                        "[error] Trending audio mode requested a full audio replacement, "
+                        "but no tracks are available in the inventory."
+                    )
+                    continue
+            else:
+                print("[audio] skipping background music mix: video is horizontal/full-size.")
 
         if args.full_size_video and full_size_upload_path != upload_path:
             print(f"[video] full-size mode enabled: additional upload source kept: {full_size_upload_path.name}")
+
+        if args.edit_only:
+            print(f"[info] edit only mode: successfully processed and saved {upload_path.name} to converted_shorts.")
+            continue
 
         if args.dry_run:
             continue

@@ -193,6 +193,12 @@ def parse_args() -> argparse.Namespace:
         help="Generate and save metadata, but do not upload.",
     )
     parser.add_argument(
+        "--edit-only",
+        action="store_true",
+        default=False,
+        help="Perform video trimming, conversion, and music mixing to converted_shorts/, but skip the upload step.",
+    )
+    parser.add_argument(
         "--skip-uploaded",
         action="store_true",
         default=True,

@@ -42,8 +42,48 @@ def resolve_media_tool(bin_name: str) -> Optional[str]:
     return None
 
 
+_FFPROBE_CACHE_FILE = Path(".ffprobe_cache.json")
+_ffprobe_cache: Dict[str, Dict[str, Any]] = {}
+_cache_loaded = False
+
+def _load_ffprobe_cache() -> None:
+    global _cache_loaded, _ffprobe_cache
+    if _cache_loaded:
+        return
+    if _FFPROBE_CACHE_FILE.exists():
+        try:
+            with open(_FFPROBE_CACHE_FILE, "r", encoding="utf-8") as f:
+                _ffprobe_cache = json.load(f)
+        except Exception:
+            _ffprobe_cache = {}
+    else:
+        _ffprobe_cache = {}
+    _cache_loaded = True
+
+def _save_ffprobe_cache() -> None:
+    try:
+        with open(_FFPROBE_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(_ffprobe_cache, f, indent=2)
+    except Exception:
+        pass
+
+
 def probe_video_info(file_path: Path, ffprobe_bin: str) -> Optional[Dict[str, float]]:
     """Get video duration and dimensions using ffprobe."""
+    _load_ffprobe_cache()
+    resolved_path = Path(file_path).resolve()
+    key = resolved_path.as_posix()
+    
+    try:
+        mtime = resolved_path.stat().st_mtime
+    except OSError:
+        mtime = 0.0
+
+    if key in _ffprobe_cache:
+        cached = _ffprobe_cache[key]
+        if cached.get("mtime") == mtime and "info" in cached:
+            return cached["info"]
+
     try:
         result = subprocess.run(
             [
@@ -74,7 +114,10 @@ def probe_video_info(file_path: Path, ffprobe_bin: str) -> Optional[Dict[str, fl
                 height = int(stream.get("height", 0))
                 break
 
-        return {"duration": duration, "width": width, "height": height}
+        info = {"duration": duration, "width": width, "height": height}
+        _ffprobe_cache[key] = {"mtime": mtime, "info": info}
+        _save_ffprobe_cache()
+        return info
     except Exception:
         return None
 

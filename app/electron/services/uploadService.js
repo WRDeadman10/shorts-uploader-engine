@@ -1,5 +1,6 @@
 const path = require("path");
 const { spawn } = require("child_process");
+const { Notification } = require("electron");
 const { getRepoRoot } = require("./pathService");
 const { resolvePythonCommand } = require("./pythonService");
 
@@ -275,6 +276,13 @@ function startUploadSession(pythonCommand, payload)
             ? "Process exited with signal " + signal
             : "Process exited with code " + String(exitCode));
         broadcastStatuses();
+        
+        if (Notification.isSupported()) {
+            new Notification({
+                title: "Upload " + (nextStatus === "completed" ? "Completed" : "Failed"),
+                body: "Platform: " + session.status.platform + "\nStatus: " + nextStatus
+            }).show();
+        }
     });
 
     return session.status;
@@ -417,7 +425,7 @@ function buildUploadCommand(payload)
     const facebookEnabled = Boolean(platforms.facebook);
     const selectedMetaPlatform = instagramEnabled && facebookEnabled ? "both" : instagramEnabled ? "instagram" : "facebook";
 
-    if (!youtubeEnabled && !instagramEnabled && !facebookEnabled)
+    if (!youtubeEnabled && !instagramEnabled && !facebookEnabled && !options.editOnly)
     {
         throw new Error("Select at least one platform before starting an upload.");
     }
@@ -425,7 +433,7 @@ function buildUploadCommand(payload)
     const maxVid = String((options.maxVideos && Number(options.maxVideos) >= 1) ? Math.round(Number(options.maxVideos)) : 1);
 
     // ── All platforms route through youtubeBatchUpload.py ─────────────────────
-    const uploadPlatform = youtubeEnabled ? "youtube" : instagramEnabled ? "instagram" : "facebook";
+    const uploadPlatform = youtubeEnabled ? "youtube" : instagramEnabled ? "instagram" : facebookEnabled ? "facebook" : "youtube";
 
     const args = [
         "--upload-platform",
@@ -435,7 +443,7 @@ function buildUploadCommand(payload)
         "--allow-fallback"
     ];
 
-    if (options.includeShorts)
+    if (options.includeShorts || instagramEnabled)
     {
         args.push("--shorts-policy", "convert");
     }
@@ -491,10 +499,19 @@ function buildUploadCommand(payload)
     }
 
     if (options.videosRoot) { args.push("--root", options.videosRoot); }
-    if (options.appendMaxSeconds) { args.push("--shorts-max-seconds", String(options.appendMaxSeconds)); }
+    if (options.appendMaxSeconds) {
+        let maxSecs = Number(options.appendMaxSeconds);
+        // Meta Graph API (Instagram/Facebook Reels) strictly enforces a 60-second duration limit.
+        if (instagramEnabled || facebookEnabled) {
+            maxSecs = Math.min(maxSecs, 60);
+        }
+        args.push("--shorts-max-seconds", String(maxSecs));
+    }
     if (options.privacy) { args.push("--privacy", options.privacy); }
     if (options.playlistName) { args.push("--playlist-name", options.playlistName); }
     if (options.dryRun) { args.push("--dry-run"); }
+    if (options.editOnly) { args.push("--edit-only"); }
+    if (options.metaDeleteConverted === false) { args.push("--keep-converted-after-upload"); }
     if (options.ffmpegBin) { args.push("--ffmpeg-bin", options.ffmpegBin); }
     if (options.ffprobeBin) { args.push("--ffprobe-bin", options.ffprobeBin); }
     if (options.extensions) { args.push("--extensions", options.extensions); }
@@ -525,7 +542,7 @@ function buildUploadCommand(payload)
         if (options.trendingAudioCacheDir) args.push("--trending-audio-cache-dir", options.trendingAudioCacheDir);
         if (options.trendingAudioMaxTracks) args.push("--trending-audio-max", String(options.trendingAudioMaxTracks));
     }
-    else if (options.musicDir)
+    else if (options.includeMusic !== false && options.musicDir)
     {
         args.push("--music-dir", options.musicDir);
     }
@@ -539,9 +556,11 @@ function buildUploadCommand(payload)
             args.push('--schedule-plan', buildSchedulePlan(slots, sch2.date));
         }
     }
-    const platformLabel = youtubeEnabled
-        ? (instagramEnabled || facebookEnabled ? "youtube+" + selectedMetaPlatform : "youtube")
-        : selectedMetaPlatform;
+    const platformLabel = options.editOnly
+        ? "editor"
+        : youtubeEnabled
+            ? (instagramEnabled || facebookEnabled ? "youtube+" + selectedMetaPlatform : "youtube")
+            : selectedMetaPlatform;
 
     return {
         scriptName: "youtubeBatchUpload.py",

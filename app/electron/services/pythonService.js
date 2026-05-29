@@ -9,19 +9,19 @@ function resolvePythonCommand()
     const candidates = [
         {
             command: path.join(repoRoot, ".venv", "Scripts", "python.exe"),
-            prefixArgs: []
+            prefixArgs: ["-u"]
         },
         {
             command: path.join(repoRoot, "venv", "Scripts", "python.exe"),
-            prefixArgs: []
+            prefixArgs: ["-u"]
         },
         {
             command: "py",
-            prefixArgs: ["-3"]
+            prefixArgs: ["-3", "-u"]
         },
         {
             command: "python",
-            prefixArgs: []
+            prefixArgs: ["-u"]
         }
     ];
 

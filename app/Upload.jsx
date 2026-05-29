@@ -113,7 +113,8 @@ const platformOptions = [
 const uploadOptions = [
     { id: "includeShorts",   label: "Shorts Format" },
     { id: "includeMusic",    label: "Music Overlay" },
-    { id: "includeMetadata", label: "AI Metadata" }
+    { id: "includeMetadata", label: "AI Metadata" },
+    { id: "editOnly",        label: "Edit Only Mode" }
 ];
 
 const sideRow = {
@@ -161,7 +162,13 @@ function Upload()
     const [historyOpen, setHistoryOpen] = useState(false);
 
     // ── Maintenance Tool Inputs State ──
-    const [valorantPlayer, setValorantPlayer] = useState("");
+    const [valorantPlayer, setValorantPlayer] = useState(() => {
+        return localStorage.getItem("valorantPlayerName") || "";
+    });
+
+    useEffect(() => {
+        localStorage.setItem("valorantPlayerName", valorantPlayer);
+    }, [valorantPlayer]);
     const [deleteDryRun, setDeleteDryRun] = useState(true);
 
     // ── Maintenance Tool Run Statuses ──
@@ -218,7 +225,9 @@ function Upload()
     // ── Build Sessions & Logs Lists ──
     const allSessions = useMemo(function()
     {
-        const list = Object.values(uploadSessions).concat(Object.values(toolSessions));
+        const list = Object.values(uploadSessions)
+            .filter(s => !(s.commandPreview && s.commandPreview.includes("--edit-only")))
+            .concat(Object.values(toolSessions));
         list.sort(function(a, b) { return (b.startedAt || "") < (a.startedAt || "") ? -1 : 1; });
         return list;
     }, [uploadSessions, toolSessions]);
@@ -229,6 +238,14 @@ function Upload()
     const visibleLogs = useMemo(function()
     {
         let logs = logEntries;
+        // Filter out edit-only session logs from this view
+        const editSessionIds = new Set(
+            Object.values(uploadSessions)
+                .filter(s => s.commandPreview && s.commandPreview.includes("--edit-only"))
+                .map(s => s.sessionId)
+        );
+        logs = logs.filter(e => !e.sessionId || !editSessionIds.has(e.sessionId));
+
         if (selectedSessionId)
         {
             logs = logs.filter(function(e) { return e.sessionId === selectedSessionId; });
@@ -239,7 +256,7 @@ function Upload()
             logs = logs.filter(function(e) { return e.message && e.message.toLowerCase().includes(q); });
         }
         return logs;
-    }, [logEntries, selectedSessionId, searchFilter]);
+    }, [logEntries, uploadSessions, selectedSessionId, searchFilter]);
 
     // Autoscroll logs
     useEffect(function scrollLogs()
@@ -673,15 +690,15 @@ function Upload()
                     <div style={{ display: 'flex', gap: 8 }}>
                         <button
                             onClick={runUpload}
-                            disabled={isRunning}
                             style={{
                                 display: 'inline-flex', alignItems: 'center', padding: '6px 14px', borderRadius: 6,
-                                background: isRunning ? '#374151' : 'linear-gradient(135deg, rgba(0, 255, 198, 0.2), rgba(0, 255, 198, 0.08))',
-                                border: '1px solid rgba(0, 255, 198, 0.3)', color: isRunning ? '#94a3b8' : '#00ffc6', cursor: isRunning ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600
+                                background: 'linear-gradient(135deg, rgba(0, 255, 198, 0.2), rgba(0, 255, 198, 0.08))',
+                                border: '1px solid rgba(0, 255, 198, 0.3)', color: '#00ffc6', cursor: 'pointer', fontSize: 12, fontWeight: 600
                             }}
                         >
                             Start Upload Pipeline
                         </button>
+
                         <button
                             onClick={handleStopAll}
                             disabled={!isRunning}

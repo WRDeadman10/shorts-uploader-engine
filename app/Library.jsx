@@ -145,6 +145,16 @@ function Library()
                         <span style={{ fontSize: 12, color: selectedVideo.ig ? '#4ade80' : '#6b7280' }}>{selectedVideo.ig ? 'IG: Yes' : 'IG: No'}</span>
                         <span style={{ fontSize: 12, color: selectedVideo.fb ? '#4ade80' : '#6b7280' }}>{selectedVideo.fb ? 'FB: Yes' : 'FB: No'}</span>
                     </div>
+                    {selectedVideo.sourcePath && window.api && window.api.getVideoFileUrl && (
+                        <div style={{ marginTop: 16 }}>
+                            <video 
+                                src={window.api.getVideoFileUrl(selectedVideo.sourcePath)} 
+                                controls 
+                                preload="metadata" 
+                                style={{ width: '100%', maxWidth: '600px', borderRadius: 8, background: '#000' }} 
+                            />
+                        </div>
+                    )}
                 </div>
             )}
         </section>

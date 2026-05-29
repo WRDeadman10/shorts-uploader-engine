@@ -1,13 +1,14 @@
 {
     "uploadOptions": {
         "includeShorts": true,
-        "includeMusic": true,
+        "includeMusic": false,
         "includeMetadata": true,
-        "maxVideos": 10,
+        "maxVideos": 1,
         "videosRoot": "E:\\New folder\\Valorant Tracker\\VALORANT",
         "privacy": "public",
         "playlistName": "Valorant",
         "dryRun": false,
+        "editOnly": true,
         "ffmpegBin": "ffmpeg",
         "ffprobeBin": "ffprobe",
         "extensions": "",
@@ -23,28 +24,28 @@
         "trendingAudioMaxTracks": 30,
         "uniqueQueueOnly": false,
         "fullSizeVideo": false,
-        "appendMaxSeconds": 180,
+        "appendMaxSeconds": 85,
         "openaiModel": "gpt-4.1-mini",
         "musicVolume": 0.05,
         "metaSkipUploaded": true,
-        "metaAccessToken": "EAARoVBi60SUBRvSKfqRgOothf0OBdHvAIb2JbZAyEYqdDoBZB4RgiYgQv26N1utnvjaF4iQkjmBnCQnhAYQaXQnFQDt45dCEOUedGnZBokjtrQObvL1lsoure53YFCzoqO8dSJj5n6T95VDZAUTEsjrMGGPCjUpYc6jcsCn4gXfNFVA6USZCpU2gVgS9DUsn9P8cF",
+        "metaAccessToken": "EAARoVBi60SUBRqHKvbyFtHSkp92xfWrNqQmml36RZBgNcL0x8JbXTS3aCOddmi3TwQZAE2qIWslpVGrGO3ctPZBt3RmTIZAnTa9GYW91zchQX1ZC6hEyaRekMbv1RiukXZBW33b7vydp4XmkHfiK7ew6nIBdVAmZAQJif0ZCiX6h7eHCDPrONjRhN5VxkqPQ5q8cApWZB0eGh",
         "metaGraphVersion": "v25.0",
         "igUserId": "17841442647474097",
         "fbPageId": "1064411090088218",
         "channelName": "GanpatiGamerBoi",
         "musicInventory": "hollywood_music_inventory.json",
         "musicDir": "E:/Music/Hollywood",
-        "metaDeleteConverted": true,
+        "metaDeleteConverted": false,
         "metaMasterToken": "EAARoVBi60SUBRn9EWeHBZAIEPoQN5wC20lFljyZAtNZA4055bklubpInCFISWfWZAuUQb6xAxS5MK9qYvQZCIsDIge5nUCaaaZBVDlBbILOZAuwYlfO3JLn19ngCNPOOBGycP8KFaXwzfdkvfpVbxZCTkAWSpr8W45QPWoZCPc4kzbpglCZANGpC2DWDQMvLaf"
     },
     "uploadPlatforms": {
         "youtube": false,
-        "instagram": false,
-        "facebook": true
+        "instagram": true,
+        "facebook": false
     },
     "schedule": {
-        "enabled": false,
-        "date": "2026-05-28",
+        "enabled": true,
+        "date": "2026-05-30",
         "youtubeSlots": [
             {
                 "time": "17:00",

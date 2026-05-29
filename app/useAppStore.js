@@ -3,6 +3,7 @@ import { create } from "zustand";
 export const pageOrder = [
     { id: "dashboard", label: "Dashboard" },
     { id: "library", label: "Library" },
+    { id: "editor", label: "Batch Editor" },
     { id: "upload", label: "Upload" },
     { id: "audit", label: "Audit" },
     { id: "setup", label: "Setup" }
@@ -344,6 +345,7 @@ export const useAppStore = create(function createAppStore(set, get)
             privacy: "",
             playlistName: "",
             dryRun: false,
+            editOnly: false,
             ffmpegBin: "",
             ffprobeBin: "",
             extensions: "",
@@ -397,7 +399,7 @@ export const useAppStore = create(function createAppStore(set, get)
 
             const response = await window.api.runUpload({
                 platforms: state.uploadPlatforms,
-                options: state.uploadOptions,
+                options: Object.assign({}, state.uploadOptions, { editOnly: false }),
                 metadata: state.metadata,
                 schedule: {
                     enabled: state.scheduleEnabled,

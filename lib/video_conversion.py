@@ -79,8 +79,16 @@ def run_ffmpeg_with_progress(
     return returncode, stdout_text, stderr_text
 
 
-def build_max_quality_video_encode_args(ffmpeg_bin: str) -> List[str]:
-    cached = _VIDEO_ENCODER_ARGS_CACHE.get(ffmpeg_bin)
+def calculate_meta_bitrates(max_duration_seconds: float) -> Tuple[str, str]:
+    """Calculate maxrate and bufsize to keep video strictly under 46MB for Meta."""
+    target_mbps = 385.87 / max(1.0, max_duration_seconds)
+    target_mbps = max(1.5, min(6.0, target_mbps))
+    return f"{target_mbps:.1f}M", f"{target_mbps * 2:.1f}M"
+
+
+def build_max_quality_video_encode_args(ffmpeg_bin: str, target_platform: str = "", max_duration_seconds: float = 60.0) -> List[str]:
+    cache_key = f"{ffmpeg_bin}_{target_platform}_{max_duration_seconds}"
+    cached = _VIDEO_ENCODER_ARGS_CACHE.get(cache_key)
     if cached is not None:
         return list(cached)
 
@@ -98,30 +106,59 @@ def build_max_quality_video_encode_args(ffmpeg_bin: str) -> List[str]:
         encoders_blob = ""
 
     if "h264_nvenc" in encoders_blob:
-        encoder_args = [
-            "-c:v", "h264_nvenc",
-            "-preset", "p7",
-            "-tune", "hq",
-            "-rc", "constqp",
-            "-qp", "0",
-            "-b:v", "0",
-            "-profile:v", "high",
-            "-pix_fmt", "yuv420p",
-        ]
-        print("[info] ffmpeg video encoder: h264_nvenc (GPU, max-quality mode)")
+        if target_platform in ("instagram", "facebook"):
+            maxrate, bufsize = calculate_meta_bitrates(max_duration_seconds)
+            encoder_args = [
+                "-c:v", "h264_nvenc",
+                "-preset", "p6",
+                "-rc", "vbr",
+                "-cq", "24",
+                "-b:v", "0",
+                "-maxrate", maxrate,
+                "-bufsize", bufsize,
+                "-profile:v", "high",
+                "-pix_fmt", "yuv420p",
+            ]
+            print(f"[info] ffmpeg video encoder: h264_nvenc (Meta constrained bitrate: {maxrate})")
+        else:
+            encoder_args = [
+                "-c:v", "h264_nvenc",
+                "-preset", "p7",
+                "-tune", "hq",
+                "-rc", "vbr",
+                "-cq", "16",
+                "-b:v", "0",
+                "-profile:v", "high",
+                "-pix_fmt", "yuv420p",
+            ]
+            print("[info] ffmpeg video encoder: h264_nvenc (GPU, max-quality mode)")
     else:
-        encoder_args = [
-            "-c:v", "libx264",
-            "-preset", "slow",
-            "-crf", "14",
-            "-tune", "grain",
-            "-pix_fmt", "yuv420p",
-            "-profile:v", "high",
-            "-level:v", "5.1",
-        ]
-        print("[info] ffmpeg video encoder: libx264 (CPU fallback)")
+        if target_platform in ("instagram", "facebook"):
+            maxrate, bufsize = calculate_meta_bitrates(max_duration_seconds)
+            encoder_args = [
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-crf", "24",
+                "-maxrate", maxrate,
+                "-bufsize", bufsize,
+                "-pix_fmt", "yuv420p",
+                "-profile:v", "high",
+                "-level:v", "5.1",
+            ]
+            print(f"[info] ffmpeg video encoder: libx264 (Meta constrained bitrate: {maxrate})")
+        else:
+            encoder_args = [
+                "-c:v", "libx264",
+                "-preset", "slow",
+                "-crf", "16",
+                "-tune", "grain",
+                "-pix_fmt", "yuv420p",
+                "-profile:v", "high",
+                "-level:v", "5.1",
+            ]
+            print("[info] ffmpeg video encoder: libx264 (CPU, very-high-quality mode)")
 
-    _VIDEO_ENCODER_ARGS_CACHE[ffmpeg_bin] = encoder_args
+    _VIDEO_ENCODER_ARGS_CACHE[cache_key] = list(encoder_args)
     return list(encoder_args)
 
 def reuse_valid_cached_video(
@@ -153,6 +190,7 @@ def combine_videos_up_to_target(
     output: Path,
     ffmpeg_bin: str,
     ffprobe_bin: str,
+    target_platform: str = "",
 ) -> Path:
     """Concatenate multiple source videos into one output clip."""
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -180,7 +218,9 @@ def combine_videos_up_to_target(
     temp_output = build_temp_media_output_path(output)
     delete_file_if_exists(temp_output)
     try:
-        video_encode_args = build_max_quality_video_encode_args(ffmpeg_bin)
+        video_encode_args = build_max_quality_video_encode_args(
+            ffmpeg_bin, target_platform=target_platform, max_duration_seconds=target_duration
+        )
         cmd = [
                 ffmpeg_bin,
                 "-y",
@@ -229,6 +269,7 @@ def trim_video_head(
     ffmpeg_bin: str,
     ffprobe_bin: str,
     trim_seconds: float = 10.0,
+    target_platform: str = "",
 ) -> Path:
     """Trim the first N seconds from a video file."""
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -250,7 +291,7 @@ def trim_video_head(
     temp_output = build_temp_media_output_path(output)
     delete_file_if_exists(temp_output)
     try:
-        video_encode_args = build_max_quality_video_encode_args(ffmpeg_bin)
+        video_encode_args = build_max_quality_video_encode_args(ffmpeg_bin, target_platform=target_platform)
         cmd = [
                 ffmpeg_bin,
                 "-y",
@@ -295,6 +336,7 @@ def convert_to_shorts(
     ffmpeg_bin: str,
     ffprobe_bin: str,
     shorts_max_seconds: int,
+    target_platform: str = "",
 ) -> Path:
     """Convert a video to YouTube Shorts format (9:16, 1080x1920, <=60s)."""
     converted_dir.mkdir(parents=True, exist_ok=True)
@@ -313,14 +355,18 @@ def convert_to_shorts(
         "'if(gte(iw/ih,9/16),ih,trunc(iw*16/9/2)*2)',"
         "scale=1080:1920,setsar=1"
     )
+    
+    video_encode_args = build_max_quality_video_encode_args(
+        ffmpeg_bin, target_platform=target_platform, max_duration_seconds=shorts_max_seconds
+    )
+
     proc = subprocess.run(
         [
             ffmpeg_bin, "-y", "-i", str(source),
             "-vf", filter_graph,
             "-t", str(shorts_max_seconds),
-            "-c:v", "libx264", "-preset", "medium", "-crf", "20",
-            "-pix_fmt", "yuv420p", "-profile:v", "high", "-level:v", "4.1",
-            "-r", "30", "-g", "60", "-maxrate", "8M", "-bufsize", "16M",
+            *video_encode_args,
+            "-r", "30", "-g", "60",
             "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2",
             "-movflags", "+faststart",
             str(temp_output),
