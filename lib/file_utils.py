@@ -27,7 +27,12 @@ def load_json_file(path: Path, default: Any = None) -> Any:
 def save_json_file(path: Path, data: Any) -> None:
     """Write data as formatted JSON. Creates parent directories if needed."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    temp_path = path.with_suffix(".tmp")
+    try:
+        temp_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        temp_path.replace(path)
+    finally:
+        delete_file_if_exists(temp_path)
 
 
 def normalize_extensions(raw_extensions: str) -> set[str]:

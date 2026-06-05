@@ -52,32 +52,41 @@ def run_ffmpeg_with_progress(
     last_percent_printed = -1
     last_heartbeat_print_at = time.time()
 
-    assert proc.stderr is not None
-    for raw_line in proc.stderr:
-        line = raw_line.rstrip("\n")
-        stderr_lines.append(line)
-        match = re.search(r"time=([0-9:.]+)", line)
-        if match and total_seconds and total_seconds > 0:
-            elapsed = _parse_ffmpeg_timecode_seconds(match.group(1))
-            if elapsed is not None:
-                percent = int(max(0.0, min(100.0, (elapsed / total_seconds) * 100.0)))
+    try:
+        assert proc.stderr is not None
+        for raw_line in proc.stderr:
+            line = raw_line.rstrip("\n")
+            stderr_lines.append(line)
+            match = re.search(r"time=([0-9:.]+)", line)
+            if match and total_seconds and total_seconds > 0:
+                elapsed = _parse_ffmpeg_timecode_seconds(match.group(1))
+                if elapsed is not None:
+                    percent = int(max(0.0, min(100.0, (elapsed / total_seconds) * 100.0)))
+                    now = time.time()
+                    if percent >= last_percent_printed + 5 or now - last_progress_print_at >= 15:
+                        print(f"[progress][{step_label}] {percent}% ({elapsed:.1f}s/{total_seconds:.1f}s)", flush=True)
+                        last_percent_printed = percent
+                        last_progress_print_at = now
+                        last_heartbeat_print_at = now
+            else:
                 now = time.time()
-                if percent >= last_percent_printed + 5 or now - last_progress_print_at >= 15:
-                    print(f"[progress][{step_label}] {percent}% ({elapsed:.1f}s/{total_seconds:.1f}s)", flush=True)
-                    last_percent_printed = percent
-                    last_progress_print_at = now
+                if now - last_heartbeat_print_at >= 30:
+                    print(f"[progress][{step_label}] still running...", flush=True)
                     last_heartbeat_print_at = now
-        else:
-            now = time.time()
-            if now - last_heartbeat_print_at >= 30:
-                print(f"[progress][{step_label}] still running...", flush=True)
-                last_heartbeat_print_at = now
 
-    if proc.stdout is not None:
-        stdout_text = proc.stdout.read()
-    returncode = proc.wait()
-    stderr_text = "\n".join(stderr_lines)
-    return returncode, stdout_text, stderr_text
+        if proc.stdout is not None:
+            stdout_text = proc.stdout.read()
+        returncode = proc.wait()
+        stderr_text = "\n".join(stderr_lines)
+        return returncode, stdout_text, stderr_text
+    except KeyboardInterrupt:
+        proc.kill()
+        proc.wait()
+        raise
+    except Exception:
+        proc.kill()
+        proc.wait()
+        raise
 
 
 def calculate_meta_bitrates(max_duration_seconds: float) -> Tuple[str, str]:
@@ -245,12 +254,19 @@ def combine_videos_up_to_target(
             step_label="combine",
             total_seconds=total_seconds if total_seconds > 0 else None,
         )
-        if rc != 0:
+        if rc != 0 or "received signal" in (err or ""):
             tail = "\n".join((err or "").splitlines()[-20:])
-            raise RuntimeError(f"ffmpeg concat failed:\n{tail}")
+            raise RuntimeError(f"ffmpeg concat failed or interrupted:\n{tail}")
         info = probe_video_info(temp_output, ffprobe_bin)
         if not info:
             raise RuntimeError("combined output is invalid or unreadable")
+            
+        # Verify it wasn't truncated
+        if total_seconds > 0:
+            actual_dur = float(info.get("duration", 0.0))
+            if actual_dur < total_seconds - 2.0:
+                raise RuntimeError(f"ffmpeg truncated output: expected {total_seconds:.1f}s, got {actual_dur:.1f}s")
+                
         temp_output.replace(output)
         return output
     finally:
@@ -314,12 +330,18 @@ def trim_video_head(
             step_label="trim",
             total_seconds=max(source_duration - trim_seconds, 1.0),
         )
-        if rc != 0:
+        if rc != 0 or "received signal" in (err or ""):
             tail = "\n".join((err or "").splitlines()[-20:])
-            raise RuntimeError(f"ffmpeg trim failed:\n{tail}")
+            raise RuntimeError(f"ffmpeg trim failed or interrupted:\n{tail}")
         info = probe_video_info(temp_output, ffprobe_bin)
         if not info:
             raise RuntimeError("trimmed output is invalid or unreadable")
+            
+        expected_dur = max(source_duration - trim_seconds, 1.0)
+        actual_dur = float(info.get("duration", 0.0))
+        if actual_dur < expected_dur - 2.0:
+            raise RuntimeError(f"ffmpeg truncated output: expected ~{expected_dur:.1f}s, got {actual_dur:.1f}s")
+            
         temp_output.replace(output)
         return output
     finally:
@@ -375,15 +397,23 @@ def convert_to_shorts(
         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, check=False, creationflags=_WIN_FLAGS,
     )
-    if proc.returncode != 0:
+    if proc.returncode != 0 or "received signal" in (proc.stderr or ""):
         delete_file_if_exists(temp_output)
         tail = "\n".join((proc.stderr or "").splitlines()[-20:])
-        raise RuntimeError(f"ffmpeg conversion failed for {source}:\n{tail}")
+        raise RuntimeError(f"ffmpeg conversion failed or interrupted for {source}:\n{tail}")
 
     converted_info = probe_video_info(temp_output, ffprobe_bin)
     if not converted_info:
         delete_file_if_exists(temp_output)
         raise RuntimeError(f"Converted output invalid: {temp_output}")
+        
+    source_info = probe_video_info(source, ffprobe_bin)
+    if source_info:
+        expected_dur = min(float(source_info.get("duration", shorts_max_seconds)), float(shorts_max_seconds))
+        actual_dur = float(converted_info.get("duration", 0.0))
+        if actual_dur < expected_dur - 2.0:
+            delete_file_if_exists(temp_output)
+            raise RuntimeError(f"ffmpeg truncated output: expected ~{expected_dur:.1f}s, got {actual_dur:.1f}s")
 
     temp_output.replace(output)
     return output
@@ -454,15 +484,23 @@ def mix_background_music(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, check=False, creationflags=_WIN_FLAGS,
     )
-    if proc.returncode != 0:
+    if proc.returncode != 0 or "received signal" in (proc.stderr or ""):
         delete_file_if_exists(temp_output)
         tail = "\n".join((proc.stderr or "").splitlines()[-20:])
-        raise RuntimeError(f"ffmpeg music mix failed for {source}:\n{tail}")
+        raise RuntimeError(f"ffmpeg music mix failed or interrupted for {source}:\n{tail}")
 
     mix_info = probe_video_info(temp_output, ffprobe_bin)
     if not mix_info:
         delete_file_if_exists(temp_output)
         raise RuntimeError(f"Mixed output invalid: {temp_output}")
+        
+    source_info = probe_video_info(source, ffprobe_bin)
+    if source_info:
+        expected_dur = float(source_info.get("duration", 0.0))
+        actual_dur = float(mix_info.get("duration", 0.0))
+        if actual_dur < expected_dur - 2.0:
+            delete_file_if_exists(temp_output)
+            raise RuntimeError(f"ffmpeg truncated output: expected ~{expected_dur:.1f}s, got {actual_dur:.1f}s")
 
     temp_output.replace(output)
     return output

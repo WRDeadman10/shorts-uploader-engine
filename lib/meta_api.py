@@ -78,21 +78,31 @@ def request_json(
     data: Optional[Dict[str, Any]] = None,
     files: Optional[Dict[str, Any]] = None,
     timeout: int = 120,
+    max_retries: int = 3,
 ) -> Dict[str, Any]:
-    """Make an HTTP request and return parsed JSON."""
-    response = requests.request(
-        method, url,
-        params=params, data=data, files=files,
-        timeout=timeout,
-    )
-    try:
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as exc:
-        error_msg = _extract_http_error_detail(response)
-        if error_msg:
-            raise RuntimeError(f"Meta API Error ({response.status_code}): {error_msg}") from exc
-        raise exc
-    return response.json()
+    """Make an HTTP request and return parsed JSON with exponential backoff retries."""
+    attempt = 0
+    while True:
+        try:
+            response = requests.request(
+                method, url,
+                params=params, data=data, files=files,
+                timeout=timeout,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as exc:
+            attempt += 1
+            if attempt > max_retries:
+                if isinstance(exc, requests.exceptions.HTTPError):
+                    error_msg = _extract_http_error_detail(exc.response)
+                    if error_msg:
+                        raise RuntimeError(f"Meta API Error ({exc.response.status_code}): {error_msg}") from exc
+                raise exc
+            
+            backoff_secs = 5 * (2 ** (attempt - 1))
+            print(f"[warn] Meta API {method} request failed. Retrying in {backoff_secs}s (attempt {attempt}/{max_retries})...")
+            time.sleep(backoff_secs)
 
 
 def ig_create_reel_container(
@@ -166,26 +176,29 @@ def ig_upload_reel_binary(
                 "Accept": "application/json",
             }
             
-            # Intentionally ignoring timeout here to perfectly match test script
-            response = requests.post(
-                upload_uri,
-                headers=headers,
-                data=chunk,
-            )
-            
-            print(f"[instagram] Chunk Response: {response.status_code} {response.text}")
-            
-            try:
-                # 206 Partial Content is expected for all but the last chunk
-                if response.status_code not in (200, 206):
-                    response.raise_for_status()
-            except requests.exceptions.HTTPError as exc:
-                error_msg = _extract_http_error_detail(response)
-                if error_msg:
-                    raise RuntimeError(
-                        f"Meta API Error ({response.status_code}) during IG binary upload: {error_msg}"
-                    ) from exc
-                raise exc
+            attempt = 0
+            max_retries = 3
+            while True:
+                try:
+                    response = requests.post(
+                        upload_uri,
+                        headers=headers,
+                        data=chunk,
+                    )
+                    if response.status_code not in (200, 206):
+                        response.raise_for_status()
+                    print(f"[instagram] Chunk Response: {response.status_code} {response.text}")
+                    break
+                except requests.exceptions.RequestException as exc:
+                    attempt += 1
+                    if attempt > max_retries:
+                        error_msg = _extract_http_error_detail(response) if 'response' in locals() else str(exc)
+                        raise RuntimeError(
+                            f"Meta API Error during IG binary upload: {error_msg}"
+                        ) from exc
+                    backoff = 5 * (2 ** (attempt - 1))
+                    print(f"[warn][instagram] Chunk upload failed. Retrying in {backoff}s (attempt {attempt}/{max_retries})...")
+                    time.sleep(backoff)
                 
             offset += len(chunk)
             
@@ -300,29 +313,38 @@ def fb_upload_reel_binary(
             if not chunk:
                 break
                 
-            response = requests.post(
-                upload_url,
-                headers={
-                    "Authorization": f"OAuth {access_token}",
-                    "offset": str(offset),
-                    "file_size": str(file_size),
-                },
-                data=chunk,
-                timeout=timeout,
-            )
-            
-            try:
-                if response.status_code not in (200, 206):
-                    response.raise_for_status()
-            except requests.exceptions.HTTPError as exc:
+            attempt = 0
+            max_retries = 3
+            while True:
                 try:
-                    error_payload = response.json()
-                    error_msg = extract_meta_error_message(error_payload)
-                    if error_msg:
-                        raise RuntimeError(f"Meta API Error ({response.status_code}): {error_msg}") from exc
-                except (ValueError, KeyError):
-                    pass
-                raise exc
+                    response = requests.post(
+                        upload_url,
+                        headers={
+                            "Authorization": f"OAuth {access_token}",
+                            "offset": str(offset),
+                            "file_size": str(file_size),
+                        },
+                        data=chunk,
+                        timeout=timeout,
+                    )
+                    
+                    if response.status_code not in (200, 206):
+                        response.raise_for_status()
+                    break
+                except requests.exceptions.RequestException as exc:
+                    attempt += 1
+                    if attempt > max_retries:
+                        try:
+                            error_payload = response.json() if 'response' in locals() else {}
+                            error_msg = extract_meta_error_message(error_payload)
+                            if error_msg:
+                                raise RuntimeError(f"Meta API Error ({response.status_code if 'response' in locals() else 'N/A'}): {error_msg}") from exc
+                        except (ValueError, KeyError, AttributeError):
+                            pass
+                        raise exc
+                    backoff = 5 * (2 ** (attempt - 1))
+                    print(f"[warn][facebook] Chunk upload failed. Retrying in {backoff}s (attempt {attempt}/{max_retries})...")
+                    time.sleep(backoff)
                 
             offset += len(chunk)
     result = response.json()

@@ -68,6 +68,9 @@ contextBridge.exposeInMainWorld("api", {
     getAuditReport: function getAuditReport() {
         return ipcRenderer.invoke('get-audit-report');
     },
+    getDetailedAuditReport: function getDetailedAuditReport() {
+        return ipcRenderer.invoke('get-detailed-audit-report');
+    },
     getThumbnail: function getThumbnail(thumbPath)
     {
         return ipcRenderer.invoke("get-thumbnail", thumbPath);

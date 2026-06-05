@@ -69,6 +69,11 @@ function registerSystemHandlers(ipcMain)
         return pathService.readAuditReport();
     });
 
+    ipcMain.handle("get-detailed-audit-report", async function handleGetDetailedAuditReport()
+    {
+        return pathService.getDetailedAuditReport();
+    });
+
     ipcMain.handle("show-in-folder", async function handleShowInFolder(_event, filePath)
     {
         if (!filePath) return;
