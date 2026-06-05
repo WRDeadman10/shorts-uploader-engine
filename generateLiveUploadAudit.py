@@ -248,7 +248,7 @@ def fetch_instagram_uploads(
     url = f"https://graph.facebook.com/{graph_version}/{ig_user_id}/media"
     params = {
         "fields": "id,caption,media_type,media_product_type,permalink,shortcode,timestamp,thumbnail_url,media_url",
-        "limit": 100,
+        "limit": 25,
         "access_token": access_token,
     }
     raw_entries = fetch_paged_graph_entries(url, params, timeout)
@@ -347,7 +347,7 @@ def fetch_facebook_uploads(
         try:
             params: Dict[str, Any] = {
                 "fields": "id,description,created_time,permalink_url,source,status,title,length",
-                "limit": 100,
+                "limit": 25,
                 "access_token": access_token,
             }
             if mode_name == "videos":
