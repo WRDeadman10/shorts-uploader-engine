@@ -594,11 +594,10 @@ def main(args) -> int:
 
         # Check if pre-edited video exists in converted_shorts
         pre_edited_path = None
+        
         for edit_candidate in [
             converted_dir / rel_path,
-            converted_dir / Path(rel_path).with_name(f"{video_path.stem}_shorts.mp4"),
             converted_dir / Path(rel_path).with_suffix(".mp4"),
-            converted_dir / f"{video_path.stem}_shorts.mp4",
             converted_dir / f"{video_path.name}",
         ]:
             if edit_candidate.exists() and edit_candidate.stat().st_size > 1024:
@@ -653,7 +652,7 @@ def main(args) -> int:
             if len(batch_entries) > 1:
                 batch_rel_paths = [entry[1] for entry in batch_entries]
                 batch_sources = [entry[0] for entry in batch_entries]
-                combined_name = f"{batch_entries[0][0].stem}.batch{len(batch_entries)}.combined.mp4"
+                combined_name = f"{batch_entries[0][0].stem}.batch{len(batch_entries)}.{int(args.shorts_max_seconds)}s.combined.mp4"
                 combined_output = converted_dir / combined_name
                 try:
                     upload_path = combine_videos_up_to_target(
@@ -762,9 +761,7 @@ def main(args) -> int:
             if info:
                 is_vertical = info.get("width", 0) <= info.get("height", 0)
 
-            if args.edit_only:
-                pass
-            elif is_vertical and music_inventory and target_platform != "youtube":
+            if is_vertical and music_inventory and target_platform != "youtube":
                 _replace_audio = bool(args.use_trending_audio)
                 if target_platform == "youtube" and args.use_trending_audio:
                     music_track_index = (index - 1)

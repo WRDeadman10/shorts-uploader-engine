@@ -114,6 +114,7 @@ export default function BatchEditor() {
     const [leftOpen, setLeftOpen] = useState(true);
     const [searchFilter, setSearchFilter] = useState("");
     const [selectedSessionId, setSelectedSessionId] = useState(null);
+    const [targetPreset, setTargetPreset] = useState("independent");
 
     const options       = useAppStore(s => s.uploadOptions);
     const setUploadOption   = useAppStore(s => s.setUploadOption);
@@ -167,9 +168,15 @@ export default function BatchEditor() {
     async function handleStartEditing() {
         if (!window.api || !window.api.runUpload) return;
 
-        // editOnly mode — no platform needed, bypasses platform validation
+        let platforms = { youtube: false, instagram: false, facebook: false };
+        if (targetPreset === "instafb") {
+            platforms = { youtube: false, instagram: true, facebook: true };
+        } else if (targetPreset === "youtube") {
+            platforms = { youtube: true, instagram: false, facebook: false };
+        }
+
         const response = await window.api.runUpload({
-            platforms: { youtube: false, instagram: false, facebook: false },
+            platforms: platforms,
             options: Object.assign({}, options, { editOnly: true }),
             metadata: { title: "", description: "", musicTrack: "No Track" },
             schedule: { enabled: false }
@@ -249,6 +256,18 @@ export default function BatchEditor() {
                 {/* Batch Settings */}
                 <SidebarSection title="Batch Settings" defaultOpen={true}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <span style={{ fontSize: 13, color: '#e2e8f0' }}>Target Preset</span>
+                            <select
+                                value={targetPreset}
+                                onChange={e => setTargetPreset(e.target.value)}
+                                style={{ ...sideInput, width: '100%', cursor: 'pointer' }}
+                            >
+                                <option value="independent">Independent (All)</option>
+                                <option value="instafb">Instagram & Facebook</option>
+                                <option value="youtube">YouTube</option>
+                            </select>
+                        </div>
                         <div style={sideRow}>
                             <span style={{ fontSize: 13 }}>Max Videos</span>
                             <ActionInput type="number" min={1} max={500} style={{ ...sideInput, width: 60 }}

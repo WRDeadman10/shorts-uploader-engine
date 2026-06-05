@@ -163,9 +163,10 @@ def is_shorts_eligible(
     return (len(reasons) == 0, reasons)
 
 
-def build_converted_path(source: Path, converted_dir: Path) -> Path:
-    """Generate the output path for a converted video."""
-    return converted_dir / f"{source.stem}_shorts{source.suffix}"
+def build_converted_path(source: Path, converted_dir: Path, max_duration: float = 60.0) -> Path:
+    """Generate the output path for a converted video, factoring in duration to prevent cache collision."""
+    dur_suffix = f"_{int(max_duration)}s" if max_duration > 0 else ""
+    return converted_dir / f"{source.stem}_shorts{dur_suffix}{source.suffix}"
 
 
 def build_temp_media_output_path(output: Path) -> Path:

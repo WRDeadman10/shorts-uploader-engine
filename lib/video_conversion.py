@@ -363,7 +363,7 @@ def convert_to_shorts(
 ) -> Path:
     """Convert a video to YouTube Shorts format (9:16, 1080x1920, <=60s)."""
     converted_dir.mkdir(parents=True, exist_ok=True)
-    output = build_converted_path(source, converted_dir)
+    output = build_converted_path(source, converted_dir, max_duration=shorts_max_seconds)
     newest_input_mtime = source.stat().st_mtime
 
     if reuse_valid_cached_video(output, newest_input_mtime, ffprobe_bin, "converted"):
