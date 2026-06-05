@@ -13,3 +13,11 @@
         <script type="module" src="/app/main.jsx"></script>
     </body>
 </html>
+<script>
+window.addEventListener('error', function(event) {
+    document.body.innerHTML = '<div style="color: red; padding: 20px; font-size: 20px; background: white;"><h2>Global Error Caught!</h2><p>' + event.error.message + '</p><pre>' + event.error.stack + '</pre></div>';
+});
+window.addEventListener('unhandledrejection', function(event) {
+    document.body.innerHTML = '<div style="color: red; padding: 20px; font-size: 20px; background: white;"><h2>Unhandled Rejection Caught!</h2><p>' + event.reason + '</p></div>';
+});
+</script>

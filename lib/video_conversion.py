@@ -44,6 +44,7 @@ def run_ffmpeg_with_progress(
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        bufsize=1,
     )
     stderr_lines: List[str] = []
     stdout_text = ""
@@ -62,14 +63,14 @@ def run_ffmpeg_with_progress(
                 percent = int(max(0.0, min(100.0, (elapsed / total_seconds) * 100.0)))
                 now = time.time()
                 if percent >= last_percent_printed + 5 or now - last_progress_print_at >= 15:
-                    print(f"[progress][{step_label}] {percent}% ({elapsed:.1f}s/{total_seconds:.1f}s)")
+                    print(f"[progress][{step_label}] {percent}% ({elapsed:.1f}s/{total_seconds:.1f}s)", flush=True)
                     last_percent_printed = percent
                     last_progress_print_at = now
                     last_heartbeat_print_at = now
         else:
             now = time.time()
             if now - last_heartbeat_print_at >= 30:
-                print(f"[progress][{step_label}] still running...")
+                print(f"[progress][{step_label}] still running...", flush=True)
                 last_heartbeat_print_at = now
 
     if proc.stdout is not None:
@@ -219,7 +220,7 @@ def combine_videos_up_to_target(
     delete_file_if_exists(temp_output)
     try:
         video_encode_args = build_max_quality_video_encode_args(
-            ffmpeg_bin, target_platform=target_platform, max_duration_seconds=target_duration
+            ffmpeg_bin, target_platform=target_platform, max_duration_seconds=total_seconds
         )
         cmd = [
                 ffmpeg_bin,

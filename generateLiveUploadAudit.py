@@ -340,6 +340,9 @@ def fetch_facebook_uploads(
         ),
     ]
 
+    all_entries: List[Dict[str, Any]] = []
+    success_count = 0
+
     for mode_name, url in attempts:
         try:
             params: Dict[str, Any] = {
@@ -350,9 +353,8 @@ def fetch_facebook_uploads(
             if mode_name == "videos":
                 params["type"] = "uploaded"
             raw_entries = fetch_paged_graph_entries(url, params, timeout)
-            entries: List[Dict[str, Any]] = []
             for item in raw_entries:
-                entries.append(
+                all_entries.append(
                     {
                         "platform": "facebook",
                         "video_id": clean_text(item.get("id", "")),
@@ -366,18 +368,30 @@ def fetch_facebook_uploads(
                         "raw": item,
                     }
                 )
-            return {
-                "generated_at_utc": now_utc_iso(),
-                "facebook_page_id": page_id,
-                "mode": mode_name,
-                "count": len(entries),
-                "entries": entries,
-                "errors": errors,
-            }
+            success_count += 1
         except Exception as exc:  # noqa: BLE001
             errors.append(f"{mode_name}: {exc}")
 
-    raise RuntimeError("; ".join(errors))
+    if success_count == 0:
+        raise RuntimeError("; ".join(errors))
+
+    # Deduplicate by video_id
+    seen_ids = set()
+    unique_entries = []
+    for entry in all_entries:
+        vid = entry["video_id"]
+        if vid not in seen_ids:
+            seen_ids.add(vid)
+            unique_entries.append(entry)
+
+    return {
+        "generated_at_utc": now_utc_iso(),
+        "facebook_page_id": page_id,
+        "mode": "combined",
+        "count": len(unique_entries),
+        "entries": unique_entries,
+        "errors": errors,
+    }
 
 
 def metadata_file_for_video(root: Path, relative_path: str) -> Path:

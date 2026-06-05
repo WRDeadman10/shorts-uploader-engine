@@ -4,6 +4,8 @@ import ToggleSwitch from "./ToggleSwitch.jsx";
 import UploadAdvancedOptions from './UploadAdvancedOptions.jsx';
 import { useAppStore } from "./useAppStore.js";
 import ActionInput from "./ActionInput.jsx";
+import StructuredDashboard from "./StructuredDashboard.jsx";
+import ErrorBoundary from "./ErrorBoundary.jsx";
 
 // ── Thin themed scrollbar injected once ───────────────────────────────────────
 const SCROLLBAR_STYLE = `
@@ -160,6 +162,7 @@ function Upload()
     const [searchFilter, setSearchFilter] = useState("");
     const [selectedSessionId, setSelectedSessionId] = useState(null);
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [showRawLogs, setShowRawLogs] = useState(false);
 
     // ── Maintenance Tool Inputs State ──
     const [valorantPlayer, setValorantPlayer] = useState(() => {
@@ -214,6 +217,7 @@ function Upload()
 
     // ── Scroll to Bottom Ref ──
     const logEndRef = useRef(null);
+    const autoScrollRef = useRef(true);
 
     useEffect(function pollStatus()
     {
@@ -261,7 +265,7 @@ function Upload()
     // Autoscroll logs
     useEffect(function scrollLogs()
     {
-        if (logEndRef.current)
+        if (autoScrollRef.current && logEndRef.current)
         {
             logEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
@@ -713,12 +717,18 @@ function Upload()
                     </div>
 
                     <div style={{ display: 'flex', gap: 6 }}>
+                        <button 
+                            onClick={() => setShowRawLogs(!showRawLogs)} 
+                            style={{ padding: '5px 12px', borderRadius: 6, background: showRawLogs ? '#3b82f6' : '#1e293b', border: '1px solid #334155', color: showRawLogs ? '#fff' : '#94a3b8', fontSize: 11, cursor: 'pointer' }}
+                        >
+                            {showRawLogs ? "View Dashboard" : "View Raw Logs"}
+                        </button>
                         <button onClick={clearLogs} style={{ padding: '5px 12px', borderRadius: 6, background: '#1e293b', border: '1px solid #334155', color: '#94a3b8', fontSize: 11, cursor: 'pointer' }}>Clear</button>
                         <button onClick={handleExportLogs} style={{ padding: '5px 12px', borderRadius: 6, background: '#1e293b', border: '1px solid #334155', color: '#94a3b8', fontSize: 11, cursor: 'pointer' }}>Export</button>
                     </div>
                 </div>
 
-                {/* Session Filter Chips */}
+                {/* Session Filter Chips (Always Visible) */}
                 {allSessions.length > 0 && (
                     <div style={{ padding: "8px 16px", display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.1)' }}>
                         <span
@@ -747,29 +757,43 @@ function Upload()
                     </div>
                 )}
 
-                {/* Search Bar */}
-                <div style={{ padding: '8px 16px', background: 'rgba(0,0,0,0.15)', borderBottom: '1px solid var(--border)' }}>
-                    <input
-                        type="text"
-                        placeholder={selectedSessionId ? "Search logs in selected session…" : "Search all logs…"}
-                        value={searchFilter}
-                        onChange={function(e) { setSearchFilter(e.target.value); }}
-                        style={{
-                            width: "100%", padding: "6px 10px", borderRadius: 6,
-                            border: "1px solid #334155", background: "#0d0d1a", color: "#ccc", fontSize: 12, outline: 'none'
-                        }}
-                    />
-                </div>
-
-                {/* Autoscrolling Logs Viewer */}
-                <div style={{ flex: 1, padding: 14, overflow: 'auto', background: '#080a0f', fontFamily: 'Consolas, monospace', fontSize: 12 }}>
-                    {visibleLogs.length === 0 && (
-                        <div style={{ padding: "40px 16px", textAlign: "center", color: "#475569", fontSize: 13 }}>
-                            {logEntries.length === 0
-                                ? "No pipeline logs available. Press 'Start Upload Pipeline' to launch."
-                                : "No logs match the current search filter."}
+                {!showRawLogs ? (
+                    <div style={{ flex: 1, overflow: 'auto', background: '#080a0f' }}>
+                        <ErrorBoundary>
+                            <StructuredDashboard logs={visibleLogs} />
+                        </ErrorBoundary>
+                    </div>
+                ) : (
+                    <>
+                        {/* Search Bar */}
+                        <div style={{ padding: '8px 16px', background: 'rgba(0,0,0,0.15)', borderBottom: '1px solid var(--border)' }}>
+                            <input
+                                type="text"
+                                placeholder={selectedSessionId ? "Search logs in selected session…" : "Search all logs…"}
+                                value={searchFilter}
+                                onChange={function(e) { setSearchFilter(e.target.value); }}
+                                style={{
+                                    width: "100%", padding: "6px 10px", borderRadius: 6,
+                                    border: "1px solid #334155", background: "#0d0d1a", color: "#ccc", fontSize: 12, outline: 'none'
+                                }}
+                            />
                         </div>
-                    )}
+
+                        {/* Autoscrolling Logs Viewer */}
+                        <div 
+                            style={{ flex: 1, padding: 14, overflow: 'auto', background: '#080a0f', fontFamily: 'Consolas, monospace', fontSize: 12 }}
+                            onScroll={function(e) {
+                                const t = e.target;
+                                autoScrollRef.current = t.scrollHeight - t.scrollTop - t.clientHeight < 50;
+                            }}
+                        >
+                            {visibleLogs.length === 0 && (
+                                <div style={{ padding: "40px 16px", textAlign: "center", color: "#475569", fontSize: 13 }}>
+                                    {logEntries.length === 0
+                                        ? "No pipeline logs available. Press 'Start Upload Pipeline' to launch."
+                                        : "No logs match the current search filter."}
+                                </div>
+                            )}
                     {visibleLogs.map(function(entry)
                     {
                         const stream = entry.stream || entry.type || "log";
@@ -824,6 +848,8 @@ function Upload()
                     })}
                     <div ref={logEndRef} />
                 </div>
+                </>
+                )}
 
                 {/* Command History Drawer */}
                 {commandHistory.length > 0 && (
