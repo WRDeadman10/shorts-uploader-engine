@@ -181,6 +181,15 @@ export default function StructuredDashboard({ logs }) {
             if (msg.match(/\[(\d+)\/(\d+)\] processing:/)) {
                 const m = msg.match(/\[(\d+)\/(\d+)\] processing:\s*(.*)/);
                 if (m) {
+                    // Mark previous active videos as skipped since we are moving on
+                    bs.videos.forEach(v => {
+                        if (v.status === 'active') {
+                            v.status = 'skipped';
+                            v.activeDetail = 'Skipped by engine rules';
+                            bs.skippedCount = (bs.skippedCount || 0) + 1;
+                        }
+                    });
+
                     bs.currentIndex = parseInt(m[1], 10);
                     bs.maxVideos = parseInt(m[2], 10);
                     bs.status = 'running';
@@ -221,6 +230,16 @@ export default function StructuredDashboard({ logs }) {
                         video.status = 'active'; 
                     }
                 }
+            } else if (msg.includes("[done] uploads completed:")) {
+                bs.status = 'stopped';
+                // End of script: mark any remaining active video as skipped if it didn't complete/fail
+                bs.videos.forEach(v => {
+                    if (v.status === 'active') {
+                        v.status = 'skipped';
+                        v.activeDetail = 'Skipped or filtered out at end of run';
+                        bs.skippedCount = (bs.skippedCount || 0) + 1;
+                    }
+                });
             } 
             
             const activeVideo = bs.videos.find(v => v.status === 'active' || v.status === 'error');
@@ -405,6 +424,11 @@ export default function StructuredDashboard({ logs }) {
                             {sessionState.failedCount > 0 && (
                                 <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
                                     {sessionState.failedCount} Failed
+                                </div>
+                            )}
+                            {sessionState.skippedCount > 0 && (
+                                <div style={{ background: 'rgba(148,163,184,0.1)', color: '#94a3b8', padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
+                                    {sessionState.skippedCount} Skipped
                                 </div>
                             )}
                         </div>

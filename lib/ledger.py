@@ -34,14 +34,28 @@ def update_platform_upload_ledger(
     error_message: str = "",
 ) -> None:
     """Record an upload result in the ledger."""
-    row: Dict[str, Any] = {
+    entries = ledger_state.get("entries")
+    if not isinstance(entries, dict):
+        ledger_state["entries"] = {}
+        entries = ledger_state["entries"]
+
+    existing_row = entries.get(state_key)
+    if isinstance(existing_row, dict):
+        row = existing_row.copy()
+        if status == "error" and row.get("status") == "pre cooked":
+            status = "pre cooked" # Keep as pre cooked but add error message
+    else:
+        row = {}
+
+    row.update({
         "status": status,
         "relative_path": relative_path,
         "source_file": str(source_file),
         "metadata_file": str(metadata_file),
         "title": title,
         "updated_at_utc": datetime.now(timezone.utc).isoformat(),
-    }
+    })
+
     if platform_id_key:
         row[platform_id_key] = platform_id_value
     if status == "ok":
@@ -53,7 +67,8 @@ def update_platform_upload_ledger(
     if extra_fields:
         for field_name, field_value in extra_fields.items():
             row[field_name] = field_value
-    ledger_state["entries"][state_key] = row
+            
+    entries[state_key] = row
 
 
 def is_platform_upload_completed(ledger_state: Dict[str, Any], state_key: str) -> bool:
@@ -110,3 +125,31 @@ def get_platform_upload_status(ledger_state: Dict[str, Any], state_key: str) -> 
     if not isinstance(row, dict):
         return ''
     return str(row.get('status', '')).strip().lower()
+
+
+def initialize_discovered_videos_in_ledgers(
+    root: Any,
+    videos: List[Any],
+    ledgers: List[Dict[str, Any]],
+) -> None:
+    """Pre-fill ledgers with discovered videos as 'not uploaded'."""
+    from lib.file_utils import file_key
+    for video_path in videos:
+        key = file_key(root, video_path)
+        try:
+            rel_path = video_path.resolve().relative_to(root.resolve()).as_posix()
+        except ValueError:
+            rel_path = video_path.name
+            
+        for ledger in ledgers:
+            entries = ledger.get("entries")
+            if not isinstance(entries, dict):
+                ledger["entries"] = {}
+                entries = ledger["entries"]
+            if key not in entries:
+                entries[key] = {
+                    "status": "not uploaded",
+                    "relative_path": rel_path,
+                    "source_file": str(video_path),
+                    "discovered_at_utc": datetime.now(timezone.utc).isoformat()
+                }

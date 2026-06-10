@@ -161,7 +161,9 @@ def ig_upload_reel_binary(
     
     with open(file_path, "rb") as f:
         offset = 0
+        reset_count = 0
         while offset < file_size:
+            f.seek(offset)
             chunk = f.read(chunk_size)
             if not chunk:
                 break
@@ -178,27 +180,74 @@ def ig_upload_reel_binary(
             
             attempt = 0
             max_retries = 3
-            while True:
+            chunk_accepted = False
+            while attempt <= max_retries:
+                response = None
                 try:
                     response = requests.post(
                         upload_uri,
                         headers=headers,
                         data=chunk,
+                        timeout=120,
                     )
                     if response.status_code not in (200, 206):
                         response.raise_for_status()
                     print(f"[instagram] Chunk Response: {response.status_code} {response.text}")
+                    chunk_accepted = True
                     break
                 except requests.exceptions.RequestException as exc:
                     attempt += 1
+                    if response is not None:
+                        error_msg = _extract_http_error_detail(response)
+                    else:
+                        error_msg = str(exc)
+                    
+                    # Instead of parsing the error message, explicitly query the server for the current offset
+                    server_offset_to_apply = None
+                    abort_due_to_reset = False
+                    try:
+                        status_resp = requests.get(
+                            upload_uri,
+                            headers={"Authorization": f"OAuth {access_token}"},
+                            timeout=30
+                        )
+                        if status_resp.status_code == 200:
+                            server_offset = int(status_resp.json().get("offset", -1))
+                            if server_offset == file_size:
+                                print(f"[instagram] Server reports upload is completely finished (offset={server_offset}).")
+                                chunk_accepted = True
+                                break # Server has the whole file
+                            elif server_offset >= 0 and server_offset != offset:
+                                print(f"[warn][instagram] Server reports offset {server_offset} (we tried {offset}). Resetting.")
+                                if server_offset < offset:
+                                    reset_count += 1
+                                    if reset_count > 3:
+                                        abort_due_to_reset = True
+                                    else:
+                                        server_offset_to_apply = server_offset
+                                else:
+                                    server_offset_to_apply = server_offset
+                    except Exception as status_exc:
+                        print(f"[warn][instagram] Failed to query server offset: {status_exc}")
+
+                    if abort_due_to_reset:
+                        raise RuntimeError(f"Meta API keeps resetting offset (reset_count={reset_count}). The video might be invalid or rejected by Instagram.")
+
+                    if server_offset_to_apply is not None:
+                        offset = server_offset_to_apply
+                        chunk_accepted = False
+                        break # Break retry loop, re-evaluate outer loop with new offset
+
                     if attempt > max_retries:
-                        error_msg = _extract_http_error_detail(response) if 'response' in locals() else str(exc)
                         raise RuntimeError(
                             f"Meta API Error during IG binary upload: {error_msg}"
                         ) from exc
                     backoff = 5 * (2 ** (attempt - 1))
                     print(f"[warn][instagram] Chunk upload failed. Retrying in {backoff}s (attempt {attempt}/{max_retries})...")
                     time.sleep(backoff)
+            
+            if not chunk_accepted:
+                continue # Skip the offset increment, loop again with the new offset
                 
             offset += len(chunk)
             

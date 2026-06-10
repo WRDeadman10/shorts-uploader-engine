@@ -198,6 +198,16 @@ def main(args) -> int:
     facebook_upload_ledger = ensure_platform_upload_ledger_shape(
         load_json_file(facebook_upload_ledger_file, default={"entries": {}})
     )
+    
+    initialize_discovered_videos_in_ledgers(
+        root=root,
+        videos=videos,
+        ledgers=[youtube_upload_ledger, instagram_upload_ledger, facebook_upload_ledger],
+    )
+    save_json_file(youtube_upload_ledger_file, youtube_upload_ledger)
+    save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
+    save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
+
     try:
         required_uploaded_platforms = normalize_platform_names_csv(args.require_uploaded_on)
         required_missing_platforms = normalize_platform_names_csv(args.require_missing_on)
@@ -614,32 +624,60 @@ def main(args) -> int:
         if not skip_editing:
             trimmed_batch_entries: List[Tuple[Path, str, str, float]] = []
             for original_path, original_rel_path, original_key, original_mtime in batch_entries:
-                original_info = probe_video_info(original_path, ffprobe_bin)
-                original_duration = float(original_info["duration"]) if original_info else 0.0
-                if original_duration <= trim_head_seconds:
-                    print(
-                        f"[skip] clip too short after trimming {trim_head_seconds:.0f}s: "
-                        f"{original_rel_path} ({original_duration:.1f}s)"
-                    )
-                    continue
-                trim_digest = hashlib.sha1(
-                    f"{original_path.resolve()}|trim{int(trim_head_seconds)}".encode("utf-8")
-                ).hexdigest()[:10]
-                safe_trim_stem = re.sub(r"[^a-zA-Z0-9._-]", "_", original_path.stem)[:80]
-                trimmed_path = converted_dir / f"{safe_trim_stem}.{trim_digest}.trim{int(trim_head_seconds)}.mp4"
-                try:
-                    trimmed_video = trim_video_head(
-                        source=original_path,
-                        output=trimmed_path,
-                        ffmpeg_bin=ffmpeg_bin,
-                        ffprobe_bin=ffprobe_bin,
-                        trim_seconds=trim_head_seconds,
-                        target_platform=target_platform,
-                    )
-                    cleanup_candidates.append(trimmed_video)
-                    trimmed_batch_entries.append((trimmed_video, original_rel_path, original_key, original_mtime))
-                except Exception as exc:  # noqa: BLE001
-                    print(f"[error] trim failed; skipping clip {original_rel_path}: {exc}")
+                clip_kill_timestamps = []
+                json_sidecar = original_path.with_suffix(".json")
+                if json_sidecar.exists():
+                    try:
+                        sd = load_json_file(json_sidecar)
+                        if isinstance(sd, dict):
+                            clip_kill_timestamps = sd.get("kill_timestamps_seconds", [])
+                    except Exception:
+                        pass
+
+                if clip_kill_timestamps:
+                    safe_trim_stem = re.sub(r"[^a-zA-Z0-9._-]", "_", original_path.stem)[:80]
+                    trim_digest = hashlib.sha1(f"{original_path.resolve()}|smart_trim".encode("utf-8")).hexdigest()[:10]
+                    trimmed_path = converted_dir / f"{safe_trim_stem}.{trim_digest}.smart_trim.mp4"
+                    try:
+                        trimmed_video = smart_trim_highlights(
+                            source=original_path,
+                            output=trimmed_path,
+                            ffmpeg_bin=ffmpeg_bin,
+                            ffprobe_bin=ffprobe_bin,
+                            kill_timestamps_seconds=clip_kill_timestamps,
+                            target_platform=target_platform,
+                        )
+                        cleanup_candidates.append(trimmed_video)
+                        trimmed_batch_entries.append((trimmed_video, original_rel_path, original_key, original_mtime))
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"[error] smart trim failed; skipping clip {original_rel_path}: {exc}")
+                else:
+                    original_info = probe_video_info(original_path, ffprobe_bin)
+                    original_duration = float(original_info["duration"]) if original_info else 0.0
+                    if original_duration <= trim_head_seconds:
+                        print(
+                            f"[skip] clip too short after trimming {trim_head_seconds:.0f}s: "
+                            f"{original_rel_path} ({original_duration:.1f}s)"
+                        )
+                        continue
+                    trim_digest = hashlib.sha1(
+                        f"{original_path.resolve()}|trim{int(trim_head_seconds)}".encode("utf-8")
+                    ).hexdigest()[:10]
+                    safe_trim_stem = re.sub(r"[^a-zA-Z0-9._-]", "_", original_path.stem)[:80]
+                    trimmed_path = converted_dir / f"{safe_trim_stem}.{trim_digest}.trim{int(trim_head_seconds)}.mp4"
+                    try:
+                        trimmed_video = trim_video_head(
+                            source=original_path,
+                            output=trimmed_path,
+                            ffmpeg_bin=ffmpeg_bin,
+                            ffprobe_bin=ffprobe_bin,
+                            trim_seconds=trim_head_seconds,
+                            target_platform=target_platform,
+                        )
+                        cleanup_candidates.append(trimmed_video)
+                        trimmed_batch_entries.append((trimmed_video, original_rel_path, original_key, original_mtime))
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"[error] trim failed; skipping clip {original_rel_path}: {exc}")
 
             if not trimmed_batch_entries:
                 print("[warn] no usable clips remained in batch after trimming; skipping batch.")
@@ -729,12 +767,13 @@ def main(args) -> int:
                         continue
                     try:
                         converted_source = upload_path
-                        upload_path = convert_to_shorts(
+                        upload_path = format_header_layout_shorts(
                             source=converted_source,
                             converted_dir=converted_dir,
                             ffmpeg_bin=ffmpeg_bin,
                             ffprobe_bin=ffprobe_bin,
                             shorts_max_seconds=args.shorts_max_seconds,
+                            overlay_text=metadata.get("title", ""),
                             target_platform=target_platform,
                         )
                         if upload_path != converted_source:
@@ -827,6 +866,17 @@ def main(args) -> int:
 
         if args.full_size_video and full_size_upload_path != upload_path:
             print(f"[video] full-size mode enabled: additional upload source kept: {full_size_upload_path.name}")
+
+        for _, batch_rel_path, batch_key, _ in batch_entries:
+            for ledger in [youtube_upload_ledger, instagram_upload_ledger, facebook_upload_ledger]:
+                entries = ledger.get("entries", {})
+                if batch_key in entries and entries[batch_key].get("status") not in {"ok", "scheduled"}:
+                    entries[batch_key]["status"] = "pre cooked"
+                    entries[batch_key]["pre_cooked_file"] = str(upload_path)
+                    entries[batch_key]["updated_at_utc"] = datetime.now(timezone.utc).isoformat()
+        save_json_file(youtube_upload_ledger_file, youtube_upload_ledger)
+        save_json_file(instagram_upload_ledger_file, instagram_upload_ledger)
+        save_json_file(facebook_upload_ledger_file, facebook_upload_ledger)
 
         if args.edit_only:
             print(f"[info] edit only mode: successfully processed and saved {upload_path.name} to converted_shorts.")

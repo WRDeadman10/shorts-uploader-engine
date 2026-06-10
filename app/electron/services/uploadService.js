@@ -556,6 +556,7 @@ function buildUploadCommand(payload)
             args.push('--schedule-plan', buildSchedulePlan(slots, sch2.date));
         }
     }
+    args.push("--continue-on-platform-error");
     const platformLabel = options.editOnly
         ? "editor"
         : youtubeEnabled

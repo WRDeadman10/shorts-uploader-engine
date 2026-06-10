@@ -279,6 +279,88 @@ def combine_videos_up_to_target(
                 pass
 
 
+def smart_trim_highlights(
+    *,
+    source: Path,
+    output: Path,
+    ffmpeg_bin: str,
+    ffprobe_bin: str,
+    kill_timestamps_seconds: List[float],
+    target_platform: str = "",
+) -> Path:
+    """Trim video to encapsulate highlights based on kill timestamps."""
+    output.parent.mkdir(parents=True, exist_ok=True)
+    source_info = probe_video_info(source, ffprobe_bin)
+    if not source_info:
+        raise RuntimeError(f"could not inspect source for smart trim: {source}")
+    source_duration = float(source_info["duration"])
+
+    if not kill_timestamps_seconds:
+        raise RuntimeError("kill_timestamps_seconds is empty; cannot perform smart trim")
+
+    # The rule is: 5 seconds before the first kill, 2 seconds after the last kill.
+    start_time = max(0.0, kill_timestamps_seconds[0] - 5.0)
+    end_time = min(source_duration, kill_timestamps_seconds[-1] + 2.0)
+    trim_duration = end_time - start_time
+
+    if trim_duration <= 0:
+        raise RuntimeError("Invalid calculated trim duration")
+
+    newest_input_mtime = source.stat().st_mtime
+    # Use a specific cache label for smart trims
+    if reuse_valid_cached_video(
+        output=output,
+        newest_input_mtime=newest_input_mtime,
+        ffprobe_bin=ffprobe_bin,
+        cache_label="smart_trimmed",
+    ):
+        return output
+
+    temp_output = build_temp_media_output_path(output)
+    delete_file_if_exists(temp_output)
+    try:
+        video_encode_args = build_max_quality_video_encode_args(ffmpeg_bin, target_platform=target_platform)
+        cmd = [
+                ffmpeg_bin,
+                "-y",
+                "-ss",
+                f"{start_time:.3f}",
+                "-to",
+                f"{end_time:.3f}",
+                "-i",
+                str(source),
+                *video_encode_args,
+                "-c:a",
+                "aac",
+                "-b:a",
+                "192k",
+                "-movflags",
+                "+faststart",
+                str(temp_output),
+            ]
+        rc, _out, err = run_ffmpeg_with_progress(
+            cmd=cmd,
+            step_label="smart_trim",
+            total_seconds=trim_duration,
+        )
+        if rc != 0 or "received signal" in (err or ""):
+            tail = "\n".join((err or "").splitlines()[-20:])
+            raise RuntimeError(f"ffmpeg smart trim failed or interrupted:\n{tail}")
+        info = probe_video_info(temp_output, ffprobe_bin)
+        if not info:
+            raise RuntimeError("smart trimmed output is invalid or unreadable")
+            
+        temp_output.replace(output)
+        return output
+    finally:
+        if temp_output.exists():
+            try:
+                if temp_output != output:
+                    temp_output.unlink()
+            except OSError:
+                pass
+
+
 def trim_video_head(
     *,
     source: Path,
@@ -351,6 +433,127 @@ def trim_video_head(
                     temp_output.unlink()
             except OSError:
                 pass
+
+
+def format_header_layout_shorts(
+    source: Path,
+    converted_dir: Path,
+    ffmpeg_bin: str,
+    ffprobe_bin: str,
+    shorts_max_seconds: int,
+    overlay_text: str = "",
+    target_platform: str = "",
+) -> Path:
+    """Convert a video to YouTube Shorts with Header Layout, Text, and Enhancements."""
+    converted_dir.mkdir(parents=True, exist_ok=True)
+    import hashlib
+    # Use a fixed string for the digest so we bypass old caches but still cache per source file
+    text_digest = hashlib.sha1(b"fun_fact_v3").hexdigest()[:6]
+    output_name = f"{source.stem}_header_{text_digest}.mp4"
+    output = converted_dir / output_name
+    
+    newest_input_mtime = source.stat().st_mtime
+
+    if reuse_valid_cached_video(output, newest_input_mtime, ffprobe_bin, "converted"):
+        return output
+
+    temp_output = build_temp_media_output_path(output)
+    delete_file_if_exists(temp_output)
+    
+    source_info = probe_video_info(source, ffprobe_bin)
+    source_duration = min(float(source_info.get("duration", shorts_max_seconds)), float(shorts_max_seconds)) if source_info else float(shorts_max_seconds)
+    fade_out_start = max(0, source_duration - 0.5)
+
+    import urllib.request
+    import json
+    import textwrap
+    import shutil
+    fact_text = "Did you know? Valorant requires precision!"
+    wrapped_lines = textwrap.wrap(fact_text, width=30)
+    for _ in range(5):
+        try:
+            req = urllib.request.Request("https://uselessfacts.jsph.pl/api/v2/facts/random", headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                fact_data = json.loads(response.read().decode())
+                candidate_text = fact_data.get("text", fact_text)
+                
+            candidate_text = candidate_text.encode("ascii", "ignore").decode("ascii")
+            candidate_text = candidate_text.replace("‘", "'").replace("’", "'").replace("“", '"').replace("”", '"').replace('\r', '').replace('\n', ' ')
+            
+            candidate_lines = textwrap.wrap(candidate_text, width=30)
+            if len(candidate_lines) <= 3:
+                fact_text = candidate_text
+                wrapped_lines = candidate_lines
+                break
+            else:
+                print(f"[info] Fact too long ({len(candidate_lines)} lines), fetching another...")
+        except Exception as e:
+            print(f"[warn] Failed to fetch random fact: {e}")
+            break
+    fact_file = converted_dir / f"{source.stem}_fact_{text_digest}.txt"
+    with open(fact_file, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(wrapped_lines))
+        
+    if not os.path.exists("impact.ttf"):
+        try:
+            shutil.copy2("C:\\Windows\\Fonts\\impact.ttf", "impact.ttf")
+        except FileNotFoundError:
+            print("[warn] impact.ttf not found on system.")
+
+    fontfile_arg = "impact.ttf"
+
+    filter_complex = (
+        "[0:v]split=2[bg_src][fg_raw];"
+        "[bg_src]scale=270:-1,boxblur=5:5,scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg];"
+        "[fg_raw]eq=saturation=1.4:contrast=1.05:gamma=1.05[fg_pop];"
+        "[fg_pop]scale=-1:1500,crop=1080:1500[fg];"
+        "[bg][fg]overlay=(W-w)/2:(H-h)/2[composed];"
+        "[composed]drawtext=textfile='{0}':fontcolor=white:fontsize=30:fontfile={1}:x=(w-text_w)/2:y=(210-th)/2:borderw=2:bordercolor=black:line_spacing=5:text_align=C[with_text];".format(fact_file.as_posix().replace(":", r"\:"), fontfile_arg) +
+        f"[with_text]fade=t=out:st={fade_out_start:.3f}:d=0.5[outv];"
+        f"[0:a]loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=out:st={fade_out_start:.3f}:d=0.5[outa]"
+    )
+    
+    video_encode_args = build_max_quality_video_encode_args(
+        ffmpeg_bin, target_platform=target_platform, max_duration_seconds=shorts_max_seconds
+    )
+
+    cmd = [
+        ffmpeg_bin, "-y", "-i", str(source),
+        "-t", str(shorts_max_seconds),
+        "-filter_complex", filter_complex,
+        "-map", "[outv]",
+        "-map", "[outa]",
+        *video_encode_args,
+        "-r", "30", "-g", "60",
+        "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
+        "-movflags", "+faststart",
+        str(temp_output),
+    ]
+
+    rc, _out, err = run_ffmpeg_with_progress(
+        cmd=cmd,
+        step_label="header_format",
+        total_seconds=source_duration,
+    )
+    
+    if rc != 0 or "received signal" in (err or ""):
+        delete_file_if_exists(temp_output)
+        tail = "\n".join((err or "").splitlines()[-20:])
+        raise RuntimeError(f"ffmpeg header_format failed or interrupted for {source}:\n{tail}")
+
+    converted_info = probe_video_info(temp_output, ffprobe_bin)
+    if not converted_info:
+        delete_file_if_exists(temp_output)
+        raise RuntimeError(f"Converted output invalid: {temp_output}")
+
+    expected_dur = source_duration
+    actual_dur = float(converted_info.get("duration", 0.0))
+    if actual_dur < expected_dur - 2.0:
+        delete_file_if_exists(temp_output)
+        raise RuntimeError(f"ffmpeg truncated output: expected ~{expected_dur:.1f}s, got {actual_dur:.1f}s")
+
+    temp_output.replace(output)
+    return output
 
 
 def convert_to_shorts(
