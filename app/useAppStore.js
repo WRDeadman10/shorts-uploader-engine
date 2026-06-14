@@ -6,6 +6,7 @@ export const pageOrder = [
     { id: "editor", label: "Batch Editor" },
     { id: "upload", label: "Upload" },
     { id: "audit", label: "Audit" },
+    { id: "community", label: "Community" },
     { id: "setup", label: "Setup" }
 ];
 

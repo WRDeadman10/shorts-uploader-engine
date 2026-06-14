@@ -7,6 +7,7 @@ import Upload from "./Upload.jsx";
 import Audit from "./Audit.jsx";
 import Topbar from "./Topbar.jsx";
 import Setup from "./Setup.jsx";
+import Community from "./Community.jsx";
 import { pageOrder, useAppStore } from "./useAppStore.js";
 import "./global.css";
 
@@ -16,6 +17,7 @@ const pageComponents = {
     editor: BatchEditor,
     upload: Upload,
     audit: Audit,
+    community: Community,
     setup: Setup
 };
 

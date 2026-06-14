@@ -279,27 +279,32 @@ def generate_ai_metadata(
 ) -> Dict[str, Any]:
     """Generate YouTube Shorts metadata using OpenAI API."""
     system_prompt = (
-        "You are a YouTube Shorts growth strategist for VALORANT content who specializes in FUNNY, VIRAL, HIGH-CTR metadata. "
-        "Your goal is to make viewers laugh, relate, or feel curious enough to instantly click. "
-        "You ONLY produce funny, entertaining, or ironic content. No serious esports tone.\n\n"
-        "Titles must feel like memes or inside jokes gamers instantly understand.\n"
-        "Descriptions should feel like a human reacting, not describing.\n\n"
-        "Avoid robotic phrasing, templates, or generic wording.\n"
+        "You are a lazy Gen-Z Valorant streamer uploading a quick highlight. "
+        "You don't care about SEO or sounding professional. Your tone is extremely casual, slightly toxic or self-deprecating, and highly relatable to everyday ranked players.\n\n"
+        "Your titles are short and punchy. Your descriptions are strictly ONE sentence, all lowercase, no punctuation, and read like a quick text message to a friend.\n\n"
+        "Never use exclamation marks, emojis, or corporate 'growth hacker' language (e.g., 'watch until the end', 'insane clutch').\n"
         "Return ONLY strict JSON."
     )
     clip_context_text = json.dumps(clip_context, ensure_ascii=False) if clip_context else "none"
     user_prompt = (
-        "Create FUNNY, HIGH-CTR metadata for a VALORANT short.\n\n"
+        "Generate realistic, natural metadata for a VALORANT short.\n\n"
         f"Video file name: {file_path.name}\n"
         f"Relative path: {rel_path}\n"
         f"Channel name/style: {channel_name or 'not provided'}\n"
         f"Language: {language}\n"
         f"Extra keywords: {', '.join(extra_keywords) if extra_keywords else 'none'}\n\n"
         f"Sibling sidecar JSON facts: {clip_context_text}\n\n"
+        "EXAMPLES OF GOOD METADATA:\n"
+        "Example 1:\n"
+        '{"title": "how did I survive this...", "description": "aim labs paying off fr", "tags": ["valorant", "jett"], "hashtags": ["#valorant", "#shorts"], "cta": "sub for more"}\n'
+        "Example 2:\n"
+        '{"title": "my teammates are actually paid actors", "description": "i cant do this anymore chat", "tags": ["valorant clips", "ranked"], "hashtags": ["#valorant"], "cta": "drop a sub"}\n'
+        "Example 3:\n"
+        '{"title": "the most average reyna player", "description": "we take those i guess", "tags": ["valorant", "reyna main"], "hashtags": ["#valorantclips"], "cta": "subscribe"}\n\n'
         "Output JSON schema:\n"
-        '{"title": "funny <=100 chars", "description": "2-4 lines", '
-        '"tags": ["10-15 tags"], "hashtags": ["3-5"], "cta": "short CTA"}\n\n'
-        "RULES: No emojis, no serious tone, no generic phrases, use clip context if available.\n\n"
+        '{"title": "short natural title <=60 chars", "description": "exactly 1 sentence, all lowercase, no punctuation", '
+        '"tags": ["10-15 relevant tags"], "hashtags": ["3-5"], "cta": "very short simple cta"}\n\n'
+        "RULES: Use clip context if available. Copy the exact tone of the examples.\n\n"
         f"Recent titles to avoid:\n{json.dumps(recent_titles[-5:], ensure_ascii=False)}\n"
         f"Recent descriptions to avoid:\n{json.dumps(recent_descriptions[-3:], ensure_ascii=False)}\n"
     )
